@@ -198,6 +198,7 @@ export const DoctorsPage: React.FC = () => {
     const updatedApps = [
       {
         id: `APP-${Math.floor(1000 + Math.random() * 9000)}`,
+        doctorId: selectedDoctorId || undefined,
         ...newApp,
       },
       ...appointments,
@@ -209,8 +210,7 @@ export const DoctorsPage: React.FC = () => {
   const activeDoctor = doctors.find((d) => d.id === selectedDoctorId);
 
   // Appointments specifically for active doctor
-  // (In full system, they are matched by doctorId, let's filter them or default all mock appointments to Dr. Aisha Mehta as shown in reference)
-  const activeDoctorAppointments = appointments; // Both show Aisha Mehta's appointments primarily
+  const activeDoctorAppointments = appointments.filter(a => a.doctorId === selectedDoctorId);
 
   return (
     <div className="space-y-6">
@@ -254,7 +254,7 @@ export const DoctorsPage: React.FC = () => {
                     <th className="py-3 px-4">Qualification</th>
                     <th className="py-3 px-4">Exp.</th>
                     <th className="py-3 px-4 text-right">Consultation Fee</th>
-                    <th className="py-3 px-4 text-right">Completed Consultations</th>
+                    <th className="py-3 px-4 text-right">Total Completed Consultations</th>
                     <th className="py-3 px-4 text-right">Followup Fee</th>
                     <th className="py-3 px-4">Working Hours</th>
                     <th className="py-3 px-4 text-center">Status</th>
@@ -307,7 +307,7 @@ export const DoctorsPage: React.FC = () => {
                           ${doc.fee.toFixed(2)}
                         </td>
 
-                        {/* 6. Completed Consultations */}
+                        {/* 6. Total Completed Consultations */}
                         <td className="py-3 px-4 text-right font-bold text-slate-700">
                           {doc.totalConsultations.toLocaleString()}
                         </td>
@@ -478,7 +478,7 @@ export const DoctorsPage: React.FC = () => {
               </div>
               <div className="w-px h-8 bg-slate-200" />
               <div className="text-center">
-                <div className="text-xs font-bold text-slate-400 uppercase tracking-wider">Completed Consultations</div>
+                <div className="text-xs font-bold text-slate-400 uppercase tracking-wider">Total Completed Consultations</div>
                 <div className="text-xl font-extrabold text-slate-800 mt-1">
                   {activeDoctor.totalConsultations.toLocaleString()}
                 </div>
@@ -611,10 +611,6 @@ export const DoctorsPage: React.FC = () => {
                     <span className="font-bold text-slate-700">{activeDoctor.joiningDate}</span>
                   </div>
                   <div className="space-y-1">
-                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block">Followup Fees</span>
-                    <span className="font-extrabold text-slate-700">${activeDoctor.followupFee}</span>
-                  </div>
-                  <div className="space-y-1">
                     <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block">Experience</span>
                     <span className="font-bold text-slate-700">{activeDoctor.experience}</span>
                   </div>
@@ -629,8 +625,12 @@ export const DoctorsPage: React.FC = () => {
                     <span className="font-extrabold text-blue-600 text-lg">${activeDoctor.fee}</span>
                   </div>
                   <div className="space-y-1">
-                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block">Completed Consultations</span>
+                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block">Total Completed Consultations</span>
                     <span className="font-extrabold text-slate-700 text-lg">{activeDoctor.totalConsultations.toLocaleString()}</span>
+                  </div>
+                  <div className="space-y-1">
+                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block">Followup Fees</span>
+                    <span className="font-extrabold text-slate-700">${activeDoctor.followupFee}</span>
                   </div>
                 </div>
               </div>

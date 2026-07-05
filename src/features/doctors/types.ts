@@ -27,6 +27,7 @@ export interface DoctorProfileExtended {
 
 export interface DoctorCalendarAppointment {
   id: string;
+  doctorId?: string;
   patientName: string;
   patientNumber?: string;
   date: string; // YYYY-MM-DD

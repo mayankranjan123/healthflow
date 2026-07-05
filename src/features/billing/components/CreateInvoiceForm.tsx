@@ -379,9 +379,14 @@ export const CreateInvoiceForm: React.FC<CreateInvoiceFormProps> = ({
                                 <span className="font-bold text-slate-800">{doc.name}</span>
                                 <span className="text-xs text-slate-400">{doc.specialization}</span>
                               </div>
-                              <span className="text-xs font-bold font-mono bg-emerald-50 text-emerald-600 px-2 py-0.5 rounded border border-emerald-100">
-                                ₹{doc.fee}
-                              </span>
+                              <div className="flex items-center gap-2.5 shrink-0">
+                                <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wide">
+                                  Done: {doc.totalConsultations}
+                                </span>
+                                <span className="text-xs font-bold font-mono bg-emerald-50 text-emerald-600 px-2 py-0.5 rounded border border-emerald-100">
+                                  ₹{doc.fee}
+                                </span>
+                              </div>
                             </div>
                           ))
                         )}

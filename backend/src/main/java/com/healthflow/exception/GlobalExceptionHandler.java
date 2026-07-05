@@ -52,6 +52,20 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(response, HttpStatus.UNAUTHORIZED);
     }
 
+    // 4b. Handle Spring Security Account Disabled
+    @ExceptionHandler(org.springframework.security.authentication.DisabledException.class)
+    public ResponseEntity<ApiResponse<Void>> handleDisabledAccount(org.springframework.security.authentication.DisabledException ex) {
+        ApiResponse<Void> response = ApiResponse.error("User account is inactive. Please contact system support.");
+        return new ResponseEntity<>(response, HttpStatus.UNAUTHORIZED);
+    }
+
+    // 4c. Handle Spring Security Account Locked
+    @ExceptionHandler(org.springframework.security.authentication.LockedException.class)
+    public ResponseEntity<ApiResponse<Void>> handleLockedAccount(org.springframework.security.authentication.LockedException ex) {
+        ApiResponse<Void> response = ApiResponse.error("User account is locked");
+        return new ResponseEntity<>(response, HttpStatus.UNAUTHORIZED);
+    }
+
     // 5. Handle Spring Security Access Denied
     @ExceptionHandler(AccessDeniedException.class)
     public ResponseEntity<ApiResponse<Void>> handleAccessDenied(AccessDeniedException ex) {

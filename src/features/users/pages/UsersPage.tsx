@@ -71,33 +71,41 @@ export const UsersPage: React.FC = () => {
     }, 400);
   };
 
-  // Load from Mock API (localStorage)
+  // Load from API
   useEffect(() => {
-    setAdmins(mockUsersApi.getAdmins());
-    setDoctors(mockUsersApi.getDoctors());
-    setStaffList(mockUsersApi.getStaff());
-    setPermissions(mockUsersApi.getPermissions());
+    mockUsersApi.getAdmins().then(setAdmins).catch(err => console.error(err));
+    mockUsersApi.getDoctors().then(setDoctors).catch(err => console.error(err));
+    mockUsersApi.getStaff().then(setStaffList).catch(err => console.error(err));
+    mockUsersApi.getPermissions().then(setPermissions).catch(err => console.error(err));
   }, []);
 
   // Sync to Storage on list changes
   const saveAdminsToStore = (newAdmins: AdminUser[]) => {
     setAdmins(newAdmins);
-    mockUsersApi.saveAdmins(newAdmins);
+    mockUsersApi.saveAdmins(newAdmins).then(() => {
+      mockUsersApi.getAdmins().then(setAdmins);
+    }).catch(err => console.error(err));
   };
 
   const saveDoctorsToStore = (newDoctors: DoctorUser[]) => {
     setDoctors(newDoctors);
-    mockUsersApi.saveDoctors(newDoctors);
+    mockUsersApi.saveDoctors(newDoctors).then(() => {
+      mockUsersApi.getDoctors().then(setDoctors);
+    }).catch(err => console.error(err));
   };
 
   const saveStaffToStore = (newStaff: StaffUser[]) => {
     setStaffList(newStaff);
-    mockUsersApi.saveStaff(newStaff);
+    mockUsersApi.saveStaff(newStaff).then(() => {
+      mockUsersApi.getStaff().then(setStaffList);
+    }).catch(err => console.error(err));
   };
 
   const savePermissionsToStore = (newPerms: ModulePermission[]) => {
     setPermissions(newPerms);
-    mockUsersApi.savePermissions(newPerms);
+    mockUsersApi.savePermissions(newPerms).then(() => {
+      mockUsersApi.getPermissions().then(setPermissions);
+    }).catch(err => console.error(err));
   };
 
   // Status Toggles
@@ -133,13 +141,13 @@ export const UsersPage: React.FC = () => {
   };
 
   const handleSaveAdmin = (data: Omit<AdminUser, 'id'> & { id?: string }) => {
-    if (data.id) {
+    if (data.id && !data.id.startsWith('temp-')) {
       // Edit mode
       const updated = admins.map(a => a.id === data.id ? { ...a, ...data } : a);
       saveAdminsToStore(updated as AdminUser[]);
     } else {
       // Create mode
-      const newId = `ADM-${String(admins.length + 1).padStart(3, '0')}`;
+      const newId = `temp-${Date.now()}`;
       const newAdmin: AdminUser = {
         id: newId,
         name: data.name,
@@ -154,13 +162,13 @@ export const UsersPage: React.FC = () => {
   };
 
   const handleSaveDoctor = (data: Omit<DoctorUser, 'id'> & { id?: string }) => {
-    if (data.id) {
+    if (data.id && !data.id.startsWith('temp-')) {
       // Edit mode
       const updated = doctors.map(d => d.id === data.id ? { ...d, ...data } : d);
       saveDoctorsToStore(updated as DoctorUser[]);
     } else {
       // Create mode
-      const newId = `DOC-${String(doctors.length + 1).padStart(3, '0')}`;
+      const newId = `temp-${Date.now()}`;
       const newDoctor: DoctorUser = {
         id: newId,
         name: data.name,
@@ -173,8 +181,8 @@ export const UsersPage: React.FC = () => {
         workingHours: data.workingHours,
         isActive: data.isActive,
         registrationNumber: data.registrationNumber,
-        totalConsultations: data.totalConsultations,
-        joiningDate: data.joiningDate,
+        totalConsultations: data.totalConsultations || 0,
+        joiningDate: data.joiningDate || new Date().toISOString().split('T')[0],
         avatarUrl: data.avatarUrl,
       };
       saveDoctorsToStore([newDoctor, ...doctors]);
@@ -183,13 +191,13 @@ export const UsersPage: React.FC = () => {
   };
 
   const handleSaveStaff = (data: Omit<StaffUser, 'id'> & { id?: string }) => {
-    if (data.id) {
+    if (data.id && !data.id.startsWith('temp-')) {
       // Edit mode
       const updated = staffList.map(s => s.id === data.id ? { ...s, ...data } : s);
       saveStaffToStore(updated as StaffUser[]);
     } else {
       // Create mode
-      const newId = `STF-${String(staffList.length + 1).padStart(3, '0')}`;
+      const newId = `temp-${Date.now()}`;
       const newStaff: StaffUser = {
         id: newId,
         name: data.name,
@@ -400,7 +408,7 @@ export const UsersPage: React.FC = () => {
                 </div>
 
                 <div className="space-y-1">
-                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block">Completed Consultations</span>
+                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block">Total Completed Consultations</span>
                   <div className="font-semibold text-slate-700 flex items-center gap-2">
                     <Activity className="w-4 h-4 text-blue-600" />
                     <span>{viewingRecord.totalConsultations?.toLocaleString() ?? 0}</span>

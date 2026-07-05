@@ -177,5 +177,8 @@ public class DoctorController {
         public void setAvatarUrl(String avatarUrl) { this.avatarUrl = avatarUrl; }
         public long getCompletedConsultations() { return completedConsultations; }
         public void setCompletedConsultations(long completedConsultations) { this.completedConsultations = completedConsultations; }
+        @JsonProperty("totalCompletedConsultations")
+        public long getTotalCompletedConsultations() { return completedConsultations; }
+        public void setTotalCompletedConsultations(long totalCompletedConsultations) { this.completedConsultations = totalCompletedConsultations; }
     }
 }

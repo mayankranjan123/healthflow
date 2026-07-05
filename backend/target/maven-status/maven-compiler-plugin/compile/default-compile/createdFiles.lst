@@ -45,6 +45,7 @@ com\healthflow\prescription\dto\PrescriptionMedicineDto.class
 com\healthflow\billing\dto\InvoiceStatsDto.class
 com\healthflow\billing\service\InvoiceServiceImpl.class
 com\healthflow\patient\repository\PatientRepository.class
+com\healthflow\security\UserController.class
 com\healthflow\billing\repository\InvoiceRepository.class
 com\healthflow\patient\service\PatientServiceImpl.class
 com\healthflow\billing\service\InvoiceService.class

@@ -164,6 +164,15 @@ export const DoctorForm: React.FC<DoctorFormProps> = ({ doctor, onSave, onCancel
         />
 
         <Input
+          label="Total Completed Consultations"
+          type="number"
+          value={totalConsultations}
+          onChange={(e) => setTotalConsultations(Number(e.target.value))}
+          required
+          min={0}
+        />
+
+        <Input
           label="Working Hours"
           value={workingHours}
           onChange={(e) => setWorkingHours(e.target.value)}
@@ -177,15 +186,6 @@ export const DoctorForm: React.FC<DoctorFormProps> = ({ doctor, onSave, onCancel
           onChange={(e) => setRegistrationNumber(e.target.value)}
           required
           placeholder="e.g. REG-87421"
-        />
-
-        <Input
-          label="Total Consultations"
-          type="number"
-          value={totalConsultations}
-          onChange={(e) => setTotalConsultations(Number(e.target.value))}
-          required
-          min={0}
         />
 
         <Input

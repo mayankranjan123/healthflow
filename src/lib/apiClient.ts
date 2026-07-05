@@ -611,6 +611,7 @@ export interface DoctorResponseDto {
   languages: string;
   avatarUrl: string;
   completedConsultations?: number;
+  totalCompletedConsultations?: number;
 }
 
 export const doctorService = {
@@ -653,6 +654,35 @@ export const authService = {
         name: string;
       };
     }>('/auth/login', { email, password });
+    return response.data.data;
+  }
+};
+
+// ==========================================
+// 7. USER MANAGEMENT SERVICES (UserController)
+// ==========================================
+
+export interface UserResponseDto {
+  id: string;
+  name: string;
+  email: string;
+  mobile: string;
+  isActive: boolean;
+  role: 'ADMIN' | 'DOCTOR' | 'STAFF';
+  avatarUrl?: string;
+}
+
+export const userService = {
+  getUsers: async () => {
+    const response = await apiClient.get<{ data: UserResponseDto[] }>('/users');
+    return response.data.data;
+  },
+  createUser: async (user: Partial<UserResponseDto>) => {
+    const response = await apiClient.post<{ data: UserResponseDto }>('/users', user);
+    return response.data.data;
+  },
+  updateUser: async (id: string, user: Partial<UserResponseDto>) => {
+    const response = await apiClient.put<{ data: UserResponseDto }>(`/users/${id}`, user);
     return response.data.data;
   }
 };

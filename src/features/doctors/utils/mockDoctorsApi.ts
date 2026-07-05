@@ -15,7 +15,7 @@ function mapDoctorToFrontend(d: any): DoctorProfileExtended {
     workingHours: d.workingHours || '09:00 AM - 05:00 PM',
     isActive: d.isActive ?? d.active ?? true,
     registrationNumber: d.registrationNumber || 'REG-12345',
-    totalConsultations: Number(d.completedConsultations ?? 0),
+    totalConsultations: Number(d.completedConsultations ?? d.totalCompletedConsultations ?? d.totalConsultations ?? 0),
     joiningDate: '2024-01-01',
     avatarUrl: d.avatarUrl || 'https://images.unsplash.com/photo-1559839734-2b71ea197ec2?q=80&w=250&auto=format&fit=crop',
     gender: d.gender || 'Female',
@@ -75,6 +75,7 @@ export const mockDoctorsApi = {
 
       return {
         id: appt.id.toString(),
+        doctorId: appt.doctorId?.toString(),
         patientName: appt.patientName,
         patientNumber: appt.appointmentCode,
         date: dateStr,

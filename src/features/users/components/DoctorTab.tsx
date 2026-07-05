@@ -151,7 +151,7 @@ export const DoctorTab: React.FC<DoctorTabProps> = ({
                 <th className="px-6 py-4 text-[11px] font-bold text-slate-400 uppercase tracking-wider">Qualification</th>
                 <th className="px-6 py-4 text-[11px] font-bold text-slate-400 uppercase tracking-wider text-center">Exp.</th>
                 <th className="px-6 py-4 text-[11px] font-bold text-slate-400 uppercase tracking-wider text-right">Consultation Fee</th>
-                <th className="px-6 py-4 text-[11px] font-bold text-slate-400 uppercase tracking-wider text-right">Completed Consultations</th>
+                <th className="px-6 py-4 text-[11px] font-bold text-slate-400 uppercase tracking-wider text-right">Total Completed Consultations</th>
                 <th className="px-6 py-4 text-[11px] font-bold text-slate-400 uppercase tracking-wider text-right">Followup Fee</th>
                 <th className="px-6 py-4 text-[11px] font-bold text-slate-400 uppercase tracking-wider">Working Hours</th>
                 <th className="px-6 py-4 text-[11px] font-bold text-slate-400 uppercase tracking-wider text-center w-28">Status</th>
@@ -202,7 +202,7 @@ export const DoctorTab: React.FC<DoctorTabProps> = ({
                     <td className="px-6 py-4.5 text-sm font-bold text-blue-600 text-right">
                       ${doc.fee.toFixed(2)}
                     </td>
-                    {/* Completed Consultations */}
+                    {/* Total Completed Consultations */}
                     <td className="px-6 py-4.5 text-sm font-bold text-slate-700 text-right">
                       {doc.totalConsultations.toLocaleString()}
                     </td>
