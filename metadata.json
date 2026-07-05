@@ -1,0 +1,6 @@
+{
+  "name": "HealthFlow",
+  "description": "A production-ready clinic management system designed with a clean, responsive layout for admins, doctors, and staff to manage patients, appointments, prescriptions, billing, and reports.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
