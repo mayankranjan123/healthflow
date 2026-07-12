@@ -36,7 +36,7 @@ apiClient.interceptors.response.use(
     if (error.response) {
       const status = error.response.status;
       const isLoginRequest = error.config?.url?.includes('/auth/login');
-      if (status === 401 && !isLoginRequest) {
+      if ((status === 401 || status === 403) && !isLoginRequest) {
         // Token has expired or is invalid - clear session to force re-login
         localStorage.removeItem('healthflow_user');
         window.location.href = '/login?expired=true';
@@ -330,6 +330,7 @@ export interface InvoiceRequestDto {
   status: 'Paid' | 'Pending' | 'Partial';
   paymentMode?: 'Cash' | 'Online';
   referenceNo?: string;
+  templateId?: string;
   items: InvoiceItemRequestDto[];
 }
 
@@ -670,6 +671,9 @@ export interface UserResponseDto {
   isActive: boolean;
   role: 'ADMIN' | 'DOCTOR' | 'STAFF';
   avatarUrl?: string;
+  gender?: string;
+  dateOfBirth?: string;
+  followupFee?: string;
 }
 
 export const userService = {
@@ -683,6 +687,136 @@ export const userService = {
   },
   updateUser: async (id: string, user: Partial<UserResponseDto>) => {
     const response = await apiClient.put<{ data: UserResponseDto }>(`/users/${id}`, user);
+    return response.data.data;
+  },
+  getPermissions: async () => {
+    const response = await apiClient.get<{ data: any[] }>('/users/permissions');
+    return response.data.data;
+  },
+  savePermissions: async (permissions: any[]) => {
+    await apiClient.post('/users/permissions', permissions);
+  }
+};
+
+// ==========================================
+// 8. REPORT SERVICES (ReportController)
+// ==========================================
+
+export interface MonthlyRevenueItemDto {
+  month: string;
+  revenue: number;
+  appointments: number;
+}
+
+export interface DoctorReportSummaryDto {
+  id: string;
+  name: string;
+  initials: string;
+  specialization: string;
+  appointments: number;
+  revenue: number;
+  pending: number;
+  completedConsultations: number;
+  totalConsultations: number;
+}
+
+export interface ReportsDataDto {
+  totalRevenue: number;
+  revenueChangePercent: number;
+  appointmentsCount: number;
+  appointmentsChangePercent: number;
+  pendingPayments: number;
+  pendingChangePercent: number;
+  monthlyRevenueTrend: MonthlyRevenueItemDto[];
+  topDoctors: DoctorReportSummaryDto[];
+}
+
+export interface RecentAppointmentDto {
+  id: string;
+  patientName: string;
+  initials: string;
+  doctorName: string;
+  time: string;
+  status: string;
+  statusText: string;
+  statusVariant: 'success' | 'neutral' | 'danger' | 'info';
+}
+
+export interface PatientFlowItemDto {
+  name: string;
+  consultations: number;
+  followUps: number;
+}
+
+export interface WeeklyRevenueItemDto {
+  day: string;
+  revenue: number;
+}
+
+export interface TimewiseAppointmentDto {
+  time: string;
+  count: number;
+}
+
+export interface DashboardDataDto {
+  totalPatients: number;
+  appointmentsTodayCount: number;
+  pendingBilling: number;
+  newReportsCount: number;
+  recentAppointments: RecentAppointmentDto[];
+  patientFlow: PatientFlowItemDto[];
+  weeklyRevenue: WeeklyRevenueItemDto[];
+  timewiseAppointments: TimewiseAppointmentDto[];
+}
+
+export const reportService = {
+  getReportData: async (clinicId: number = 1, filters: { quickFilter: string; fromDate?: string; toDate?: string }) => {
+    const response = await apiClient.get<{ data: ReportsDataDto }>('/reports', {
+      params: {
+        clinicId,
+        quickFilter: filters.quickFilter,
+        fromDate: filters.fromDate || undefined,
+        toDate: filters.toDate || undefined,
+      }
+    });
+    return response.data.data;
+  },
+
+  getDashboardData: async (clinicId: number = 1, params: { fromDate: string; toDate: string }) => {
+    const response = await apiClient.get<{ data: DashboardDataDto }>('/reports/dashboard', {
+      params: {
+        clinicId,
+        fromDate: params.fromDate,
+        toDate: params.toDate,
+      }
+    });
+    return response.data.data;
+  }
+};
+
+export const clinicService = {
+  getClinicSettings: async (id: number = 1) => {
+    const response = await apiClient.get<{ data: any }>(`/clinics/${id}`);
+    return response.data.data;
+  },
+  updateClinicSettings: async (id: number = 1, clinic: any) => {
+    const response = await apiClient.put(`/clinics/${id}`, clinic);
+    return response.data.data;
+  },
+  getBillingSettings: async (id: number = 1) => {
+    const response = await apiClient.get<{ data: any }>(`/clinics/${id}/billing`);
+    return response.data.data;
+  },
+  updateBillingSettings: async (id: number = 1, billing: any) => {
+    const response = await apiClient.put(`/clinics/${id}/billing`, billing);
+    return response.data.data;
+  },
+  getPrescriptionSettings: async (id: number = 1) => {
+    const response = await apiClient.get<{ data: any }>(`/clinics/${id}/prescription`);
+    return response.data.data;
+  },
+  updatePrescriptionSettings: async (id: number = 1, prescription: any) => {
+    const response = await apiClient.put(`/clinics/${id}/prescription`, prescription);
     return response.data.data;
   }
 };

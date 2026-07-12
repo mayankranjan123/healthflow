@@ -1,29 +1,49 @@
 import React, { useState } from 'react';
-import { Settings, Building, Receipt, Pill } from 'lucide-react';
+import { Settings, Building, Receipt, Pill, UserSquare2 } from 'lucide-react';
 import { mockSettingsApi } from '../utils/mockSettingsApi';
 import { ClinicSettingsTab } from '../components/ClinicSettingsTab';
 import { BillingSettingsTab } from '../components/BillingSettingsTab';
 import { PrescriptionSettingsTab } from '../components/PrescriptionSettingsTab';
 import { SettingsState, ClinicSettings, BillingSettings, PrescriptionSettings } from '../types';
+import { UsersPage } from '../../users/pages/UsersPage';
 
 export const SettingsPage: React.FC = () => {
-  const [settings, setSettings] = useState<SettingsState>(() => mockSettingsApi.getSettings());
-  const [activeTab, setActiveTab] = useState<'CLINIC' | 'BILLING' | 'PRESCRIPTION'>('CLINIC');
+  const [settings, setSettings] = useState<SettingsState | null>(null);
+  const [activeTab, setActiveTab] = useState<'CLINIC' | 'USERS' | 'BILLING' | 'PRESCRIPTION'>('CLINIC');
+  const [isLoading, setIsLoading] = useState<boolean>(true);
 
-  const handleSaveClinic = (updatedClinic: ClinicSettings) => {
-    const updated = mockSettingsApi.updateClinicSettings(updatedClinic);
+  React.useEffect(() => {
+    mockSettingsApi.getSettings().then(data => {
+      setSettings(data);
+      setIsLoading(false);
+    }).catch(() => {
+      setIsLoading(false);
+    });
+  }, []);
+
+  const handleSaveClinic = async (updatedClinic: ClinicSettings) => {
+    const updated = await mockSettingsApi.updateClinicSettings(updatedClinic);
     setSettings(updated);
   };
 
-  const handleSaveBilling = (updatedBilling: BillingSettings) => {
-    const updated = mockSettingsApi.updateBillingSettings(updatedBilling);
+  const handleSaveBilling = async (updatedBilling: BillingSettings) => {
+    const updated = await mockSettingsApi.updateBillingSettings(updatedBilling);
     setSettings(updated);
   };
 
-  const handleSavePrescription = (updatedPrescription: PrescriptionSettings) => {
-    const updated = mockSettingsApi.updatePrescriptionSettings(updatedPrescription);
+  const handleSavePrescription = async (updatedPrescription: PrescriptionSettings) => {
+    const updated = await mockSettingsApi.updatePrescriptionSettings(updatedPrescription);
     setSettings(updated);
   };
+
+  if (isLoading || !settings) {
+    return (
+      <div className="flex flex-col justify-center items-center py-20">
+        <div className="w-10 h-10 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin" />
+        <span className="text-slate-500 font-semibold mt-4 text-sm">Loading Settings...</span>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6 animate-fade-in-up">
@@ -53,6 +73,19 @@ export const SettingsPage: React.FC = () => {
           >
             <Building className="w-4.5 h-4.5" />
             <span>Clinic Settings</span>
+          </button>
+
+          {/* Tab 2: Users & Roles */}
+          <button
+            onClick={() => setActiveTab('USERS')}
+            className={`pb-3.5 text-xs font-bold uppercase tracking-wider flex items-center gap-2 border-b-2 transition-all cursor-pointer ${
+              activeTab === 'USERS'
+                ? 'border-indigo-600 text-indigo-700 font-black'
+                : 'border-transparent text-slate-400 hover:text-slate-600'
+            }`}
+          >
+            <UserSquare2 className="w-4.5 h-4.5" />
+            <span>Users & Roles</span>
           </button>
 
           {/* Tab 2: Billing Settings */}
@@ -91,6 +124,10 @@ export const SettingsPage: React.FC = () => {
             initialSettings={settings.clinic}
             onSave={handleSaveClinic}
           />
+        )}
+
+        {activeTab === 'USERS' && (
+          <UsersPage hideHeader={true} />
         )}
 
         {activeTab === 'BILLING' && (

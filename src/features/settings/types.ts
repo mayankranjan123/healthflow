@@ -20,37 +20,24 @@ export type InvoiceTemplateId = 'CLASSIC_MEDICAL' | 'MODERN_COMPACT' | 'GST_DETA
 export interface BillingSettings {
   invoicePrefix: string;
   startingInvoiceNumber: number;
-  receiptPrefix: string;
   autoGenerateInvoiceNumber: boolean;
   
   defaultTaxPercent: number;
   taxLabel: string;
   enableItemLevelTax: boolean;
   enableInvoiceLevelDiscount: boolean;
-  enableItemLevelDiscount: boolean;
-  gstNumberDisplay: boolean;
-  roundOffAmount: boolean;
 
   selectedTemplateId: InvoiceTemplateId;
 
   showClinicLogo: boolean;
   showClinicAddress: boolean;
   showClinicContact: boolean;
-  showGstOnHeader: boolean;
   showDoctorName: boolean;
   showPatientMobile: boolean;
   showPaymentSummary: boolean;
-  showPendingAmount: boolean;
   showFooterMessage: boolean;
   showAuthorizedSignature: boolean;
   footerMessage: string;
-
-  paperSize: 'A4' | 'A5';
-  printOrientation: 'PORTRAIT' | 'LANDSCAPE';
-  pdfFooterText: string;
-  downloadFileNameFormat: string;
-  autoDownloadAfterSave: boolean;
-  showPrintButtonAfterGen: boolean;
 }
 
 export interface PrescriptionSettings {

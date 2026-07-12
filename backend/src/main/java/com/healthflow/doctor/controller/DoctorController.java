@@ -24,13 +24,29 @@ public class DoctorController {
         this.appointmentRepository = appointmentRepository;
     }
 
+    private Long getCurrentDoctorUserId() {
+        org.springframework.security.core.Authentication auth = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
+        if (auth != null && auth.getPrincipal() instanceof com.healthflow.security.UserPrincipal) {
+            com.healthflow.security.UserPrincipal principal = (com.healthflow.security.UserPrincipal) auth.getPrincipal();
+            boolean isDoctor = principal.getAuthorities().stream()
+                    .anyMatch(a -> a.getAuthority().equals("ROLE_DOCTOR"));
+            if (isDoctor) {
+                return principal.getId();
+            }
+        }
+        return null;
+    }
+
     @GetMapping
     public ResponseEntity<ApiResponse<List<DoctorDto>>> getDoctors(
             @RequestParam(value = "clinicId", defaultValue = "1") Long clinicId) {
         List<Doctor> doctors = doctorRepository.findAll();
         
+        Long currentDocUserId = getCurrentDoctorUserId();
+        
         List<DoctorDto> dtos = doctors.stream()
                 .filter(d -> d.getClinicId().equals(clinicId))
+                .filter(d -> currentDocUserId == null || (d.getUserId() != null && d.getUserId().equals(currentDocUserId)))
                 .map(this::mapToDto)
                 .collect(Collectors.toList());
 
@@ -60,6 +76,12 @@ public class DoctorController {
         doctor.setSpecialization(dto.getSpecialization());
         doctor.setLicenseNumber(dto.getRegistrationNumber() != null ? dto.getRegistrationNumber() : "LIC-" + System.currentTimeMillis());
         doctor.setActive(dto.getIsActive());
+        if (dto.getFee() != null && !dto.getFee().isBlank()) {
+            doctor.setConsultationFees(new java.math.BigDecimal(dto.getFee()));
+        }
+        if (dto.getFollowupFee() != null && !dto.getFollowupFee().isBlank()) {
+            doctor.setFollowupFees(new java.math.BigDecimal(dto.getFollowupFee()));
+        }
 
         Doctor saved = doctorRepository.save(doctor);
         return ResponseEntity.ok(ApiResponse.success("Doctor created successfully", mapToDto(saved)));
@@ -93,6 +115,16 @@ public class DoctorController {
             doctor.setLicenseNumber(dto.getRegistrationNumber());
         }
         doctor.setActive(dto.getIsActive());
+        if (dto.getFee() != null && !dto.getFee().isBlank()) {
+            doctor.setConsultationFees(new java.math.BigDecimal(dto.getFee()));
+        } else {
+            doctor.setConsultationFees(null);
+        }
+        if (dto.getFollowupFee() != null && !dto.getFollowupFee().isBlank()) {
+            doctor.setFollowupFees(new java.math.BigDecimal(dto.getFollowupFee()));
+        } else {
+            doctor.setFollowupFees(null);
+        }
 
         Doctor saved = doctorRepository.save(doctor);
         return ResponseEntity.ok(ApiResponse.success("Doctor updated successfully", mapToDto(saved)));
@@ -111,8 +143,8 @@ public class DoctorController {
         // Static fallbacks for UI fields not persisted in database
         dto.setQualification("MD, DM");
         dto.setExperience("10 Years");
-        dto.setFee("100");
-        dto.setFollowupFee("60");
+        dto.setFee(doctor.getConsultationFees() != null ? doctor.getConsultationFees().toString() : "100");
+        dto.setFollowupFee(doctor.getFollowupFees() != null ? doctor.getFollowupFees().toString() : "60");
         dto.setWorkingHours("09:00 AM - 05:00 PM");
         dto.setGender("Female");
         dto.setLanguages("English, Hindi");

@@ -25,8 +25,7 @@ export const BillingFilters: React.FC<BillingFiltersProps> = ({
 
   useEffect(() => {
     // Load doctors dynamically
-    const list = mockDoctorsApi.getDoctors();
-    setDoctors(list);
+    mockDoctorsApi.getDoctors().then(setDoctors).catch(err => console.error(err));
   }, []);
 
   // Update component states if parent states change

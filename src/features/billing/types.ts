@@ -31,6 +31,7 @@ export interface BillingInvoice {
   status: PaymentStatus;
   paymentMode?: 'CASH' | 'ONLINE';
   referenceNo?: string;
+  templateId?: string;
   items: BillingInvoiceItem[];
   createdAt: string;
 }

@@ -43,6 +43,7 @@ public class InvoiceMapper {
         dto.setPaymentMode(invoice.getPaymentMode());
         dto.setReferenceNo(invoice.getReferenceNo());
         dto.setPdfUrl(invoice.getPdfUrl());
+        dto.setTemplateId(invoice.getTemplateId());
         dto.setCreatedAt(invoice.getCreatedAt());
         dto.setUpdatedAt(invoice.getUpdatedAt());
 

@@ -15,6 +15,7 @@ public interface PatientRepository extends JpaRepository<Patient, Long> {
 
     // Find all active patients within a clinic with pagination
     Page<Patient> findByClinicIdAndIsDeletedFalse(Long clinicId, Pageable pageable);
+    long countByClinicIdAndIsDeletedFalse(Long clinicId);
 
     // Find patient by code
     Optional<Patient> findByClinicIdAndPatientCodeAndIsDeletedFalse(Long clinicId, String patientCode);

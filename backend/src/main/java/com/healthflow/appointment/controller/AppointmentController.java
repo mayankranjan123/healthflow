@@ -5,6 +5,9 @@ import com.healthflow.appointment.dto.AppointmentRequestDto;
 import com.healthflow.appointment.dto.AppointmentResponseDto;
 import com.healthflow.appointment.service.AppointmentService;
 import com.healthflow.common.dto.ApiResponse;
+import com.healthflow.doctor.entity.Doctor;
+import com.healthflow.doctor.repository.DoctorRepository;
+import com.healthflow.security.UserPrincipal;
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -12,6 +15,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.Instant;
@@ -21,9 +26,26 @@ import java.time.Instant;
 public class AppointmentController {
 
     private final AppointmentService appointmentService;
+    private final DoctorRepository doctorRepository;
 
-    public AppointmentController(AppointmentService appointmentService) {
+    public AppointmentController(AppointmentService appointmentService, DoctorRepository doctorRepository) {
         this.appointmentService = appointmentService;
+        this.doctorRepository = doctorRepository;
+    }
+
+    private Long getCurrentDoctorId() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth != null && auth.getPrincipal() instanceof UserPrincipal) {
+            UserPrincipal principal = (UserPrincipal) auth.getPrincipal();
+            boolean isDoctor = principal.getAuthorities().stream()
+                    .anyMatch(a -> a.getAuthority().equals("ROLE_DOCTOR"));
+            if (isDoctor) {
+                return doctorRepository.findByUserId(principal.getId())
+                        .map(Doctor::getId)
+                        .orElse(-1L);
+            }
+        }
+        return null;
     }
 
     // 1. Create Appointment
@@ -66,8 +88,15 @@ public class AppointmentController {
                 : Sort.by(sortBy).ascending();
 
         Pageable pageable = PageRequest.of(page, size, sort);
+
+        Long filteredDoctorId = doctorId;
+        Long currentDocId = getCurrentDoctorId();
+        if (currentDocId != null) {
+            filteredDoctorId = currentDocId;
+        }
+
         Page<AppointmentResponseDto> result = appointmentService.getFilteredAppointments(
-                clinicId, doctorId, status, fromDate, toDate, patientQuery, pageable);
+                clinicId, filteredDoctorId, status, fromDate, toDate, patientQuery, pageable);
 
         return ResponseEntity.ok(ApiResponse.success("Appointments list retrieved successfully", result));
     }

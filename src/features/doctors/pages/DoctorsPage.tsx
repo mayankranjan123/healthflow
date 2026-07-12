@@ -217,7 +217,6 @@ export const DoctorsPage: React.FC = () => {
       {/* 1. LIST VIEW */}
       {!selectedDoctorId && (
         <div className="space-y-6 animate-fade-in-up">
-          {/* Header Row */}
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
               <h1 className="text-2xl font-display font-bold text-slate-900">Doctors</h1>
@@ -225,10 +224,6 @@ export const DoctorsPage: React.FC = () => {
                 Manage doctor profiles, specialization and availability across all departments.
               </p>
             </div>
-            <Button id="add-doctor-btn" onClick={() => setIsAddModalOpen(true)} className="shadow-xs shrink-0">
-              <Plus className="w-4.5 h-4.5" />
-              <span>Add Doctor</span>
-            </Button>
           </div>
 
           {/* Filtering Panel */}

@@ -10,7 +10,8 @@ import {
   UserSquare2, 
   Settings, 
   LogOut,
-  Activity
+  Activity,
+  User
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -22,20 +23,38 @@ export const Sidebar: React.FC<SidebarProps> = ({ onLogout, currentUser }) => {
   const navigate = useNavigate();
 
   const menuItems = [
-    { name: 'Dashboard', path: '/dashboard', icon: LayoutDashboard, roles: ['ADMIN', 'DOCTOR', 'STAFF'] },
-    { name: 'Patients', path: '/patients', icon: Users, roles: ['ADMIN', 'DOCTOR', 'STAFF'] },
-    { name: 'Appointments', path: '/appointments', icon: CalendarDays, roles: ['ADMIN', 'DOCTOR', 'STAFF'] },
-    { name: 'Billing', path: '/billing', icon: CreditCard, roles: ['ADMIN', 'STAFF'] },
-    { name: 'Reports', path: '/reports', icon: FileBarChart, roles: ['ADMIN', 'DOCTOR'] },
-    { name: 'Doctors', path: '/doctors', icon: Stethoscope, roles: ['ADMIN', 'DOCTOR'] },
-    { name: 'Users', path: '/users', icon: UserSquare2, roles: ['ADMIN'] },
-    { name: 'Settings', path: '/settings', icon: Settings, roles: ['ADMIN'] },
+    { name: 'Dashboard', path: '/dashboard', icon: LayoutDashboard, module: 'dashboard', defaultRoles: ['ADMIN', 'DOCTOR', 'STAFF'] },
+    { name: 'Patients', path: '/patients', icon: Users, module: 'patients', defaultRoles: ['ADMIN', 'DOCTOR', 'STAFF'] },
+    { name: 'Appointments', path: '/appointments', icon: CalendarDays, module: 'appointments', defaultRoles: ['ADMIN', 'DOCTOR', 'STAFF'] },
+    { name: 'Billing', path: '/billing', icon: CreditCard, module: 'billing', defaultRoles: ['ADMIN', 'STAFF'] },
+    { name: 'Reports', path: '/reports', icon: FileBarChart, module: 'reports', defaultRoles: ['ADMIN'] },
+    { name: 'Doctors', path: '/doctors', icon: Stethoscope, module: 'doctors', defaultRoles: ['ADMIN'] },
+    { name: 'Settings', path: '/settings', icon: Settings, module: 'settings', defaultRoles: ['ADMIN'] },
+    { name: 'Profile', path: '/profile', icon: User, module: 'profile', defaultRoles: ['ADMIN', 'DOCTOR', 'STAFF'] },
   ];
 
   const filteredMenuItems = menuItems.filter(item => {
     if (!currentUser || !currentUser.role) return true;
-    const userRole = currentUser.role.toUpperCase();
-    return item.roles.includes(userRole);
+    const userRole = currentUser.role.toUpperCase() as 'ADMIN' | 'DOCTOR' | 'STAFF';
+
+    if (item.module === 'dashboard' || item.module === 'users' || item.module === 'profile') {
+      return item.defaultRoles.includes(userRole);
+    }
+
+    const savedPerms = localStorage.getItem('healthflow_permissions');
+    if (savedPerms) {
+      try {
+        const perms = JSON.parse(savedPerms);
+        const modulePerm = perms.find((p: any) => p.module === item.module);
+        if (modulePerm) {
+          return !!modulePerm[userRole];
+        }
+      } catch (e) {
+        console.error("Failed to parse permissions", e);
+      }
+    }
+
+    return item.defaultRoles.includes(userRole);
   });
 
   return (

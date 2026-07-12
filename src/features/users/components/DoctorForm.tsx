@@ -28,13 +28,15 @@ export const DoctorForm: React.FC<DoctorFormProps> = ({ doctor, onSave, onCancel
   const [specialization, setSpecialization] = useState('General Physician');
   const [qualification, setQualification] = useState('');
   const [experience, setExperience] = useState('');
-  const [fee, setFee] = useState<number>(60);
+  const [fee, setFee] = useState<number>(100);
+  const [followupFee, setFollowupFee] = useState<number>(60);
   const [workingHours, setWorkingHours] = useState('');
   const [isActive, setIsActive] = useState(true);
   const [registrationNumber, setRegistrationNumber] = useState('');
-  const [totalConsultations, setTotalConsultations] = useState<number>(0);
   const [joiningDate, setJoiningDate] = useState('');
   const [avatarUrl, setAvatarUrl] = useState('');
+  const [gender, setGender] = useState('Female');
+  const [dateOfBirth, setDateOfBirth] = useState('');
 
   useEffect(() => {
     if (doctor) {
@@ -45,26 +47,30 @@ export const DoctorForm: React.FC<DoctorFormProps> = ({ doctor, onSave, onCancel
       setQualification(doctor.qualification);
       setExperience(doctor.experience);
       setFee(doctor.fee);
+      setFollowupFee(doctor.followupFee || 60);
       setWorkingHours(doctor.workingHours);
       setIsActive(doctor.isActive);
       setRegistrationNumber(doctor.registrationNumber);
-      setTotalConsultations(doctor.totalConsultations);
       setJoiningDate(doctor.joiningDate);
       setAvatarUrl(doctor.avatarUrl || '');
+      setGender(doctor.gender || 'Female');
+      setDateOfBirth(doctor.dateOfBirth || '');
     } else {
       setName('');
       setEmail('');
-      setMobile('');
+      setMobile('+91 ');
       setSpecialization('General Physician');
       setQualification('');
       setExperience('');
-      setFee(60);
+      setFee(100);
+      setFollowupFee(60);
       setWorkingHours('09:00 AM - 05:00 PM');
       setIsActive(true);
       setRegistrationNumber('');
-      setTotalConsultations(0);
       setJoiningDate(new Date().toISOString().split('T')[0]);
       setAvatarUrl('');
+      setGender('Female');
+      setDateOfBirth('');
     }
   }, [doctor]);
 
@@ -90,12 +96,15 @@ export const DoctorForm: React.FC<DoctorFormProps> = ({ doctor, onSave, onCancel
       qualification,
       experience,
       fee: Number(fee),
+      followupFee: Number(followupFee),
       workingHours,
       isActive,
       registrationNumber,
-      totalConsultations: Number(totalConsultations),
+      totalConsultations: 0,
       joiningDate,
       avatarUrl: avatarUrl || undefined,
+      gender,
+      dateOfBirth,
     });
   };
 
@@ -164,12 +173,33 @@ export const DoctorForm: React.FC<DoctorFormProps> = ({ doctor, onSave, onCancel
         />
 
         <Input
-          label="Total Completed Consultations"
+          label="Follow-up Fee ($)"
           type="number"
-          value={totalConsultations}
-          onChange={(e) => setTotalConsultations(Number(e.target.value))}
+          value={followupFee}
+          onChange={(e) => setFollowupFee(Number(e.target.value))}
           required
           min={0}
+        />
+
+        <div className="space-y-1.5 flex-1">
+          <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider">Gender</label>
+          <select
+            value={gender}
+            onChange={(e) => setGender(e.target.value)}
+            className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm bg-slate-50/50 text-slate-700 font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all h-[42px]"
+          >
+            <option value="">Select Gender</option>
+            <option value="Male">Male</option>
+            <option value="Female">Female</option>
+            <option value="Other">Other</option>
+          </select>
+        </div>
+
+        <Input
+          label="Date of Birth"
+          type="date"
+          value={dateOfBirth}
+          onChange={(e) => setDateOfBirth(e.target.value)}
         />
 
         <Input
@@ -201,7 +231,7 @@ export const DoctorForm: React.FC<DoctorFormProps> = ({ doctor, onSave, onCancel
           value={mobile}
           onChange={(e) => setMobile(e.target.value)}
           required
-          placeholder="e.g. +1 (555) 099-1122"
+          placeholder="e.g. +91 98765 00001"
         />
 
         <div className="md:col-span-2">

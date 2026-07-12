@@ -30,6 +30,7 @@ public class InvoiceResponseDto {
     private String paymentMode;
     private String referenceNo;
     private String pdfUrl;
+    private String templateId;
     
     private Instant createdAt;
     private Instant updatedAt;
@@ -197,6 +198,14 @@ public class InvoiceResponseDto {
 
     public void setPdfUrl(String pdfUrl) {
         this.pdfUrl = pdfUrl;
+    }
+
+    public String getTemplateId() {
+        return templateId;
+    }
+
+    public void setTemplateId(String templateId) {
+        this.templateId = templateId;
     }
 
     public Instant getCreatedAt() {

@@ -7,6 +7,7 @@ import { BillingTable } from '../components/BillingTable';
 import { CreateInvoiceForm } from '../components/CreateInvoiceForm';
 import { InvoicePreviewModal } from '../components/InvoicePreviewModal';
 import { BillingInvoice, BillingFilters as FiltersType } from '../types';
+import { mockSettingsApi } from '../../settings/utils/mockSettingsApi';
 
 export const BillingPage: React.FC = () => {
   // Views
@@ -20,6 +21,9 @@ export const BillingPage: React.FC = () => {
     paidInvoicesCount: 0,
     partialPaymentsCount: 0,
   });
+
+  // Settings
+  const [billingSettings, setBillingSettings] = useState<any>(null);
 
   // Filters state
   const [filters, setFilters] = useState<FiltersType>({
@@ -37,6 +41,11 @@ export const BillingPage: React.FC = () => {
   // On mount, load data
   useEffect(() => {
     loadBillingData();
+    mockSettingsApi.getSettings().then((settings) => {
+      if (settings && settings.billing) {
+        setBillingSettings(settings.billing);
+      }
+    });
   }, []);
 
   const loadBillingData = () => {
@@ -46,21 +55,24 @@ export const BillingPage: React.FC = () => {
 
   // Compute next Invoice Number sequentially (e.g. INV-1005)
   const nextInvoiceNumber = useMemo(() => {
-    const defaultNext = 1005;
-    if (invoices.length === 0) return `INV-${defaultNext}`;
+    const prefix = billingSettings?.invoicePrefix || 'INV';
+    const startingNumber = billingSettings?.startingInvoiceNumber || 1001;
+
+    if (invoices.length === 0) return `${prefix}-${startingNumber}`;
     
     // Scan IDs for high values
     const maxNum = invoices.reduce((max, inv) => {
-      const match = inv.invoiceNumber.match(/INV-(\d+)/);
+      const regex = new RegExp(`${prefix}-(\\d+)`);
+      const match = inv.invoiceNumber.match(regex);
       if (match) {
         const val = parseInt(match[1]);
         return val > max ? val : max;
       }
       return max;
-    }, 1000);
+    }, startingNumber - 1);
 
-    return `INV-${maxNum + 1}`;
-  }, [invoices]);
+    return `${prefix}-${maxNum + 1}`;
+  }, [invoices, billingSettings]);
 
   // Apply filters to invoices list
   const filteredInvoices = useMemo(() => {

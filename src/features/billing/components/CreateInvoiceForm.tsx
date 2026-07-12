@@ -8,6 +8,15 @@ import { mockDoctorsApi } from '../../doctors/utils/mockDoctorsApi';
 import { PatientProfileExtended } from '../../patients/types';
 import { DoctorProfileExtended } from '../../doctors/types';
 import { BillingInvoice, BillingInvoiceItem } from '../types';
+import { mockSettingsApi } from '../../settings/utils/mockSettingsApi';
+
+const getTodayDateString = () => {
+  const d = new Date();
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
 
 interface CreateInvoiceFormProps {
   nextInvoiceNumber: string;
@@ -35,7 +44,10 @@ export const CreateInvoiceForm: React.FC<CreateInvoiceFormProps> = ({
   // Selections
   const [selectedPatient, setSelectedPatient] = useState<PatientProfileExtended | null>(null);
   const [selectedDoctor, setSelectedDoctor] = useState<DoctorProfileExtended | null>(null);
-  const [invoiceDate, setInvoiceDate] = useState('2026-07-03');
+  const [invoiceDate, setInvoiceDate] = useState(getTodayDateString());
+
+  // Settings State
+  const [billingSettings, setBillingSettings] = useState<any>(null);
 
   // Items State
   const [items, setItems] = useState<BillingInvoiceItem[]>([
@@ -45,20 +57,39 @@ export const CreateInvoiceForm: React.FC<CreateInvoiceFormProps> = ({
       quantity: 1,
       rate: 500,
       discountPercent: 0,
-      taxPercent: 0,
-      total: 500,
+      taxPercent: 18,
+      total: 590,
     }
   ]);
 
   // Payment Details
   const [paymentMode, setPaymentMode] = useState<'CASH' | 'ONLINE'>('ONLINE');
   const [referenceNo, setReferenceNo] = useState('');
-  const [amountReceived, setAmountReceived] = useState<number>(500);
+  const [amountReceived, setAmountReceived] = useState<number>(590);
 
-  // Load lists on mount
+  // Load lists and settings on mount
   useEffect(() => {
     mockPatientsApi.getPatients().then(setPatients);
     mockDoctorsApi.getDoctors().then(setDoctors);
+    mockSettingsApi.getSettings().then((settings) => {
+      if (settings && settings.billing) {
+        setBillingSettings(settings.billing);
+        const defaultTax = settings.billing.defaultTaxPercent ?? 18;
+        const initialTotal = 500 + 500 * (defaultTax / 100);
+        setItems([
+          {
+            id: '1',
+            name: 'Consultation Fee',
+            quantity: 1,
+            rate: 500,
+            discountPercent: 0,
+            taxPercent: defaultTax,
+            total: parseFloat(initialTotal.toFixed(2)),
+          }
+        ]);
+        setAmountReceived(parseFloat(initialTotal.toFixed(2)));
+      }
+    });
   }, []);
 
   // Filter patients based on query
@@ -111,9 +142,21 @@ export const CreateInvoiceForm: React.FC<CreateInvoiceFormProps> = ({
       
       // Re-calculate row total
       const qty = field === 'quantity' ? Number(value) : updated.quantity;
-      const rate = field === 'rate' ? Number(value) : updated.rate;
+      let rate = field === 'rate' ? Number(value) : updated.rate;
       const disc = field === 'discountPercent' ? Number(value) : updated.discountPercent;
       const tax = field === 'taxPercent' ? Number(value) : updated.taxPercent;
+
+      // Auto-prefill fee if name changes to Consultation Fee or Follow-up Fee
+      if (field === 'name' && selectedDoctor) {
+        const lowerName = value.toLowerCase().trim();
+        if (lowerName === 'consultation fee') {
+          rate = selectedDoctor.fee || 100;
+          updated.rate = rate;
+        } else if (lowerName === 'follow-up fee' || lowerName === 'followup fee') {
+          rate = selectedDoctor.followupFee || 60;
+          updated.rate = rate;
+        }
+      }
 
       updated.total = calculateRowTotal(qty, rate, disc, tax);
       return updated;
@@ -124,6 +167,7 @@ export const CreateInvoiceForm: React.FC<CreateInvoiceFormProps> = ({
 
   const handleAddItem = () => {
     const newId = (items.reduce((max, i) => Math.max(max, parseInt(i.id) || 0), 0) + 1).toString();
+    const defaultTax = billingSettings?.defaultTaxPercent ?? 18;
     setItems([
       ...items,
       {
@@ -132,8 +176,8 @@ export const CreateInvoiceForm: React.FC<CreateInvoiceFormProps> = ({
         quantity: 1,
         rate: 250,
         discountPercent: 0,
-        taxPercent: 5,
-        total: 262.5,
+        taxPercent: defaultTax,
+        total: parseFloat((250 + 250 * (defaultTax / 100)).toFixed(2)),
       }
     ]);
   };
@@ -185,6 +229,7 @@ export const CreateInvoiceForm: React.FC<CreateInvoiceFormProps> = ({
       doctorSpecialization: selectedDoctor ? selectedDoctor.specialization : 'General Practice',
       doctorDepartment: 'Clinical OPD',
       date: invoiceDate,
+      templateId: billingSettings?.selectedTemplateId || 'CLASSIC_MEDICAL',
       subtotal,
       discountTotal,
       taxTotal,
@@ -208,6 +253,10 @@ export const CreateInvoiceForm: React.FC<CreateInvoiceFormProps> = ({
       alert('Please select a doctor first.');
       return;
     }
+    if (invoiceDate > getTodayDateString()) {
+      alert('Invoice date cannot be in the future.');
+      return;
+    }
     onSave(buildInvoiceObject());
   };
 
@@ -218,6 +267,10 @@ export const CreateInvoiceForm: React.FC<CreateInvoiceFormProps> = ({
     }
     if (!selectedDoctor) {
       alert('Please select a doctor first.');
+      return;
+    }
+    if (invoiceDate > getTodayDateString()) {
+      alert('Invoice date cannot be in the future.');
       return;
     }
     onPreview(buildInvoiceObject());
@@ -368,9 +421,23 @@ export const CreateInvoiceForm: React.FC<CreateInvoiceFormProps> = ({
                                 setSelectedDoctor(doc);
                                 setShowDoctorDropdown(false);
                                 setDoctorQuery('');
-                                // Automatically pre-fill rate of Consultation Fee if consultation row is empty or exists
-                                if (items.length === 1 && items[0].name === 'Consultation Fee' && items[0].rate === 500) {
-                                  handleItemChange('1', 'rate', doc.fee || 500);
+                                // Automatically pre-fill rate of Consultation Fee or Follow-up Fee based on item name
+                                if (items.length > 0) {
+                                  const updatedItems = items.map((item) => {
+                                    const lowerName = item.name.toLowerCase().trim();
+                                    let newRate = item.rate;
+                                    if (lowerName === 'consultation fee') {
+                                      newRate = doc.fee || 100;
+                                    } else if (lowerName === 'follow-up fee' || lowerName === 'followup fee') {
+                                      newRate = doc.followupFee || 60;
+                                    }
+                                    return {
+                                      ...item,
+                                      rate: newRate,
+                                      total: calculateRowTotal(item.quantity, newRate, item.discountPercent, item.taxPercent)
+                                    };
+                                  });
+                                  setItems(updatedItems);
                                 }
                               }}
                               className="p-3 hover:bg-slate-50 cursor-pointer flex items-center justify-between text-sm transition-colors"
@@ -435,7 +502,7 @@ export const CreateInvoiceForm: React.FC<CreateInvoiceFormProps> = ({
             )}
 
             {/* Invoice Date */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 gap-4">
               <div className="space-y-1.5">
                 <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider">
                   Invoice Date
@@ -443,17 +510,10 @@ export const CreateInvoiceForm: React.FC<CreateInvoiceFormProps> = ({
                 <input
                   type="date"
                   value={invoiceDate}
+                  max={getTodayDateString()}
                   onChange={(e) => setInvoiceDate(e.target.value)}
                   className="w-full px-3 h-11 bg-slate-50 border border-slate-200 rounded-lg text-sm outline-none focus:border-brand-primary focus:bg-white focus:ring-1 focus:ring-brand-primary transition-all text-slate-700 font-medium"
                 />
-              </div>
-              <div className="space-y-1.5">
-                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider">
-                  Invoice Number
-                </label>
-                <div className="w-full px-3 h-11 bg-slate-100/70 border border-slate-200 rounded-lg text-sm text-slate-500 font-mono font-bold flex items-center">
-                  {nextInvoiceNumber}
-                </div>
               </div>
             </div>
           </div>
@@ -485,12 +545,20 @@ export const CreateInvoiceForm: React.FC<CreateInvoiceFormProps> = ({
                     <th className="px-4 py-3.5 text-[11px] font-bold text-slate-400 uppercase tracking-wider w-28">
                       Rate (₹)
                     </th>
-                    <th className="px-4 py-3.5 text-[11px] font-bold text-slate-400 uppercase tracking-wider w-20">
-                      Disc %
-                    </th>
-                    <th className="px-4 py-3.5 text-[11px] font-bold text-slate-400 uppercase tracking-wider w-20">
-                      Tax %
-                    </th>
+                    {billingSettings?.selectedTemplateId === 'GST_DETAILED' ? (
+                      <>
+                        <th className="px-4 py-3.5 text-[11px] font-bold text-slate-400 uppercase tracking-wider w-20 text-center">
+                          CGST %
+                        </th>
+                        <th className="px-4 py-3.5 text-[11px] font-bold text-slate-400 uppercase tracking-wider w-20 text-center">
+                          SGST %
+                        </th>
+                      </>
+                    ) : (
+                      <th className="px-4 py-3.5 text-[11px] font-bold text-slate-400 uppercase tracking-wider w-20">
+                        {billingSettings?.taxLabel || 'Tax'} %
+                      </th>
+                    )}
                     <th className="px-4 py-3.5 text-[11px] font-bold text-slate-400 uppercase tracking-wider text-right w-28">
                       Total
                     </th>
@@ -540,29 +608,44 @@ export const CreateInvoiceForm: React.FC<CreateInvoiceFormProps> = ({
                         />
                       </td>
 
-                      {/* Discount % */}
-                      <td className="p-3">
-                        <input
-                          type="number"
-                          min="0"
-                          max="100"
-                          value={row.discountPercent}
-                          onChange={(e) => handleItemChange(row.id, 'discountPercent', Math.min(100, Math.max(0, Number(e.target.value))))}
-                          className="w-full px-2 py-1.5 bg-slate-50 border border-slate-200 rounded-md text-sm outline-none focus:border-brand-primary focus:bg-white text-slate-700 text-center font-medium font-mono"
-                        />
-                      </td>
-
-                      {/* Tax % */}
-                      <td className="p-3">
-                        <input
-                          type="number"
-                          min="0"
-                          max="100"
-                          value={row.taxPercent}
-                          onChange={(e) => handleItemChange(row.id, 'taxPercent', Math.min(100, Math.max(0, Number(e.target.value))))}
-                          className="w-full px-2 py-1.5 bg-slate-50 border border-slate-200 rounded-md text-sm outline-none focus:border-brand-primary focus:bg-white text-slate-700 text-center font-medium font-mono"
-                        />
-                      </td>
+                      {/* Tax % / CGST & SGST */}
+                      {billingSettings?.selectedTemplateId === 'GST_DETAILED' ? (
+                        <>
+                          <td className="p-3">
+                            <input
+                              type="number"
+                              min="0"
+                              max="50"
+                              step="0.1"
+                              value={(row.taxPercent / 2).toFixed(1)}
+                              onChange={(e) => handleItemChange(row.id, 'taxPercent', Number(e.target.value) * 2)}
+                              className="w-full px-2 py-1.5 bg-slate-50 border border-slate-200 rounded-md text-sm outline-none focus:border-brand-primary focus:bg-white text-slate-700 text-center font-medium font-mono"
+                            />
+                          </td>
+                          <td className="p-3">
+                            <input
+                              type="number"
+                              min="0"
+                              max="50"
+                              step="0.1"
+                              value={(row.taxPercent / 2).toFixed(1)}
+                              onChange={(e) => handleItemChange(row.id, 'taxPercent', Number(e.target.value) * 2)}
+                              className="w-full px-2 py-1.5 bg-slate-50 border border-slate-200 rounded-md text-sm outline-none focus:border-brand-primary focus:bg-white text-slate-700 text-center font-medium font-mono"
+                            />
+                          </td>
+                        </>
+                      ) : (
+                        <td className="p-3">
+                          <input
+                            type="number"
+                            min="0"
+                            max="100"
+                            value={row.taxPercent}
+                            onChange={(e) => handleItemChange(row.id, 'taxPercent', Math.min(100, Math.max(0, Number(e.target.value))))}
+                            className="w-full px-2 py-1.5 bg-slate-50 border border-slate-200 rounded-md text-sm outline-none focus:border-brand-primary focus:bg-white text-slate-700 text-center font-medium font-mono"
+                          />
+                        </td>
+                      )}
 
                       {/* Total */}
                       <td className="p-3 text-right font-bold text-slate-800 font-mono text-sm">
@@ -699,14 +782,29 @@ export const CreateInvoiceForm: React.FC<CreateInvoiceFormProps> = ({
                 <span>Subtotal</span>
                 <span className="font-mono text-slate-700">₹{subtotal.toFixed(2)}</span>
               </div>
-              <div className="flex justify-between text-sm font-medium text-slate-500">
-                <span>Discount</span>
-                <span className="font-mono text-rose-500">- ₹{discountTotal.toFixed(2)}</span>
-              </div>
-              <div className="flex justify-between text-sm font-medium text-slate-500 pb-3 border-b border-dashed border-slate-150">
-                <span>Tax</span>
-                <span className="font-mono text-slate-700">₹{taxTotal.toFixed(2)}</span>
-              </div>
+              {billingSettings?.enableInvoiceLevelDiscount && (
+                <div className="flex justify-between text-sm font-medium text-slate-500">
+                  <span>Discount</span>
+                  <span className="font-mono text-rose-500">- ₹{discountTotal.toFixed(2)}</span>
+                </div>
+              )}
+              {billingSettings?.selectedTemplateId === 'GST_DETAILED' ? (
+                <>
+                  <div className="flex justify-between text-sm font-medium text-slate-500">
+                    <span>CGST</span>
+                    <span className="font-mono text-slate-700">₹{(taxTotal / 2).toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between text-sm font-medium text-slate-500 pb-3 border-b border-dashed border-slate-150">
+                    <span>SGST</span>
+                    <span className="font-mono text-slate-700">₹{(taxTotal / 2).toFixed(2)}</span>
+                  </div>
+                </>
+              ) : (
+                <div className="flex justify-between text-sm font-medium text-slate-500 pb-3 border-b border-dashed border-slate-150">
+                  <span>{billingSettings?.taxLabel || 'Tax'}</span>
+                  <span className="font-mono text-slate-700">₹{taxTotal.toFixed(2)}</span>
+                </div>
+              )}
 
               <div className="flex justify-between text-base font-extrabold text-slate-900 pt-1.5 pb-3 border-b border-dashed border-slate-150">
                 <span>Grand Total</span>

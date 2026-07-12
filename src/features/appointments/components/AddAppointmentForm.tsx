@@ -53,14 +53,15 @@ export const AddAppointmentForm: React.FC<AddAppointmentFormProps> = ({
       mockAppointmentsApi.getAppointments()
     ]).then(([fetchedPatients, fetchedDoctors, fetchedAppointments]) => {
       setPatients(fetchedPatients);
-      setDoctors(fetchedDoctors); // show all doctors
+      const activeDoctors = fetchedDoctors.filter(d => d.isActive);
+      setDoctors(activeDoctors);
       setExistingAppointments(fetchedAppointments);
 
       if (fetchedPatients.length > 0) {
         setSelectedPatientId(fetchedPatients[0].id);
       }
-      if (fetchedDoctors.length > 0) {
-        setSelectedDoctorId(fetchedDoctors[0].id);
+      if (activeDoctors.length > 0) {
+        setSelectedDoctorId(activeDoctors[0].id);
       }
     });
   }, []);

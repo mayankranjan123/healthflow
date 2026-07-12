@@ -70,6 +70,9 @@ public class Invoice extends BaseEntity {
     @Column(name = "pdf_url")
     private String pdfUrl;
 
+    @Column(name = "template_id")
+    private String templateId = "CLASSIC_MEDICAL";
+
     @OneToMany(mappedBy = "invoice", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<InvoiceItem> items = new ArrayList<>();
 
@@ -231,6 +234,14 @@ public class Invoice extends BaseEntity {
 
     public void setPdfUrl(String pdfUrl) {
         this.pdfUrl = pdfUrl;
+    }
+
+    public String getTemplateId() {
+        return templateId;
+    }
+
+    public void setTemplateId(String templateId) {
+        this.templateId = templateId;
     }
 
     public List<InvoiceItem> getItems() {

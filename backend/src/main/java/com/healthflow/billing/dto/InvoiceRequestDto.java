@@ -26,6 +26,8 @@ public class InvoiceRequestDto {
 
     private String referenceNo;
 
+    private String templateId;
+
     @NotEmpty(message = "Invoice must contain at least one line item")
     @Valid
     private List<InvoiceItemDto> items;
@@ -99,6 +101,14 @@ public class InvoiceRequestDto {
 
     public void setReferenceNo(String referenceNo) {
         this.referenceNo = referenceNo;
+    }
+
+    public String getTemplateId() {
+        return templateId;
+    }
+
+    public void setTemplateId(String templateId) {
+        this.templateId = templateId;
     }
 
     public List<InvoiceItemDto> getItems() {

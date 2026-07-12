@@ -71,6 +71,7 @@ public class InvoiceServiceImpl implements InvoiceService {
         invoice.setInvoiceNumber(generateUniqueInvoiceNumber(clinicId));
         invoice.setPaymentMode(request.getPaymentMode());
         invoice.setReferenceNo(request.getReferenceNo());
+        invoice.setTemplateId(request.getTemplateId() != null ? request.getTemplateId() : "CLASSIC_MEDICAL");
 
         // 4. Run Calculation Logic & Link Items
         calculateAndPopulateInvoice(invoice, request.getItems(), request.getPaidAmount(), request.getStatus());

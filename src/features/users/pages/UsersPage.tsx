@@ -34,9 +34,13 @@ import { StaffForm } from '../components/StaffForm';
 import { Modal } from '../../../components/ui/Modal';
 import { Button } from '../../../components/ui/Button';
 
+interface UsersPageProps {
+  hideHeader?: boolean;
+}
+
 type ActiveTab = 'admin' | 'doctor' | 'staff' | 'roles';
 
-export const UsersPage: React.FC = () => {
+export const UsersPage: React.FC<UsersPageProps> = ({ hideHeader = false }) => {
   const [activeTab, setActiveTab] = useState<ActiveTab>('admin');
 
   // Core States
@@ -155,6 +159,8 @@ export const UsersPage: React.FC = () => {
         mobile: data.mobile,
         avatarUrl: data.avatarUrl,
         isActive: data.isActive,
+        gender: data.gender,
+        dateOfBirth: data.dateOfBirth,
       };
       saveAdminsToStore([newAdmin, ...admins]);
     }
@@ -184,6 +190,8 @@ export const UsersPage: React.FC = () => {
         totalConsultations: data.totalConsultations || 0,
         joiningDate: data.joiningDate || new Date().toISOString().split('T')[0],
         avatarUrl: data.avatarUrl,
+        gender: data.gender,
+        dateOfBirth: data.dateOfBirth,
       };
       saveDoctorsToStore([newDoctor, ...doctors]);
     }
@@ -205,6 +213,8 @@ export const UsersPage: React.FC = () => {
         mobile: data.mobile,
         avatarUrl: data.avatarUrl,
         isActive: data.isActive,
+        gender: data.gender,
+        dateOfBirth: data.dateOfBirth,
       };
       saveStaffToStore([newStaff, ...staffList]);
     }
@@ -246,13 +256,15 @@ export const UsersPage: React.FC = () => {
   return (
     <div className="space-y-6 animate-fade-in-up">
       {/* Dynamic Module Header */}
-      <div>
-        <span className="text-[10px] font-bold text-blue-600 tracking-widest uppercase block mb-1">
-          {header.category}
-        </span>
-        <h2 className="text-2xl font-display font-bold text-slate-900">{header.title}</h2>
-        <p className="text-sm text-slate-500 font-medium leading-relaxed">{header.subtitle}</p>
-      </div>
+      {!hideHeader && (
+        <div>
+          <span className="text-[10px] font-bold text-blue-600 tracking-widest uppercase block mb-1">
+            {header.category}
+          </span>
+          <h2 className="text-2xl font-display font-bold text-slate-900">{header.title}</h2>
+          <p className="text-sm text-slate-500 font-medium leading-relaxed">{header.subtitle}</p>
+        </div>
+      )}
 
       {/* Tabs Menu */}
       <div className="border-b border-slate-200">
@@ -408,6 +420,24 @@ export const UsersPage: React.FC = () => {
                 </div>
 
                 <div className="space-y-1">
+                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block">Follow-up Fee</span>
+                  <div className="font-bold text-blue-600 flex items-center gap-1">
+                    <DollarSign className="w-4 h-4 text-blue-600" />
+                    <span>${typeof viewingRecord.followupFee === 'number' ? viewingRecord.followupFee.toFixed(2) : (Number(viewingRecord.followupFee || 60).toFixed(2))}</span>
+                  </div>
+                </div>
+
+                <div className="space-y-1">
+                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block">Gender</span>
+                  <div className="font-semibold text-slate-700">{viewingRecord.gender || 'Not specified'}</div>
+                </div>
+
+                <div className="space-y-1">
+                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block">Date of Birth</span>
+                  <div className="font-semibold text-slate-700">{viewingRecord.dateOfBirth || 'Not specified'}</div>
+                </div>
+
+                <div className="space-y-1">
                   <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block">Total Completed Consultations</span>
                   <div className="font-semibold text-slate-700 flex items-center gap-2">
                     <Activity className="w-4 h-4 text-blue-600" />
@@ -452,7 +482,7 @@ export const UsersPage: React.FC = () => {
               </div>
             ) : (
               // Simple Contact Fields for Admin / Staff
-              <div className="space-y-4 text-sm">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-4 gap-x-6 text-sm">
                 <div className="space-y-1">
                   <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block">Email Address</span>
                   <div className="font-semibold text-slate-700 flex items-center gap-2">
@@ -467,6 +497,16 @@ export const UsersPage: React.FC = () => {
                     <Phone className="w-4 h-4 text-blue-600" />
                     <span>{viewingRecord.mobile}</span>
                   </div>
+                </div>
+
+                <div className="space-y-1">
+                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block">Gender</span>
+                  <div className="font-semibold text-slate-700">{viewingRecord.gender || 'Not specified'}</div>
+                </div>
+
+                <div className="space-y-1">
+                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block">Date of Birth</span>
+                  <div className="font-semibold text-slate-700">{viewingRecord.dateOfBirth || 'Not specified'}</div>
                 </div>
               </div>
             )}

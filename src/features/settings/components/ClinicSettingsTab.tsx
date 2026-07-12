@@ -2,6 +2,15 @@ import React, { useState } from 'react';
 import { Building, Phone, Mail, Globe, MapPin, DollarSign, Languages, Upload, Trash2, ShieldCheck, AlertCircle } from 'lucide-react';
 import { ClinicSettings } from '../types';
 
+const INDIAN_STATES = [
+  "Andhra Pradesh", "Arunachal Pradesh", "Assam", "Bihar", "Chhattisgarh", "Goa", "Gujarat", "Haryana", 
+  "Himachal Pradesh", "Jharkhand", "Karnataka", "Kerala", "Madhya Pradesh", "Maharashtra", "Manipur", 
+  "Meghalaya", "Mizoram", "Nagaland", "Odisha", "Punjab", "Rajasthan", "Sikkim", "Tamil Nadu", "Telangana", 
+  "Tripura", "Uttar Pradesh", "Uttarakhand", "West Bengal",
+  "Andaman and Nicobar Islands", "Chandigarh", "Dadra and Nagar Haveli and Daman and Diu", "Delhi", 
+  "Jammu and Kashmir", "Ladakh", "Lakshadweep", "Puducherry"
+];
+
 interface ClinicSettingsTabProps {
   initialSettings: ClinicSettings;
   onSave: (data: ClinicSettings) => void;
@@ -120,15 +129,20 @@ export const ClinicSettingsTab: React.FC<ClinicSettingsTabProps> = ({ initialSet
                 <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider">
                   Primary Phone Contact *
                 </label>
-                <div className="relative">
-                  <Phone className="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5" />
+                <div className="relative flex">
+                  <span className="inline-flex items-center px-3 rounded-l-lg border border-r-0 border-slate-200 bg-slate-100 text-slate-500 text-sm font-bold">
+                    +91
+                  </span>
                   <input
                     type="tel"
                     required
-                    value={formData.phone}
-                    onChange={(e) => handleChange('phone', e.target.value)}
-                    placeholder="e.g. +91 98765 00001"
-                    className="w-full pl-10 pr-4 h-11 bg-slate-50 border border-slate-200 rounded-lg text-sm font-semibold text-slate-700 outline-none focus:border-indigo-500 focus:bg-white focus:ring-1 focus:ring-indigo-500 transition-all"
+                    value={formData.phone ? formData.phone.replace(/^\+91\s?/, '') : ''}
+                    onChange={(e) => {
+                      const digits = e.target.value.replace(/[^0-9]/g, '');
+                      handleChange('phone', '+91 ' + digits);
+                    }}
+                    placeholder="98765 00001"
+                    className="w-full px-4 h-11 bg-slate-50 border border-slate-200 rounded-r-lg text-sm font-semibold text-slate-700 outline-none focus:border-indigo-500 focus:bg-white focus:ring-1 focus:ring-indigo-500 transition-all"
                   />
                 </div>
               </div>
@@ -241,14 +255,17 @@ export const ClinicSettingsTab: React.FC<ClinicSettingsTabProps> = ({ initialSet
                   <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider">
                     State *
                   </label>
-                  <input
-                    type="text"
+                  <select
                     required
                     value={formData.state}
                     onChange={(e) => handleChange('state', e.target.value)}
-                    placeholder="e.g. California"
-                    className="w-full px-4 h-11 bg-slate-50 border border-slate-200 rounded-lg text-sm font-semibold text-slate-700 outline-none focus:border-indigo-500 focus:bg-white focus:ring-1 focus:ring-indigo-500 transition-all"
-                  />
+                    className="w-full px-3 h-11 bg-slate-50 border border-slate-200 rounded-lg text-sm font-semibold text-slate-700 outline-none focus:border-indigo-500 focus:bg-white focus:ring-1 focus:ring-indigo-500 transition-all"
+                  >
+                    <option value="">Select State</option>
+                    {INDIAN_STATES.map(st => (
+                      <option key={st} value={st}>{st}</option>
+                    ))}
+                  </select>
                 </div>
 
                 {/* Country */}
@@ -261,11 +278,7 @@ export const ClinicSettingsTab: React.FC<ClinicSettingsTabProps> = ({ initialSet
                     onChange={(e) => handleChange('country', e.target.value)}
                     className="w-full px-3 h-11 bg-slate-50 border border-slate-200 rounded-lg text-sm font-semibold text-slate-700 outline-none focus:border-indigo-500 focus:bg-white focus:ring-1 focus:ring-indigo-500 transition-all"
                   >
-                    <option value="United States">United States</option>
                     <option value="India">India</option>
-                    <option value="United Kingdom">United Kingdom</option>
-                    <option value="Canada">Canada</option>
-                    <option value="Australia">Australia</option>
                   </select>
                 </div>
 
@@ -279,7 +292,7 @@ export const ClinicSettingsTab: React.FC<ClinicSettingsTabProps> = ({ initialSet
                     required
                     value={formData.pincode}
                     onChange={(e) => handleChange('pincode', e.target.value)}
-                    placeholder="e.g. 94301"
+                    placeholder="e.g. 110001"
                     className="w-full px-4 h-11 bg-slate-50 border border-slate-200 rounded-lg text-sm font-semibold text-slate-700 outline-none focus:border-indigo-500 focus:bg-white focus:ring-1 focus:ring-indigo-500 transition-all"
                   />
                 </div>
@@ -307,10 +320,7 @@ export const ClinicSettingsTab: React.FC<ClinicSettingsTabProps> = ({ initialSet
                     onChange={(e) => handleChange('currency', e.target.value)}
                     className="w-full pl-10 pr-4 h-11 bg-slate-50 border border-slate-200 rounded-lg text-sm font-semibold text-slate-700 outline-none focus:border-indigo-500 focus:bg-white focus:ring-1 focus:ring-indigo-500 transition-all"
                   >
-                    <option value="USD ($)">USD ($) - US Dollar</option>
                     <option value="INR (₹)">INR (₹) - Indian Rupee</option>
-                    <option value="EUR (€)">EUR (€) - Euro</option>
-                    <option value="GBP (£)">GBP (£) - British Pound</option>
                   </select>
                 </div>
               </div>
@@ -325,10 +335,7 @@ export const ClinicSettingsTab: React.FC<ClinicSettingsTabProps> = ({ initialSet
                   onChange={(e) => handleChange('language', e.target.value)}
                   className="w-full px-3 h-11 bg-slate-50 border border-slate-200 rounded-lg text-sm font-semibold text-slate-700 outline-none focus:border-indigo-500 focus:bg-white focus:ring-1 focus:ring-indigo-500 transition-all"
                 >
-                  <option value="English">English (United States)</option>
-                  <option value="Hindi">Hindi (भारत)</option>
-                  <option value="Spanish">Spanish (Español)</option>
-                  <option value="French">French (Français)</option>
+                  <option value="English (India)">English (India)</option>
                 </select>
               </div>
             </div>

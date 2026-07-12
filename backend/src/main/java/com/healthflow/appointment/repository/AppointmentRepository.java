@@ -30,6 +30,13 @@ public interface AppointmentRepository extends JpaRepository<Appointment, Long> 
             @Param("excludeId") Long excludeId
     );
 
+    @Query("SELECT a FROM Appointment a WHERE a.clinicId = :clinicId AND a.appointmentDateTime >= :start AND a.appointmentDateTime <= :end")
+    java.util.List<Appointment> findAllByClinicIdAndDateRange(
+            @Param("clinicId") Long clinicId,
+            @Param("start") java.time.Instant start,
+            @Param("end") java.time.Instant end
+    );
+
     long countByClinicIdAndDoctorIdAndStatus(Long clinicId, Long doctorId, String status);
 
 }

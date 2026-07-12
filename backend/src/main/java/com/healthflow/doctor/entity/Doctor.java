@@ -35,6 +35,9 @@ public class Doctor extends BaseEntity {
     @Column(name = "is_active", nullable = false)
     private boolean isActive = true;
 
+    @Column(name = "user_id")
+    private Long userId;
+
     public Doctor() {
         super();
     }
@@ -129,5 +132,35 @@ public class Doctor extends BaseEntity {
     @Transient
     public String getFullName() {
         return firstName + " " + lastName;
+    }
+
+    public Long getUserId() {
+        return userId;
+    }
+
+    public void setUserId(Long userId) {
+        this.userId = userId;
+    }
+
+    @Column(name = "followup_fees")
+    private java.math.BigDecimal followupFees;
+
+    public java.math.BigDecimal getFollowupFees() {
+        return followupFees;
+    }
+
+    public void setFollowupFees(java.math.BigDecimal followupFees) {
+        this.followupFees = followupFees;
+    }
+
+    @Column(name = "consultation_fees")
+    private java.math.BigDecimal consultationFees;
+
+    public java.math.BigDecimal getConsultationFees() {
+        return consultationFees;
+    }
+
+    public void setConsultationFees(java.math.BigDecimal consultationFees) {
+        this.consultationFees = consultationFees;
     }
 }

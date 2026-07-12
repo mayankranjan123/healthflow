@@ -33,6 +33,7 @@ function mapToFrontend(i: any): BillingInvoice {
     status: (i.status || 'Pending').toUpperCase() as any,
     paymentMode: i.paymentMode ? (i.paymentMode.toUpperCase() as any) : 'ONLINE',
     referenceNo: i.referenceNo || '',
+    templateId: i.templateId || 'CLASSIC_MEDICAL',
     items: (i.items || []).map(mapItemToFrontend),
     createdAt: i.createdAt || ''
   };
@@ -59,6 +60,7 @@ function mapToBackend(invoice: BillingInvoice): InvoiceRequestDto {
     status: invoice.status === 'PAID' ? 'Paid' : invoice.status === 'PENDING' ? 'Pending' : 'Partial',
     paymentMode: invoice.paymentMode === 'CASH' ? 'Cash' : 'Online',
     referenceNo: invoice.referenceNo || undefined,
+    templateId: invoice.templateId || 'CLASSIC_MEDICAL',
     items: (invoice.items || []).map(mapItemToBackend)
   };
 }

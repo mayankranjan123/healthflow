@@ -5,6 +5,8 @@ export interface AdminUser {
   mobile: string;
   avatarUrl?: string;
   isActive: boolean;
+  gender?: string;
+  dateOfBirth?: string;
 }
 
 export interface DoctorUser {
@@ -16,12 +18,15 @@ export interface DoctorUser {
   qualification: string;
   experience: string; // e.g., "12 yrs"
   fee: number; // consultation fee
+  followupFee?: number; // followup fee
   workingHours: string; // e.g., "09:00 AM - 04:00 PM"
   isActive: boolean;
   registrationNumber: string;
   totalConsultations: number;
   joiningDate: string;
   avatarUrl?: string;
+  gender?: string;
+  dateOfBirth?: string;
 }
 
 export interface StaffUser {
@@ -31,6 +36,8 @@ export interface StaffUser {
   mobile: string;
   avatarUrl?: string;
   isActive: boolean;
+  gender?: string;
+  dateOfBirth?: string;
 }
 
 export interface ModulePermission {

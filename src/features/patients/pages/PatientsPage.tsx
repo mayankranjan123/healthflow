@@ -48,11 +48,22 @@ import {
 } from '../types';
 import { mockPatientsApi } from '../utils/mockPatientsApi';
 import { mockDoctorsApi } from '../../doctors/utils/mockDoctorsApi';
+import { mockSettingsApi } from '../../settings/utils/mockSettingsApi';
 
 export const PatientsPage: React.FC = () => {
   // Load data from persistent APIs
   const [patients, setPatients] = useState<PatientProfileExtended[]>([]);
   const [doctorsList, setDoctorsList] = useState<any[]>([]);
+  const [currentUser, setCurrentUser] = useState<any>(null);
+
+  useEffect(() => {
+    const cached = localStorage.getItem('healthflow_user');
+    if (cached) {
+      try {
+        setCurrentUser(JSON.parse(cached));
+      } catch (e) {}
+    }
+  }, []);
 
   // Page View state
   const [viewMode, setViewMode] = useState<'list' | 'detail'>('list');
@@ -147,10 +158,28 @@ export const PatientsPage: React.FC = () => {
   });
   const [fileError, setFileError] = useState<string | null>(null);
 
+  // Prescription Settings State
+  const [prescriptionSettings, setPrescriptionSettings] = useState<any>(null);
+  const [clinicSettings, setClinicSettings] = useState<any>(null);
+
   // Initialize data
   useEffect(() => {
     mockPatientsApi.getPatients().then(setPatients);
     mockDoctorsApi.getDoctors().then(setDoctorsList);
+    mockSettingsApi.getSettings().then((settings) => {
+      if (settings) {
+        if (settings.prescription) {
+          setPrescriptionSettings(settings.prescription);
+          setNewPrescription(prev => ({
+            ...prev,
+            advice: settings.prescription.defaultFooterNote || ''
+          }));
+        }
+        if (settings.clinic) {
+          setClinicSettings(settings.clinic);
+        }
+      }
+    });
   }, []);
 
   // Update selected patient profile from source to stay in sync
@@ -319,7 +348,7 @@ export const PatientsPage: React.FC = () => {
       alert('Please select a prescribing doctor.');
       return;
     }
-    if (!newPrescription.diagnosis) {
+    if (prescriptionSettings?.showDiagnosis !== false && !newPrescription.diagnosis) {
       alert('Please provide a diagnosis.');
       return;
     }
@@ -333,8 +362,22 @@ export const PatientsPage: React.FC = () => {
     const docSpec = selectedDoc ? selectedDoc.specialization : 'General Medicine';
     const docAvatar = selectedDoc ? selectedDoc.avatarUrl : '';
 
+    const prefix = prescriptionSettings?.prefix || 'RX';
+    const startingNumber = prescriptionSettings?.startingNumber || 1001;
+    const allPrescriptions = patients.flatMap(p => p.prescriptions || []);
+    const maxNum = allPrescriptions.reduce((max, pr) => {
+      const regex = new RegExp(`${prefix}-(\\d+)`);
+      const match = pr.id.match(regex);
+      if (match) {
+        const val = parseInt(match[1]);
+        return val > max ? val : max;
+      }
+      return max;
+    }, startingNumber - 1);
+    const newPrescId = `${prefix}-${maxNum + 1}`;
+
     const newPrsc: PatientPrescription = {
-      id: `PRSC-${Math.floor(1000 + Math.random() * 9000)}`,
+      id: newPrescId,
       patientId: selectedPatient.id,
       patientName: `${selectedPatient.firstName} ${selectedPatient.lastName}`,
       patientNumber: selectedPatient.patientNumber,
@@ -1060,22 +1103,31 @@ export const PatientsPage: React.FC = () => {
                 </div>
                 
                 {/* Create Button */}
-                <div className="flex items-end pt-5 md:pt-0 shrink-0">
-                  <Button
-                    id="create-prescription-btn"
-                    onClick={() => {
-                      setNewPrescription({
-                        ...newPrescription,
-                        doctorId: doctorsList[0]?.id || ''
-                      });
-                      setIsCreatePrescriptionOpen(true);
-                    }}
-                    className="w-full md:w-auto shadow-sm"
-                  >
-                    <Plus className="w-4 h-4" />
-                    <span>Create Prescription</span>
-                  </Button>
-                </div>
+                {currentUser?.role !== 'STAFF' && (
+                  <div className="flex items-end pt-5 md:pt-0 shrink-0">
+                    <Button
+                      id="create-prescription-btn"
+                      onClick={() => {
+                        let defaultDocId = doctorsList[0]?.id || '';
+                        if (currentUser?.role === 'DOCTOR') {
+                          const matchedDoc = doctorsList.find(d => d.email?.toLowerCase() === currentUser.email?.toLowerCase());
+                          if (matchedDoc) {
+                            defaultDocId = matchedDoc.id;
+                          }
+                        }
+                        setNewPrescription({
+                          ...newPrescription,
+                          doctorId: defaultDocId
+                        });
+                        setIsCreatePrescriptionOpen(true);
+                      }}
+                      className="w-full md:w-auto shadow-sm"
+                    >
+                      <Plus className="w-4 h-4" />
+                      <span>Create Prescription</span>
+                    </Button>
+                  </div>
+                )}
               </div>
 
               {/* List of Prescriptions */}
@@ -1528,13 +1580,22 @@ export const PatientsPage: React.FC = () => {
       >
         <form onSubmit={handleCreatePrescriptionSubmit} className="space-y-5">
           {/* Prescribing Doctor Selector */}
-          <Select
-            label="Prescribed By (Doctor) *"
-            value={newPrescription.doctorId}
-            onChange={(e) => setNewPrescription({ ...newPrescription, doctorId: e.target.value })}
-            options={doctorsList.map((d) => ({ value: d.id, label: `${d.name} (${d.specialization})` }))}
-            required
-          />
+          {currentUser?.role === 'DOCTOR' ? (
+            <div className="space-y-1.5 text-left">
+              <span className="block text-xs font-semibold text-slate-500 uppercase tracking-wider">Prescribing Doctor</span>
+              <div className="px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm font-bold text-slate-700">
+                {doctorsList.find(d => d.email?.toLowerCase() === currentUser.email?.toLowerCase())?.name || (currentUser.firstName + " " + currentUser.lastName)}
+              </div>
+            </div>
+          ) : (
+            <Select
+              label="Prescribed By (Doctor) *"
+              value={newPrescription.doctorId}
+              onChange={(e) => setNewPrescription({ ...newPrescription, doctorId: e.target.value })}
+              options={doctorsList.map((d) => ({ value: d.id, label: `${d.name} (${d.specialization})` }))}
+              required
+            />
+          )}
 
           <div className="grid grid-cols-2 gap-4">
             <Input
@@ -1552,70 +1613,84 @@ export const PatientsPage: React.FC = () => {
             />
           </div>
 
-          <Input
-            label="Diagnosis / Findings *"
-            value={newPrescription.diagnosis}
-            onChange={(e) => setNewPrescription({ ...newPrescription, diagnosis: e.target.value })}
-            required
-            placeholder="e.g. Stage 1 Essential Hypertension"
-          />
+          {prescriptionSettings?.showDiagnosis !== false && (
+            <Input
+              label="Diagnosis / Findings *"
+              value={newPrescription.diagnosis}
+              onChange={(e) => setNewPrescription({ ...newPrescription, diagnosis: e.target.value })}
+              required
+              placeholder="e.g. Stage 1 Essential Hypertension"
+            />
+          )}
 
-          <div className="grid grid-cols-2 gap-4">
-            <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-semibold text-slate-700 uppercase tracking-wider">Symptoms</label>
-              <textarea
-                value={newPrescription.symptoms}
-                onChange={(e) => setNewPrescription({ ...newPrescription, symptoms: e.target.value })}
-                className="w-full min-h-[60px] p-2.5 text-xs rounded-lg border border-slate-200 outline-none focus:border-brand-primary"
-                placeholder="Morning headaches, blood pressure 140/90..."
-              />
-            </div>
-            <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-semibold text-slate-700 uppercase tracking-wider">Clinical Notes</label>
-              <textarea
-                value={newPrescription.clinicalNotes}
-                onChange={(e) => setNewPrescription({ ...newPrescription, clinicalNotes: e.target.value })}
-                className="w-full min-h-[60px] p-2.5 text-xs rounded-lg border border-slate-200 outline-none focus:border-brand-primary"
-                placeholder="Rhythm evaluation normal. Low sodium advice..."
-              />
-            </div>
+          <div className="grid grid-cols-2 gap-4 text-left">
+            {prescriptionSettings?.showPatientHistory !== false && (
+              <div className="flex flex-col gap-1.5">
+                <label className="text-xs font-semibold text-slate-700 uppercase tracking-wider">Symptoms</label>
+                <textarea
+                  value={newPrescription.symptoms}
+                  onChange={(e) => setNewPrescription({ ...newPrescription, symptoms: e.target.value })}
+                  className="w-full min-h-[60px] p-2.5 text-xs rounded-lg border border-slate-200 outline-none focus:border-brand-primary"
+                  placeholder="Morning headaches, blood pressure 140/90..."
+                />
+              </div>
+            )}
+            {prescriptionSettings?.showVitals !== false && (
+              <div className="flex flex-col gap-1.5">
+                <label className="text-xs font-semibold text-slate-700 uppercase tracking-wider">Clinical Notes</label>
+                <textarea
+                  value={newPrescription.clinicalNotes}
+                  onChange={(e) => setNewPrescription({ ...newPrescription, clinicalNotes: e.target.value })}
+                  className="w-full min-h-[60px] p-2.5 text-xs rounded-lg border border-slate-200 outline-none focus:border-brand-primary"
+                  placeholder="Rhythm evaluation normal. Low sodium advice..."
+                />
+              </div>
+            )}
           </div>
 
           {/* MEDICINES FORM TABLE INTERFACE */}
           <div className="border-t border-slate-200 pt-4 space-y-3">
-            <label className="text-xs font-bold text-slate-800 uppercase tracking-wider block">
+            <label className="text-xs font-bold text-slate-800 uppercase tracking-wider block text-left">
               Medicines Table * (At least one required)
             </label>
 
             {/* Quick Medicine Add Form */}
             <div className="bg-slate-50 border border-slate-200/60 rounded-xl p-3 space-y-3">
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-2 gap-2 text-left">
                 <Input
                   label="Medicine Name"
                   value={newMedicine.medicineName}
                   onChange={(e) => setNewMedicine({ ...newMedicine, medicineName: e.target.value })}
                   placeholder="Amlodipine / Paracetamol"
                 />
-                <Input
-                  label="Dosage"
-                  value={newMedicine.dosage}
-                  onChange={(e) => setNewMedicine({ ...newMedicine, dosage: e.target.value })}
-                  placeholder="500 mg / 1 Puff"
-                />
+                {prescriptionSettings?.showDosageInstructions !== false ? (
+                  <Input
+                    label="Dosage"
+                    value={newMedicine.dosage}
+                    onChange={(e) => setNewMedicine({ ...newMedicine, dosage: e.target.value })}
+                    placeholder="500 mg / 1 Puff"
+                  />
+                ) : (
+                  <div />
+                )}
               </div>
-              <div className="grid grid-cols-3 gap-2">
+              <div className="grid grid-cols-3 gap-2 text-left">
                 <Input
                   label="Frequency"
                   value={newMedicine.frequency}
                   onChange={(e) => setNewMedicine({ ...newMedicine, frequency: e.target.value })}
                   placeholder="Once daily"
                 />
-                <Input
-                  label="Duration"
-                  value={newMedicine.duration}
-                  onChange={(e) => setNewMedicine({ ...newMedicine, duration: e.target.value })}
-                  placeholder="7 Days"
-                />
+                {prescriptionSettings?.showDuration !== false ? (
+                  <Input
+                    label="Duration"
+                    value={newMedicine.duration}
+                    onChange={(e) => setNewMedicine({ ...newMedicine, duration: e.target.value })}
+                    placeholder="7 Days"
+                  />
+                ) : (
+                  <div />
+                )}
                 <div className="flex flex-col gap-1">
                   <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider invisible">Add</span>
                   <Button
@@ -1738,120 +1813,160 @@ export const PatientsPage: React.FC = () => {
             </div>
 
             {/* A4 sheet simulation */}
-            <div id="printable-area" className="bg-white border border-slate-300 p-6 rounded-lg shadow-inner text-slate-800 space-y-6 min-h-[500px]">
-              {/* Header */}
-              <div className="flex justify-between items-start border-b-2 border-brand-primary pb-4">
-                <div className="space-y-1">
-                  <div className="flex items-center gap-1.5">
-                    <Activity className="w-6 h-6 text-brand-primary shrink-0" />
-                    <h1 className="text-xl font-display font-bold text-brand-primary tracking-wider uppercase">HealthFlow</h1>
+            {(() => {
+              const pSettings = prescriptionSettings;
+              const showLogo = pSettings ? pSettings.showClinicLogo : true;
+              const headerLayout = pSettings?.headerLayout || 'CENTERED_PROFESSIONAL';
+              
+              const clinicName = clinicSettings?.name || 'HealthFlow';
+              const clinicAddress = clinicSettings?.addressLine 
+                ? `${clinicSettings.addressLine}, ${clinicSettings.city}, ${clinicSettings.state} - ${clinicSettings.pincode}` 
+                : 'Sector 17, Main Road, Chandigarh, India';
+              const clinicPhone = clinicSettings?.phone || '+91 172 555 1200';
+              const clinicEmail = clinicSettings?.email || 'support@healthflow.com';
+
+              const showDocQuals = pSettings ? pSettings.showDoctorQualifications : true;
+              const showDocDept = pSettings ? pSettings.showDoctorDepartment : true;
+              const showVitals = pSettings ? pSettings.showVitals : true;
+              const showHistory = pSettings ? pSettings.showPatientHistory : true;
+              const showDiagnosis = pSettings ? pSettings.showDiagnosis : true;
+              const showDuration = pSettings ? pSettings.showDuration : true;
+              const showDosage = pSettings ? pSettings.showDosageInstructions : true;
+
+              return (
+                <div id="printable-area" className="bg-white border border-slate-300 p-6 rounded-lg shadow-inner text-slate-800 space-y-6 min-h-[500px]">
+                  {/* Header */}
+                  <div className={`flex ${
+                    headerLayout === 'CENTERED_PROFESSIONAL' 
+                      ? 'flex-col items-center text-center gap-2 border-b-2 border-brand-primary pb-4' 
+                      : headerLayout === 'MODERN_MINIMAL' 
+                        ? 'flex-row justify-between items-center border-b border-slate-200 pb-3' 
+                        : 'flex-row justify-between items-start border-b-2 border-brand-primary pb-4'
+                  }`}>
+                    <div className={`space-y-1 flex flex-col ${headerLayout === 'CENTERED_PROFESSIONAL' ? 'items-center' : 'items-start'}`}>
+                      <div className="flex items-center gap-1.5">
+                        {showLogo && <Activity className="w-6 h-6 text-brand-primary shrink-0" />}
+                        <h1 className="text-xl font-display font-bold text-brand-primary tracking-wider uppercase">{clinicName}</h1>
+                      </div>
+                      <p className="text-xs font-bold text-slate-500 leading-normal">
+                        Premier Healthcare and Multi-Specialty Clinic<br />
+                        {clinicAddress}<br />
+                        Phone: {clinicPhone} | {clinicEmail}
+                      </p>
+                    </div>
+                    <div className={`text-right space-y-1 bg-slate-50 p-2 rounded border border-slate-200 ${
+                      headerLayout === 'CENTERED_PROFESSIONAL' ? 'mt-2 w-full flex justify-between items-center text-left' : ''
+                    }`}>
+                      <div>
+                        <p className="text-xs font-mono font-bold text-slate-400 uppercase">Prescription Sheet</p>
+                        <p className="text-sm font-bold text-slate-800">{previewPrescription.id}</p>
+                      </div>
+                      <p className="text-xs text-slate-500 font-medium">Date: {previewPrescription.issueDate}</p>
+                    </div>
                   </div>
-                  <p className="text-xs font-bold text-slate-500 leading-normal">
-                    Premier Healthcare and Multi-Specialty Clinic<br />
-                    Sector 17, Main Road, Chandigarh, India<br />
-                    Phone: +91 172 555 1200 | support@healthflow.com
-                  </p>
-                </div>
-                <div className="text-right space-y-1 bg-slate-50 p-2 rounded border border-slate-200">
-                  <p className="text-xs font-mono font-bold text-slate-400 uppercase">Prescription Sheet</p>
-                  <p className="text-sm font-bold text-slate-800">{previewPrescription.id}</p>
-                  <p className="text-xs text-slate-500 font-medium">Date: {previewPrescription.issueDate}</p>
-                </div>
-              </div>
 
-              {/* Patient & Doctor metadata */}
-              <div className="grid grid-cols-2 gap-4 text-xs bg-slate-50 p-3.5 rounded-lg border border-slate-100">
-                <div className="space-y-1">
-                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Patient Information</p>
-                  <p className="text-sm font-bold text-slate-800">
-                    {selectedPatient.firstName} {selectedPatient.lastName}
-                  </p>
-                  <p className="text-slate-600 font-medium">
-                    ID: {selectedPatient.patientNumber} | Age: {new Date().getFullYear() - new Date(selectedPatient.dateOfBirth).getFullYear()} Yrs | Gender: {selectedPatient.gender}
-                  </p>
-                  <p className="text-slate-500">Phone: {selectedPatient.phone}</p>
-                </div>
-                <div className="space-y-1 text-right">
-                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Prescribed By</p>
-                  <p className="text-sm font-bold text-slate-800">{previewPrescription.doctorName}</p>
-                  <p className="text-slate-600 font-bold">{previewPrescription.doctorSpecialization}</p>
-                  <p className="text-slate-500 font-semibold font-mono">Reg No: REG-{previewPrescription.id.split('-')[1] || '87421'}</p>
-                </div>
-              </div>
-
-              {/* Diagnosis / Symptoms */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs border-b border-slate-100 pb-4">
-                <div className="space-y-1">
-                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Diagnosis Findings</p>
-                  <p className="font-bold text-slate-800 text-sm leading-normal">{previewPrescription.diagnosis}</p>
-                </div>
-                {previewPrescription.symptoms && (
-                  <div className="space-y-1">
-                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Symptoms Observed</p>
-                    <p className="text-slate-600 italic leading-relaxed font-semibold">"{previewPrescription.symptoms}"</p>
+                  {/* Patient & Doctor metadata */}
+                  <div className="grid grid-cols-2 gap-4 text-xs bg-slate-50 p-3.5 rounded-lg border border-slate-100">
+                    <div className="space-y-1 text-left">
+                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Patient Information</p>
+                      <p className="text-sm font-bold text-slate-800">
+                        {selectedPatient.firstName} {selectedPatient.lastName}
+                      </p>
+                      <p className="text-slate-600 font-medium">
+                        ID: {selectedPatient.patientNumber} | Age: {new Date().getFullYear() - new Date(selectedPatient.dateOfBirth).getFullYear()} Yrs | Gender: {selectedPatient.gender}
+                      </p>
+                      <p className="text-slate-500">Phone: {selectedPatient.phone}</p>
+                    </div>
+                    <div className="space-y-1 text-right">
+                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Prescribed By</p>
+                      <p className="text-sm font-bold text-slate-800">{previewPrescription.doctorName}</p>
+                      {showDocQuals && <p className="text-slate-600 font-bold">{previewPrescription.doctorSpecialization}</p>}
+                      {showDocDept && <p className="text-slate-500 font-semibold font-mono">Department: Outpatient Services</p>}
+                      <p className="text-slate-400 font-medium font-mono text-[10px]">Reg No: REG-{previewPrescription.id.split('-')[1] || '87421'}</p>
+                    </div>
                   </div>
-                )}
-              </div>
 
-              {/* Rx Medicines List */}
-              <div className="space-y-3">
-                <div className="flex items-center gap-1.5 text-brand-primary">
-                  <span className="font-display font-black text-xl italic leading-none">Rx</span>
-                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest pt-1">Prescribed Medicines</span>
-                </div>
+                  {/* Diagnosis / Symptoms */}
+                  {(showDiagnosis || showHistory) && (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs border-b border-slate-100 pb-4 text-left">
+                      {showDiagnosis && (
+                        <div className="space-y-1">
+                          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Diagnosis Findings</p>
+                          <p className="font-bold text-slate-800 text-sm leading-normal">{previewPrescription.diagnosis}</p>
+                        </div>
+                      )}
+                      {showHistory && previewPrescription.symptoms && (
+                        <div className="space-y-1">
+                          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Symptoms Observed</p>
+                          <p className="text-slate-600 italic leading-relaxed font-semibold">"{previewPrescription.symptoms}"</p>
+                        </div>
+                      )}
+                    </div>
+                  )}
 
-                <div className="border border-slate-200 rounded-lg overflow-hidden">
-                  <table className="w-full text-left border-collapse text-xs">
-                    <thead className="bg-slate-50 border-b border-slate-200">
-                      <tr>
-                        <th className="p-3 font-bold text-slate-600">Medicine & Instructions</th>
-                        <th className="p-3 font-bold text-slate-600">Dosage</th>
-                        <th className="p-3 font-bold text-slate-600">Frequency</th>
-                        <th className="p-3 font-bold text-slate-600 text-right">Duration</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-100">
-                      {previewPrescription.medicines.map((med, index) => (
-                        <tr key={med.id || index}>
-                          <td className="p-3">
-                            <p className="font-bold text-slate-800">{med.medicineName}</p>
-                            <p className="text-[10px] text-slate-500 font-medium italic">{med.instructions}</p>
-                          </td>
-                          <td className="p-3 font-semibold text-slate-700">{med.dosage}</td>
-                          <td className="p-3 text-slate-600 font-semibold">{med.frequency}</td>
-                          <td className="p-3 text-slate-700 font-bold text-right">{med.duration}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
+                  {/* Rx Medicines List */}
+                  <div className="space-y-3 text-left">
+                    <div className="flex items-center gap-1.5 text-brand-primary">
+                      <span className="font-display font-black text-xl italic leading-none">Rx</span>
+                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest pt-1">Prescribed Medicines</span>
+                    </div>
 
-              {/* Additional parameters */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs pt-2">
-                <div className="bg-slate-50 p-3 rounded-lg border border-slate-100 space-y-1">
-                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Recommended Diagnostic Tests</p>
-                  <p className="font-semibold text-slate-700 leading-normal">{previewPrescription.testsRecommended || 'None'}</p>
-                </div>
-                <div className="bg-slate-50 p-3 rounded-lg border border-slate-100 space-y-1">
-                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">General Dietary & Activity Advice</p>
-                  <p className="font-semibold text-slate-700 leading-normal">{previewPrescription.advice || 'None'}</p>
-                </div>
-              </div>
+                    <div className="border border-slate-200 rounded-lg overflow-hidden">
+                      <table className="w-full text-left border-collapse text-xs">
+                        <thead className="bg-slate-50 border-b border-slate-200">
+                          <tr>
+                            <th className="p-3 font-bold text-slate-600">Medicine & Instructions</th>
+                            {showDosage && <th className="p-3 font-bold text-slate-600">Dosage</th>}
+                            <th className="p-3 font-bold text-slate-600">Frequency</th>
+                            {showDuration && <th className="p-3 font-bold text-slate-600 text-right">Duration</th>}
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100">
+                          {previewPrescription.medicines.map((med, index) => (
+                            <tr key={med.id || index}>
+                              <td className="p-3">
+                                <p className="font-bold text-slate-800">{med.medicineName}</p>
+                                <p className="text-[10px] text-slate-500 font-medium italic">{med.instructions}</p>
+                              </td>
+                              {showDosage && <td className="p-3 font-semibold text-slate-700">{med.dosage}</td>}
+                              <td className="p-3 text-slate-600 font-semibold">{med.frequency}</td>
+                              {showDuration && <td className="p-3 text-slate-700 font-bold text-right">{med.duration}</td>}
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
 
-              {/* Footer details */}
-              <div className="flex justify-between items-end pt-12 border-t border-slate-100 text-xs">
-                <div>
-                  <p className="font-semibold text-slate-500">
-                    Next Scheduled Consultation Visit: <strong className="text-blue-600 bg-blue-50 px-2 py-0.5 rounded">{previewPrescription.nextVisitDate || 'As Needed'}</strong>
-                  </p>
+                  {/* Additional parameters */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs pt-2 text-left">
+                    <div className="bg-slate-50 p-3 rounded-lg border border-slate-100 space-y-1">
+                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Recommended Diagnostic Tests</p>
+                      <p className="font-semibold text-slate-700 leading-normal">{previewPrescription.testsRecommended || 'None'}</p>
+                    </div>
+                    {showVitals && (
+                      <div className="bg-slate-50 p-3 rounded-lg border border-slate-100 space-y-1">
+                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Clinical Intake Logs / Vitals</p>
+                        <p className="font-semibold text-slate-700 leading-normal">{previewPrescription.clinicalNotes || 'None'}</p>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Footer details */}
+                  <div className="flex justify-between items-end pt-12 border-t border-slate-100 text-xs text-left">
+                    <div>
+                      <p className="font-semibold text-slate-500">
+                        Next Scheduled Consultation Visit: <strong className="text-blue-600 bg-blue-50 px-2 py-0.5 rounded">{previewPrescription.nextVisitDate || 'As Needed'}</strong>
+                      </p>
+                    </div>
+                    <div className="text-right space-y-3 shrink-0">
+                      <div className="w-36 h-px bg-slate-300 mx-auto" />
+                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest text-center">Clinician Signature</p>
+                    </div>
+                  </div>
                 </div>
-                <div className="text-right space-y-3 shrink-0">
-                  <div className="w-36 h-px bg-slate-300 mx-auto" />
-                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest text-center">Clinician Signature</p>
-                </div>
-              </div>
-            </div>
+              );
+            })()}
 
             <div className="flex justify-end pt-3 border-t border-slate-100">
               <Button onClick={() => setIsPrescriptionPreviewOpen(false)} className="px-5">

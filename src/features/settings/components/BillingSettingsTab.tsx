@@ -49,20 +49,6 @@ export const BillingSettingsTab: React.FC<BillingSettingsTabProps> = ({
   // List of templates with descriptors
   const templates = [
     {
-      id: 'CLASSIC_MEDICAL' as InvoiceTemplateId,
-      name: 'Classic Medical',
-      desc: 'Standard formal practice outline with corporate blue alignments.',
-      color: 'border-slate-300 bg-slate-50',
-      tag: 'Standard'
-    },
-    {
-      id: 'MODERN_COMPACT' as InvoiceTemplateId,
-      name: 'Modern Compact',
-      desc: 'Tight borders, compact rows, with a solid brand-colored header banner.',
-      color: 'border-indigo-400 bg-indigo-50/50',
-      tag: 'Space Saving'
-    },
-    {
       id: 'GST_DETAILED' as InvoiceTemplateId,
       name: 'GST Detailed',
       desc: 'Dual grid structure showing itemized CGST, SGST, and HS Codes.',
@@ -121,23 +107,6 @@ export const BillingSettingsTab: React.FC<BillingSettingsTabProps> = ({
                   onChange={(e) => handleValChange('startingInvoiceNumber', parseInt(e.target.value) || 1)}
                   className="w-full px-4 h-11 bg-slate-50 border border-slate-200 rounded-lg text-sm font-semibold text-slate-700 outline-none focus:border-indigo-500 focus:bg-white focus:ring-1 focus:ring-indigo-500 transition-all"
                 />
-              </div>
-
-              {/* Receipt Prefix */}
-              <div className="space-y-1.5">
-                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider">
-                  Receipt Prefix
-                </label>
-                <input
-                  type="text"
-                  value={formData.receiptPrefix}
-                  onChange={(e) => handleValChange('receiptPrefix', e.target.value)}
-                  placeholder="e.g. RCP"
-                  className="w-full px-4 h-11 bg-slate-50 border border-slate-200 rounded-lg text-sm font-semibold text-slate-700 outline-none focus:border-indigo-500 focus:bg-white focus:ring-1 focus:ring-indigo-500 transition-all"
-                />
-                <span className="text-[10px] font-bold text-slate-400 block">
-                  Preview: <span className="font-mono text-indigo-600">{formData.receiptPrefix}-{formData.startingInvoiceNumber}</span>
-                </span>
               </div>
 
               {/* Auto-generate switch */}
@@ -257,81 +226,6 @@ export const BillingSettingsTab: React.FC<BillingSettingsTabProps> = ({
                   />
                 </button>
               </div>
-
-              {/* Enable item level discount */}
-              <div className="flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <span className="block text-xs font-bold text-slate-700 uppercase tracking-wider">
-                    Enable Item-Level Discount
-                  </span>
-                  <span className="block text-[11px] font-semibold text-slate-400">
-                    Allow discount percentages inside the items list table
-                  </span>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => handleToggle('enableItemLevelDiscount')}
-                  className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-250 ease-in-out outline-none ${
-                    formData.enableItemLevelDiscount ? 'bg-indigo-600' : 'bg-slate-250'
-                  }`}
-                >
-                  <span
-                    className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-md ring-0 transition duration-250 ease-in-out ${
-                      formData.enableItemLevelDiscount ? 'translate-x-5' : 'translate-x-0'
-                    }`}
-                  />
-                </button>
-              </div>
-
-              {/* GST number display toggle */}
-              <div className="flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <span className="block text-xs font-bold text-slate-700 uppercase tracking-wider">
-                    Display GST Number on Layout
-                  </span>
-                  <span className="block text-[11px] font-semibold text-slate-400">
-                    Print the practice GST certificate code on invoices
-                  </span>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => handleToggle('gstNumberDisplay')}
-                  className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-250 ease-in-out outline-none ${
-                    formData.gstNumberDisplay ? 'bg-indigo-600' : 'bg-slate-250'
-                  }`}
-                >
-                  <span
-                    className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-md ring-0 transition duration-250 ease-in-out ${
-                      formData.gstNumberDisplay ? 'translate-x-5' : 'translate-x-0'
-                    }`}
-                  />
-                </button>
-              </div>
-
-              {/* Round off final amount */}
-              <div className="flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <span className="block text-xs font-bold text-slate-700 uppercase tracking-wider">
-                    Round-Off Final Amount
-                  </span>
-                  <span className="block text-[11px] font-semibold text-slate-400">
-                    Truncate decimals and round off invoices to nearest rupee
-                  </span>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => handleToggle('roundOffAmount')}
-                  className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-250 ease-in-out outline-none ${
-                    formData.roundOffAmount ? 'bg-indigo-600' : 'bg-slate-250'
-                  }`}
-                >
-                  <span
-                    className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-md ring-0 transition duration-250 ease-in-out ${
-                      formData.roundOffAmount ? 'translate-x-5' : 'translate-x-0'
-                    }`}
-                  />
-                </button>
-              </div>
             </div>
           </div>
 
@@ -444,16 +338,6 @@ export const BillingSettingsTab: React.FC<BillingSettingsTabProps> = ({
               <label className="flex items-center gap-2.5 cursor-pointer p-1">
                 <input
                   type="checkbox"
-                  checked={formData.showGstOnHeader}
-                  onChange={() => handleToggle('showGstOnHeader')}
-                  className="w-4.5 h-4.5 text-indigo-600 border-slate-300 rounded focus:ring-indigo-500"
-                />
-                <span>Show GST number</span>
-              </label>
-
-              <label className="flex items-center gap-2.5 cursor-pointer p-1">
-                <input
-                  type="checkbox"
                   checked={formData.showDoctorName}
                   onChange={() => handleToggle('showDoctorName')}
                   className="w-4.5 h-4.5 text-indigo-600 border-slate-300 rounded focus:ring-indigo-500"
@@ -479,16 +363,6 @@ export const BillingSettingsTab: React.FC<BillingSettingsTabProps> = ({
                   className="w-4.5 h-4.5 text-indigo-600 border-slate-300 rounded focus:ring-indigo-500"
                 />
                 <span>Show payment summary</span>
-              </label>
-
-              <label className="flex items-center gap-2.5 cursor-pointer p-1">
-                <input
-                  type="checkbox"
-                  checked={formData.showPendingAmount}
-                  onChange={() => handleToggle('showPendingAmount')}
-                  className="w-4.5 h-4.5 text-indigo-600 border-slate-300 rounded focus:ring-indigo-500"
-                />
-                <span>Show pending amount</span>
               </label>
 
               <label className="flex items-center gap-2.5 cursor-pointer p-1">
@@ -527,123 +401,6 @@ export const BillingSettingsTab: React.FC<BillingSettingsTabProps> = ({
                 placeholder="e.g. Thank you for visiting HealthFlow. Wish you a speedy recovery!"
                 className="w-full p-3.5 h-20 bg-slate-50 border border-slate-200 rounded-lg text-sm font-semibold text-slate-700 outline-none focus:border-indigo-500 focus:bg-white focus:ring-1 focus:ring-indigo-500 transition-all resize-none leading-relaxed"
               />
-            </div>
-          </div>
-
-          {/* Card 5: Print Settings */}
-          <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm space-y-5">
-            <div className="flex items-center gap-2 pb-3 border-b border-slate-100">
-              <Printer className="w-5 h-5 text-indigo-600" />
-              <h3 className="font-display font-bold text-slate-900 text-base">Print Settings</h3>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4.5">
-              {/* Paper Size */}
-              <div className="space-y-1.5">
-                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider">
-                  Default Paper Size
-                </label>
-                <select
-                  value={formData.paperSize}
-                  onChange={(e) => handleValChange('paperSize', e.target.value)}
-                  className="w-full px-3 h-11 bg-slate-50 border border-slate-200 rounded-lg text-sm font-semibold text-slate-700 outline-none focus:border-indigo-500 focus:bg-white focus:ring-1 focus:ring-indigo-500 transition-all"
-                >
-                  <option value="A4">A4 Standard Sheet</option>
-                  <option value="A5">A5 Compact Leaflet</option>
-                </select>
-              </div>
-
-              {/* Print Orientation */}
-              <div className="space-y-1.5">
-                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider">
-                  Print Orientation
-                </label>
-                <select
-                  value={formData.printOrientation}
-                  onChange={(e) => handleValChange('printOrientation', e.target.value)}
-                  className="w-full px-3 h-11 bg-slate-50 border border-slate-200 rounded-lg text-sm font-semibold text-slate-700 outline-none focus:border-indigo-500 focus:bg-white focus:ring-1 focus:ring-indigo-500 transition-all"
-                >
-                  <option value="PORTRAIT">Portrait (Vertical)</option>
-                  <option value="LANDSCAPE">Landscape (Horizontal)</option>
-                </select>
-              </div>
-
-              {/* PDF Footer */}
-              <div className="space-y-1.5">
-                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider">
-                  PDF Footer Message
-                </label>
-                <input
-                  type="text"
-                  value={formData.pdfFooterText}
-                  onChange={(e) => handleValChange('pdfFooterText', e.target.value)}
-                  placeholder="e.g. HealthFlow - Electronic Invoice Document"
-                  className="w-full px-4 h-11 bg-slate-50 border border-slate-200 rounded-lg text-sm font-semibold text-slate-700 outline-none focus:border-indigo-500 focus:bg-white focus:ring-1 focus:ring-indigo-500 transition-all"
-                />
-              </div>
-
-              {/* File name format */}
-              <div className="space-y-1.5">
-                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider">
-                  Download File Name Format
-                </label>
-                <input
-                  type="text"
-                  value={formData.downloadFileNameFormat}
-                  onChange={(e) => handleValChange('downloadFileNameFormat', e.target.value)}
-                  className="w-full px-4 h-11 bg-slate-50 border border-slate-200 rounded-lg text-sm font-semibold text-slate-700 outline-none focus:border-indigo-500 focus:bg-white focus:ring-1 focus:ring-indigo-500 transition-all"
-                />
-              </div>
-
-              {/* Auto download after save */}
-              <div className="flex items-center justify-between pt-2">
-                <div className="space-y-0.5">
-                  <span className="block text-xs font-bold text-slate-700 uppercase tracking-wider">
-                    Auto-Download After Save
-                  </span>
-                  <span className="block text-[11px] font-semibold text-slate-400">
-                    Instantly save PDF copy on local device
-                  </span>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => handleToggle('autoDownloadAfterSave')}
-                  className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-250 ease-in-out outline-none ${
-                    formData.autoDownloadAfterSave ? 'bg-indigo-600' : 'bg-slate-250'
-                  }`}
-                >
-                  <span
-                    className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-md ring-0 transition duration-250 ease-in-out ${
-                      formData.autoDownloadAfterSave ? 'translate-x-5' : 'translate-x-0'
-                    }`}
-                  />
-                </button>
-              </div>
-
-              {/* Show print button after generation */}
-              <div className="flex items-center justify-between pt-2">
-                <div className="space-y-0.5">
-                  <span className="block text-xs font-bold text-slate-700 uppercase tracking-wider">
-                    Show Print Button After Save
-                  </span>
-                  <span className="block text-[11px] font-semibold text-slate-400">
-                    Provide manual triggers for local printer setups
-                  </span>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => handleToggle('showPrintButtonAfterGen')}
-                  className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-250 ease-in-out outline-none ${
-                    formData.showPrintButtonAfterGen ? 'bg-indigo-600' : 'bg-slate-250'
-                  }`}
-                >
-                  <span
-                    className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-md ring-0 transition duration-250 ease-in-out ${
-                      formData.showPrintButtonAfterGen ? 'translate-x-5' : 'translate-x-0'
-                    }`}
-                  />
-                </button>
-              </div>
             </div>
           </div>
 
@@ -825,7 +582,7 @@ export const BillingSettingsTab: React.FC<BillingSettingsTabProps> = ({
                   </div>
                   <div className="flex justify-between w-28 pt-1 border-t border-slate-150 text-[10px] text-indigo-700 font-extrabold">
                     <span>Grand Total:</span>
-                    <span className="font-mono">₹{formData.roundOffAmount ? '1,620' : '1,620.00'}</span>
+                    <span className="font-mono">₹1,620.00</span>
                   </div>
                 </div>
 
@@ -836,11 +593,6 @@ export const BillingSettingsTab: React.FC<BillingSettingsTabProps> = ({
                       <span>Payment Mode:</span>
                       <span className="text-slate-600 ml-1">ONLINE / UPI</span>
                     </div>
-                    {formData.showPendingAmount && (
-                      <div className="text-rose-500 font-mono font-extrabold bg-rose-50 px-1 py-0.5 rounded">
-                        Pending: ₹0.00 (Fully Settled)
-                      </div>
-                    )}
                   </div>
                 )}
               </div>
@@ -854,13 +606,6 @@ export const BillingSettingsTab: React.FC<BillingSettingsTabProps> = ({
                 <p className="text-[7.5px] italic font-semibold text-slate-500 max-w-[190px] mx-auto leading-normal">
                   "{formData.footerMessage}"
                 </p>
-              )}
-
-              {/* Show practice GST display code if checked */}
-              {formData.gstNumberDisplay && clinicGst && (
-                <div className="text-[7px] font-mono font-bold uppercase tracking-wider text-slate-400">
-                  CLINIC REG: {clinicGst}
-                </div>
               )}
 
               {/* Authorized signature if checked */}

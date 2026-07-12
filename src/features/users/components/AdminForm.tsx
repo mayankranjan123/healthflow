@@ -16,6 +16,8 @@ export const AdminForm: React.FC<AdminFormProps> = ({ admin, onSave, onCancel })
   const [mobile, setMobile] = useState('');
   const [avatarUrl, setAvatarUrl] = useState('');
   const [isActive, setIsActive] = useState(true);
+  const [gender, setGender] = useState('');
+  const [dateOfBirth, setDateOfBirth] = useState('');
 
   useEffect(() => {
     if (admin) {
@@ -24,12 +26,16 @@ export const AdminForm: React.FC<AdminFormProps> = ({ admin, onSave, onCancel })
       setMobile(admin.mobile);
       setAvatarUrl(admin.avatarUrl || '');
       setIsActive(admin.isActive);
+      setGender(admin.gender || '');
+      setDateOfBirth(admin.dateOfBirth || '');
     } else {
       setName('');
       setEmail('');
-      setMobile('');
+      setMobile('+91 ');
       setAvatarUrl('');
       setIsActive(true);
+      setGender('');
+      setDateOfBirth('');
     }
   }, [admin]);
 
@@ -53,6 +59,8 @@ export const AdminForm: React.FC<AdminFormProps> = ({ admin, onSave, onCancel })
       mobile,
       avatarUrl: avatarUrl || undefined,
       isActive,
+      gender,
+      dateOfBirth,
     });
   };
 
@@ -94,7 +102,7 @@ export const AdminForm: React.FC<AdminFormProps> = ({ admin, onSave, onCancel })
             value={mobile}
             onChange={(e) => setMobile(e.target.value)}
             required
-            placeholder="e.g. +1 (555) 012-3456"
+            placeholder="e.g. +91 98765 00001"
           />
           <Input
             label="Email Address"
@@ -103,6 +111,28 @@ export const AdminForm: React.FC<AdminFormProps> = ({ admin, onSave, onCancel })
             onChange={(e) => setEmail(e.target.value)}
             required
             placeholder="e.g. admin@healthflow.com"
+          />
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="space-y-1.5 flex-1">
+            <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider">Gender</label>
+            <select
+              value={gender}
+              onChange={(e) => setGender(e.target.value)}
+              className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm bg-slate-50/50 text-slate-700 font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all h-[42px]"
+            >
+              <option value="">Select Gender</option>
+              <option value="Male">Male</option>
+              <option value="Female">Female</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+          <Input
+            label="Date of Birth"
+            type="date"
+            value={dateOfBirth}
+            onChange={(e) => setDateOfBirth(e.target.value)}
           />
         </div>
 

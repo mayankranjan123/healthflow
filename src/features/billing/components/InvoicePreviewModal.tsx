@@ -2,6 +2,7 @@ import React from 'react';
 import { X, Printer, Download, CheckSquare, Plus, Activity } from 'lucide-react';
 import { Modal } from '../../../components/ui/Modal';
 import { BillingInvoice } from '../types';
+import { mockSettingsApi } from '../../settings/utils/mockSettingsApi';
 
 interface InvoicePreviewModalProps {
   isOpen: boolean;
@@ -18,7 +19,39 @@ export const InvoicePreviewModal: React.FC<InvoicePreviewModalProps> = ({
   onPrint,
   onDownload,
 }) => {
+  const [settings, setSettings] = React.useState<any>(null);
+
+  React.useEffect(() => {
+    if (isOpen) {
+      mockSettingsApi.getSettings().then(setSettings);
+    }
+  }, [isOpen]);
+
   if (!invoice) return null;
+
+  const clinic = settings?.clinic;
+  const billing = settings?.billing;
+
+  const showLogo = billing ? billing.showClinicLogo : true;
+  const showAddress = billing ? billing.showClinicAddress : true;
+  const showContact = billing ? billing.showClinicContact : true;
+  const showDoctor = billing ? billing.showDoctorName : true;
+  const showPayment = billing ? billing.showPaymentSummary : true;
+  const showFooter = billing ? billing.showFooterMessage : true;
+  const showSignature = billing ? billing.showAuthorizedSignature : true;
+  const footerText = billing?.footerMessage || 'Thank you for visiting HealthFlow. Wish you a speedy recovery!';
+
+  const clinicName = clinic?.name || 'HealthFlow';
+  const clinicAddress = clinic?.addressLine 
+    ? `${clinic.addressLine}, ${clinic.city}, ${clinic.state} - ${clinic.pincode}` 
+    : '12th Floor, Med Tower, Tech Park, Mumbai, Maharashtra - 400001';
+  const clinicPhone = clinic?.phone || '+91 99999 99999';
+  const clinicEmail = clinic?.email || 'contact@healthflow.com';
+  const clinicGst = clinic?.gstNumber || '';
+  const taxLabel = billing?.taxLabel || 'GST';
+  const templateId = invoice.templateId || billing?.selectedTemplateId || 'CLASSIC_MEDICAL';
+
+
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -69,207 +102,224 @@ export const InvoicePreviewModal: React.FC<InvoicePreviewModalProps> = ({
     >
       <div className="space-y-6 pt-2">
         {/* Printable/Paper Area */}
-        <div className="bg-slate-50 border border-slate-200 rounded-xl p-6 sm:p-8 space-y-8 text-slate-700 select-all shadow-inner print:bg-white print:border-none print:p-0">
+        <div className={`bg-white text-slate-707 select-all print:bg-white print:border-none print:p-0 ${
+          templateId === 'MINIMAL_RECEIPT' 
+            ? 'p-6 sm:p-8 space-y-6 text-slate-800' 
+            : templateId === 'MODERN_COMPACT' 
+              ? 'p-4 sm:p-5 border border-indigo-200 bg-indigo-50/5 rounded-xl shadow-sm' 
+              : templateId === 'GST_DETAILED'
+                ? 'p-6 sm:p-8 space-y-6 text-slate-800'
+                : 'p-6 sm:p-8 space-y-8 border border-slate-200 rounded-xl shadow-sm'
+        }`}>
           {/* Header Row */}
-          <div className="flex flex-col sm:flex-row sm:justify-between items-start gap-4 pb-6 border-b border-slate-200">
+          <div className="flex flex-row justify-between items-start gap-4 pb-4">
             {/* Logo & Clinic Info */}
-            <div className="space-y-2">
-              <div className="flex items-center gap-2">
-                <div className="w-10 h-10 rounded-xl bg-indigo-600 flex items-center justify-center text-white text-lg font-black tracking-wider shrink-0 shadow-sm shadow-indigo-200">
-                  HF
-                </div>
-                <div>
-                  <h4 className="font-display font-black text-slate-900 text-lg tracking-tight leading-tight">
-                    HealthFlow
-                  </h4>
-                  <span className="text-[10px] text-indigo-600 font-bold tracking-widest uppercase font-mono">
-                    Specialty Clinic
-                  </span>
-                </div>
+            <div className="space-y-1 text-left">
+              <div className="flex items-center gap-1.5">
+                {showLogo && (
+                  <div className="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center text-white shrink-0 shadow-sm">
+                    <svg className="w-4 h-4 fill-white text-white" viewBox="0 0 24 24">
+                      <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+                    </svg>
+                  </div>
+                )}
+                <h4 className="font-display font-black text-slate-900 text-lg tracking-tight leading-none pt-0.5">
+                  {clinicName}
+                </h4>
               </div>
-              <p className="text-xs text-slate-400 font-medium leading-relaxed max-w-xs">
-                12th Floor, Med Tower, Tech Park,<br />
-                Mumbai, Maharashtra - 400001<br />
-                GSTIN: <span className="font-mono font-bold text-slate-500">27AAAAA0000A1Z5</span>
-              </p>
+              {showAddress && (
+                <p className="text-[11px] text-slate-400 font-bold leading-tight max-w-xs">
+                  {clinicAddress}
+                  {clinicGst && <><br />GSTIN: <span className="font-mono font-bold text-slate-500">{clinicGst}</span></>}
+                </p>
+              )}
+              {showContact && (
+                <p className="text-[11px] text-slate-400 font-bold leading-tight mt-0.5">
+                  {clinicPhone}
+                </p>
+              )}
             </div>
 
             {/* Invoice Meta */}
-            <div className="text-left sm:text-right space-y-1.5 sm:self-stretch flex flex-col justify-between items-start sm:items-end">
-              <h3 className="font-display font-black text-slate-300 text-3xl tracking-widest leading-none">
+            <div className="text-right space-y-1">
+              <h3 className="font-display font-black text-indigo-600 text-sm tracking-wider leading-none">
                 INVOICE
               </h3>
-              <div className="text-xs font-semibold text-slate-500 space-y-0.5 font-sans">
-                <div>
-                  INVOICE NO:{' '}
-                  <span className="font-mono font-bold text-slate-950">#{invoice.invoiceNumber}</span>
-                </div>
-                <div>
-                  DATE:{' '}
-                  <span className="font-mono font-bold text-slate-950">{formattedDate}</span>
-                </div>
-                <div className="flex items-center gap-1 sm:justify-end">
-                  STATUS:{' '}
-                  <span className={`px-2 py-0.2 rounded text-[10px] font-bold uppercase tracking-wider border ${getStatusColor(invoice.status)}`}>
-                    {invoice.status}
-                  </span>
-                </div>
+              <div className="text-[15px] font-bold text-slate-750 font-sans tracking-tight">
+                No: {invoice.invoiceNumber}
+              </div>
+              <div className="text-[11px] text-slate-400 font-bold">
+                Date: {formattedDate}
               </div>
             </div>
           </div>
 
           {/* Bill To & Physician */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 pb-2">
+          <div className="grid grid-cols-2 gap-4 text-[11px] bg-slate-50/75 p-3 rounded-lg border border-slate-150/70">
             {/* Patient (Bill To) */}
-            <div className="space-y-2">
-              <span className="text-[10px] font-bold text-slate-400 tracking-wider uppercase font-mono block">
-                Bill To:
+            <div className="space-y-0.5 text-left leading-normal">
+              <span className="text-[9px] font-bold text-slate-450 uppercase tracking-wide block">
+                Patient Details
               </span>
-              <div className="space-y-0.5">
-                <h5 className="font-bold text-slate-900 text-base leading-snug">
-                  {invoice.patientName}
-                </h5>
-                <span className="text-xs font-bold font-mono text-indigo-600 block">
-                  {invoice.patientId}
-                </span>
-                <p className="text-xs text-slate-500 font-medium">
-                  Phone: {invoice.patientPhone}<br />
-                  {invoice.patientEmail && <>Email: {invoice.patientEmail}</>}
-                </p>
-              </div>
+              <h5 className="font-bold text-slate-900 text-sm">
+                {invoice.patientName}
+              </h5>
+              <p className="text-slate-500 font-semibold font-mono">
+                {invoice.patientPhone}
+              </p>
             </div>
 
-            {/* Physician */}
-            <div className="space-y-2 sm:text-right">
-              <span className="text-[10px] font-bold text-slate-400 tracking-wider uppercase font-mono block">
-                Treating Physician:
+            {/* Attending Doctor */}
+            <div className="space-y-0.5 text-left pl-4 border-l border-slate-200/80 leading-normal">
+              <span className="text-[9px] font-bold text-slate-450 uppercase tracking-wide block">
+                Attending Doctor
               </span>
-              <div className="space-y-0.5">
-                <h5 className="font-bold text-slate-900 text-base leading-snug">
-                  {invoice.doctorName}
-                </h5>
-                <span className="text-xs font-bold text-emerald-600 block">
-                  {invoice.doctorSpecialization}
-                </span>
-                <p className="text-xs text-slate-500 font-medium">
-                  Department: {invoice.doctorDepartment || 'Outpatient Services'}<br />
-                  Registration: <span className="font-mono">REG-87421</span>
-                </p>
-              </div>
+              <h5 className="font-bold text-slate-900 text-sm">
+                {invoice.doctorName}
+              </h5>
+              <span className="text-slate-500 font-semibold">
+                {invoice.doctorSpecialization}
+              </span>
             </div>
           </div>
 
           {/* Items Summary Table */}
-          <div className="border border-slate-200 rounded-xl overflow-hidden bg-white">
+          <div className="overflow-hidden bg-white">
             <table className="w-full text-left border-collapse">
               <thead>
-                <tr className="bg-slate-50/75 border-b border-slate-200 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-                  <th className="px-4 py-3">Description</th>
-                  <th className="px-4 py-3 text-center w-12">Qty</th>
-                  <th className="px-4 py-3 text-right w-24">Rate</th>
-                  <th className="px-4 py-3 text-center w-20">Disc %</th>
-                  <th className="px-4 py-3 text-center w-20">Tax %</th>
-                  <th className="px-4 py-3 text-right w-28">Total</th>
+                <tr className="border-t border-b border-slate-350 text-[10px] font-bold text-slate-450 uppercase tracking-wider">
+                  <th className="px-1 py-2.5 text-left">Consultation Service</th>
+                  <th className="px-1 py-2.5 text-center w-12">Qty</th>
+                  <th className="px-1 py-2.5 text-right w-24">Price</th>
+                  <th className="px-1 py-2.5 text-right w-20">GST</th>
+                  <th className="px-1 py-2.5 text-right w-28">Total</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-150 text-xs font-semibold text-slate-600">
+              <tbody className="divide-y divide-slate-100 text-xs font-semibold text-slate-700">
                 {invoice.items.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="px-4 py-6 text-center text-slate-400 font-medium italic">
+                    <td colSpan={5} className="px-1 py-6 text-center text-slate-400 font-medium italic">
                       No medical itemized services listed.
                     </td>
                   </tr>
                 ) : (
-                  invoice.items.map((item) => (
-                    <tr key={item.id}>
-                      <td className="px-4 py-3.5">
-                        <div className="font-bold text-slate-800">{item.name}</div>
-                        <span className="text-[10px] text-slate-400 font-medium font-sans">
-                          Clinical health services
-                        </span>
-                      </td>
-                      <td className="px-4 py-3.5 text-center font-bold font-mono text-slate-700">
-                        {item.quantity}
-                      </td>
-                      <td className="px-4 py-3.5 text-right font-mono font-medium">
-                        ₹{item.rate.toLocaleString('en-IN')}
-                      </td>
-                      <td className="px-4 py-3.5 text-center font-mono font-medium text-rose-500">
-                        {item.discountPercent > 0 ? `${item.discountPercent}%` : '—'}
-                      </td>
-                      <td className="px-4 py-3.5 text-center font-mono font-medium text-slate-500">
-                        {item.taxPercent > 0 ? `${item.taxPercent}%` : '—'}
-                      </td>
-                      <td className="px-4 py-3.5 text-right font-bold font-mono text-slate-900">
-                        ₹{item.total.toLocaleString('en-IN')}
-                      </td>
-                    </tr>
-                  ))
+                  invoice.items.map((item) => {
+                    const rowSubtotal = item.quantity * item.rate;
+                    const taxAmount = rowSubtotal * (item.taxPercent / 100);
+
+                    return (
+                      <React.Fragment key={item.id}>
+                        <tr className="border-b border-slate-100 font-bold text-slate-800 text-[11px]">
+                          <td className="px-1 py-3 text-left">
+                            {item.name}
+                          </td>
+                          <td className="px-1 py-3 text-center font-mono">
+                            {item.quantity}
+                          </td>
+                          <td className="px-1 py-3 text-right font-mono text-slate-750">
+                            ₹{item.rate.toLocaleString('en-IN')}.00
+                          </td>
+                          <td className="px-1 py-3 text-right font-mono text-slate-750">
+                            ₹{taxAmount.toLocaleString('en-IN')}.00
+                          </td>
+                          <td className="px-1 py-3 text-right font-mono text-slate-900">
+                            ₹{item.total.toLocaleString('en-IN')}.00
+                          </td>
+                        </tr>
+                        {templateId === 'GST_DETAILED' && (
+                          <tr className="bg-white">
+                            <td colSpan={5} className="px-1 pb-3 pt-1">
+                              <div className="bg-slate-50 p-2.5 rounded border border-slate-350 text-[9px] text-slate-500 font-mono space-y-0.5 leading-normal text-left">
+                                <div className="flex justify-between">
+                                  <span>HSN Code: 999311 (Medical OPD)</span>
+                                  <span>CGST ({(item.taxPercent / 2).toFixed(0)}%): ₹{(taxAmount / 2).toLocaleString('en-IN')}.00</span>
+                                </div>
+                                <div className="flex justify-between">
+                                  <span>Place of Supply: Punjab</span>
+                                  <span>SGST ({(item.taxPercent / 2).toFixed(0)}%): ₹{(taxAmount / 2).toLocaleString('en-IN')}.00</span>
+                                </div>
+                              </div>
+                            </td>
+                          </tr>
+                        )}
+                      </React.Fragment>
+                    );
+                  })
                 )}
               </tbody>
             </table>
           </div>
 
           {/* Totals Section */}
-          <div className="flex flex-col sm:flex-row sm:justify-between items-start gap-6 pt-4">
+          <div className="flex flex-col sm:flex-row sm:justify-between items-start gap-6 pt-3 border-t border-slate-350">
             {/* Left Box (Payment Details details) */}
-            <div className="bg-white border border-slate-150 rounded-xl p-4 text-xs font-medium text-slate-500 space-y-1.5 w-full sm:max-w-xs">
-              <span className="text-[10px] font-bold text-slate-400 tracking-wider uppercase font-mono block">
-                Settlement Details
-              </span>
-              <div>
-                Mode:{' '}
-                <span className="font-bold text-slate-800 uppercase">
-                  {invoice.paymentMode || 'CASH'}
+            {showPayment && (
+              <div className="text-[11px] font-bold text-slate-505 text-left pt-2 leading-none">
+                <span>Payment Mode: </span>
+                <span className="text-slate-800 uppercase">
+                  {invoice.paymentMode || 'CASH'} / UPI
                 </span>
               </div>
-              {invoice.referenceNo && (
-                <div className="break-all">
-                  Ref No:{' '}
-                  <span className="font-mono font-bold text-slate-700">
-                    {invoice.referenceNo}
-                  </span>
-                </div>
-              )}
-              <div className="text-[10px] text-slate-400 italic pt-1 leading-normal border-t border-slate-100 mt-1">
-                This is a computer-generated billing statement and does not require an ink signature.
-              </div>
-            </div>
+            )}
 
             {/* Right Box (Sums) */}
-            <div className="w-full sm:max-w-xs space-y-2.5 font-sans text-xs">
-              <div className="flex justify-between font-medium text-slate-500">
-                <span>Subtotal</span>
-                <span className="font-mono text-slate-800">₹{invoice.subtotal.toLocaleString('en-IN')}</span>
+            <div className="w-full sm:max-w-xs space-y-1.5 font-sans text-[11px] font-bold text-slate-600">
+              <div className="flex justify-between">
+                <span>Subtotal:</span>
+                <span className="font-mono text-slate-900">₹{invoice.subtotal.toLocaleString('en-IN')}.00</span>
               </div>
-              <div className="flex justify-between font-medium text-slate-500">
-                <span>Discount</span>
-                <span className="font-mono text-rose-500">- ₹{invoice.discountTotal.toLocaleString('en-IN')}</span>
-              </div>
-              <div className="flex justify-between font-medium text-slate-500 pb-2 border-b border-slate-200">
-                <span>Tax</span>
-                <span className="font-mono text-slate-800">₹{invoice.taxTotal.toLocaleString('en-IN')}</span>
-              </div>
-
-              <div className="flex justify-between text-base font-extrabold text-slate-900 py-1 border-b border-slate-200">
-                <span>Grand Total</span>
-                <span className="font-mono text-indigo-700 text-lg">₹{invoice.grandTotal.toLocaleString('en-IN')}</span>
-              </div>
-
-              <div className="space-y-1 pt-1 text-[11px] font-semibold">
-                <div className="flex justify-between text-slate-500">
-                  <span>Paid Amount</span>
-                  <span className="font-mono text-emerald-600">₹{invoice.paidAmount.toLocaleString('en-IN')}</span>
+              
+              {billing?.enableInvoiceLevelDiscount && (
+                <div className="flex justify-between text-rose-500">
+                  <span>Discount (10%):</span>
+                  <span className="font-mono">-₹{invoice.discountTotal.toLocaleString('en-IN')}.00</span>
                 </div>
-                <div className="flex justify-between text-slate-500">
-                  <span>Outstanding Balance</span>
-                  <span className={`font-mono ${invoice.pendingAmount > 0 ? 'text-rose-500 font-extrabold' : 'text-slate-500'}`}>
-                    ₹{invoice.pendingAmount.toLocaleString('en-IN')}
-                  </span>
+              )}
+
+              {templateId === 'GST_DETAILED' ? (
+                <div className="flex justify-between pb-1.5">
+                  <span>GST Tax ({invoice.items[0]?.taxPercent || 18}%):</span>
+                  <span className="font-mono text-slate-900">₹{invoice.taxTotal.toLocaleString('en-IN')}.00</span>
                 </div>
+              ) : (
+                <div className="flex justify-between pb-1.5">
+                  <span>{taxLabel} Tax:</span>
+                  <span className="font-mono text-slate-900">₹{invoice.taxTotal.toLocaleString('en-IN')}.00</span>
+                </div>
+              )}
+
+              <div className="flex justify-between text-sm font-black text-indigo-750 pt-2 border-t-2 border-slate-350">
+                <span className="flex flex-col text-left leading-none">
+                  <span>Grand</span>
+                  <span>Total:</span>
+                </span>
+                <span className="font-mono text-lg text-indigo-700 self-center">₹{invoice.grandTotal.toLocaleString('en-IN')}.00</span>
               </div>
             </div>
           </div>
+
+          {/* Bottom section: Footer + Signature */}
+          {(showFooter || showSignature) && (
+            <div className="space-y-4 pt-4 border-t border-slate-100 text-slate-400 font-medium">
+              
+              {/* Footer message if checked */}
+              {showFooter && footerText && (
+                <p className="text-[10px] italic font-semibold text-slate-500 text-center leading-normal max-w-md mx-auto">
+                  "{footerText}"
+                </p>
+              )}
+
+              {/* Authorized signature if checked */}
+              {showSignature && (
+                <div className="flex flex-col items-end pt-2">
+                  <div className="w-36 border-t border-slate-350 mt-4" />
+                  <span className="text-[8px] uppercase font-black text-slate-400 tracking-widest block mt-1 pr-4">
+                    Authorized Signatory
+                  </span>
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Action Row */}

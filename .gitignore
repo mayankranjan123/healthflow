@@ -1,3 +1,4 @@
+# Frontend Build & Dependencies
 node_modules/
 build/
 dist/
@@ -6,3 +7,22 @@ coverage/
 *.log
 .env*
 !.env.example
+
+# Java Backend
+backend/target/
+backend/*.jar
+backend/*.war
+backend/*.class
+
+# IDE / Editors
+.idea/
+.vscode/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+.settings/
+.classpath
+.project
+.factorypath

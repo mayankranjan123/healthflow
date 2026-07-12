@@ -15,16 +15,17 @@ import java.util.Optional;
 public interface PrescriptionRepository extends JpaRepository<Prescription, Long> {
 
     Optional<Prescription> findByClinicIdAndPrescriptionCode(Long clinicId, String prescriptionCode);
+    long countByClinicIdAndPrescriptionDateBetween(Long clinicId, LocalDate start, LocalDate end);
 
     // Filtered search query with support for date range, doctor, patient, and pagination
     @Query("SELECT p FROM Prescription p " +
            "LEFT JOIN FETCH p.patient pat " +
            "LEFT JOIN FETCH p.doctor doc " +
            "WHERE p.clinicId = :clinicId " +
-           "AND (:patientId IS NULL OR p.patientId = :patientId) " +
-           "AND (:doctorId IS NULL OR p.doctorId = :doctorId) " +
-           "AND (:fromDate IS NULL OR p.prescriptionDate >= :fromDate) " +
-           "AND (:toDate IS NULL OR p.prescriptionDate <= :toDate)")
+           "AND (cast(:patientId as Long) IS NULL OR p.patientId = :patientId) " +
+           "AND (cast(:doctorId as Long) IS NULL OR p.doctorId = :doctorId) " +
+           "AND (cast(:fromDate as date) IS NULL OR p.prescriptionDate >= :fromDate) " +
+           "AND (cast(:toDate as date) IS NULL OR p.prescriptionDate <= :toDate)")
     Page<Prescription> findFilteredPrescriptions(
             @Param("clinicId") Long clinicId,
             @Param("patientId") Long patientId,

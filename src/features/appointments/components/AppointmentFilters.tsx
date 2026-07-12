@@ -30,6 +30,16 @@ export const AppointmentFilters: React.FC<AppointmentFiltersProps> = ({
   isFilteredToTodayByDefault,
 }) => {
   const [tempFilters, setTempFilters] = useState<FilterState>(initialFilters);
+  const [currentUser, setCurrentUser] = useState<any>(null);
+
+  useEffect(() => {
+    const cached = localStorage.getItem('healthflow_user');
+    if (cached) {
+      try {
+        setCurrentUser(JSON.parse(cached));
+      } catch (e) {}
+    }
+  }, []);
 
   // Keep local temp filter state in sync if parent resets
   useEffect(() => {
@@ -44,28 +54,32 @@ export const AppointmentFilters: React.FC<AppointmentFiltersProps> = ({
     onResetFilters();
   };
 
+  const isDoctor = currentUser?.role?.toUpperCase() === 'DOCTOR';
+
   return (
     <Card className="border border-slate-200/80 shadow-sm bg-white overflow-visible">
       <CardBody className="p-6 space-y-6">
-        <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
+        <div className={`grid grid-cols-1 ${isDoctor ? 'md:grid-cols-5' : 'md:grid-cols-6'} gap-4`}>
           {/* Search Doctor */}
-          <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1">
-              Search Doctor
-            </label>
-            <div className="relative">
-              <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400">
-                <SlidersHorizontal className="w-4 h-4" />
-              </span>
-              <input
-                type="text"
-                value={tempFilters.doctorSearch}
-                onChange={(e) => setTempFilters({ ...tempFilters, doctorSearch: e.target.value })}
-                placeholder="e.g. Dr. Smith"
-                className="w-full pl-10 pr-3 py-2 text-sm rounded-lg border border-slate-200 bg-white hover:border-slate-300 focus:border-brand-primary focus:ring-1 focus:ring-brand-primary outline-none transition-all text-slate-900 placeholder:text-slate-400"
-              />
+          {!isDoctor && (
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1">
+                Search Doctor
+              </label>
+              <div className="relative">
+                <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400">
+                  <SlidersHorizontal className="w-4 h-4" />
+                </span>
+                <input
+                  type="text"
+                  value={tempFilters.doctorSearch}
+                  onChange={(e) => setTempFilters({ ...tempFilters, doctorSearch: e.target.value })}
+                  placeholder="e.g. Dr. Smith"
+                  className="w-full pl-10 pr-3 py-2 text-sm rounded-lg border border-slate-200 bg-white hover:border-slate-300 focus:border-brand-primary focus:ring-1 focus:ring-brand-primary outline-none transition-all text-slate-900 placeholder:text-slate-400"
+                />
+              </div>
             </div>
-          </div>
+          )}
 
           {/* From Date */}
           <div className="flex flex-col gap-1.5">

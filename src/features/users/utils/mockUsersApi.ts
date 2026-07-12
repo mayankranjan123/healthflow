@@ -64,6 +64,8 @@ export const mockUsersApi = {
         mobile: u.mobile,
         avatarUrl: u.avatarUrl || 'https://images.unsplash.com/photo-1537368910025-700350fe46c7?q=80&w=120&auto=format&fit=crop',
         isActive: u.isActive,
+        gender: u.gender,
+        dateOfBirth: u.dateOfBirth,
       }));
   },
 
@@ -76,6 +78,8 @@ export const mockUsersApi = {
           mobile: admin.mobile,
           role: 'ADMIN',
           isActive: admin.isActive,
+          gender: admin.gender,
+          dateOfBirth: admin.dateOfBirth,
         });
       } else {
         await userService.updateUser(admin.id, {
@@ -83,6 +87,8 @@ export const mockUsersApi = {
           email: admin.email,
           mobile: admin.mobile,
           isActive: admin.isActive,
+          gender: admin.gender,
+          dateOfBirth: admin.dateOfBirth,
         });
       }
     }
@@ -104,11 +110,14 @@ export const mockUsersApi = {
         qualification: details?.qualification || 'MBBS, MD',
         experience: details?.experience || '10 Years',
         fee: Number(details?.fee || 100),
+        followupFee: Number(u.followupFee || details?.followupFee || 60),
         workingHours: details?.workingHours || '09:00 AM - 05:00 PM',
         isActive: u.isActive,
         registrationNumber: details?.registrationNumber || 'REG-12345',
         totalConsultations: details?.completedConsultations ?? details?.totalCompletedConsultations ?? 0,
         joiningDate: '2024-01-01',
+        gender: u.gender || details?.gender || 'Female',
+        dateOfBirth: u.dateOfBirth || '',
         avatarUrl: u.avatarUrl || details?.avatarUrl || 'https://images.unsplash.com/photo-1559839734-2b71ea197ec2?q=80&w=120&auto=format&fit=crop',
       };
     });
@@ -123,6 +132,17 @@ export const mockUsersApi = {
           mobile: doc.mobile,
           role: 'DOCTOR',
           isActive: doc.isActive,
+          gender: doc.gender,
+          dateOfBirth: doc.dateOfBirth,
+          followupFee: doc.followupFee ? doc.followupFee.toString() : undefined,
+          specialization: doc.specialization,
+          qualification: doc.qualification,
+          experience: doc.experience,
+          fee: doc.fee ? doc.fee.toString() : undefined,
+          workingHours: doc.workingHours,
+          registrationNumber: doc.registrationNumber,
+          totalConsultations: doc.totalConsultations ? doc.totalConsultations.toString() : undefined,
+          joiningDate: doc.joiningDate,
         });
       } else {
         await userService.updateUser(doc.id, {
@@ -130,6 +150,17 @@ export const mockUsersApi = {
           email: doc.email,
           mobile: doc.mobile,
           isActive: doc.isActive,
+          gender: doc.gender,
+          dateOfBirth: doc.dateOfBirth,
+          followupFee: doc.followupFee ? doc.followupFee.toString() : undefined,
+          specialization: doc.specialization,
+          qualification: doc.qualification,
+          experience: doc.experience,
+          fee: doc.fee ? doc.fee.toString() : undefined,
+          workingHours: doc.workingHours,
+          registrationNumber: doc.registrationNumber,
+          totalConsultations: doc.totalConsultations ? doc.totalConsultations.toString() : undefined,
+          joiningDate: doc.joiningDate,
         });
       }
     }
@@ -146,6 +177,8 @@ export const mockUsersApi = {
         mobile: u.mobile,
         avatarUrl: u.avatarUrl || 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?q=80&w=120&auto=format&fit=crop',
         isActive: u.isActive,
+        gender: u.gender,
+        dateOfBirth: u.dateOfBirth,
       }));
   },
 
@@ -158,6 +191,8 @@ export const mockUsersApi = {
           mobile: s.mobile,
           role: 'STAFF',
           isActive: s.isActive,
+          gender: s.gender,
+          dateOfBirth: s.dateOfBirth,
         });
       } else {
         await userService.updateUser(s.id, {
@@ -165,12 +200,24 @@ export const mockUsersApi = {
           email: s.email,
           mobile: s.mobile,
           isActive: s.isActive,
+          gender: s.gender,
+          dateOfBirth: s.dateOfBirth,
         });
       }
     }
   },
 
   async getPermissions(): Promise<ModulePermission[]> {
+    try {
+      const serverPerms = await userService.getPermissions();
+      if (serverPerms && serverPerms.length > 0) {
+        localStorage.setItem('healthflow_permissions', JSON.stringify(serverPerms));
+        return serverPerms;
+      }
+    } catch (e) {
+      console.warn("Failed to load permissions from server, falling back to cache", e);
+    }
+
     const item = localStorage.getItem('healthflow_permissions');
     if (!item) return INITIAL_PERMISSIONS;
     try {
@@ -181,6 +228,11 @@ export const mockUsersApi = {
   },
 
   async savePermissions(permissions: ModulePermission[]): Promise<void> {
+    try {
+      await userService.savePermissions(permissions);
+    } catch (e) {
+      console.error("Failed to save permissions to server", e);
+    }
     localStorage.setItem('healthflow_permissions', JSON.stringify(permissions));
   },
 };
