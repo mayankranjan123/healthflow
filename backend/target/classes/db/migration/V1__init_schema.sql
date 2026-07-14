@@ -3,7 +3,7 @@
 
 -- 1. Table: clinics (The top-level scoping entity)
 CREATE TABLE clinics (
-    id BIGSERIAL PRIMARY KEY,
+    id BIGINT PRIMARY KEY,
     name VARCHAR(150) NOT NULL,
     code VARCHAR(50) NOT NULL UNIQUE,
     phone VARCHAR(50),
@@ -18,7 +18,7 @@ CREATE UNIQUE INDEX idx_clinics_code ON clinics(code);
 
 -- Seed Initial Default Clinic
 INSERT INTO clinics (id, name, code, phone, email, address)
-VALUES (1, 'HealthFlow Downtown Clinic', 'HF-DOWNTOWN', '+1-555-0199', 'contact@healthflow.com', '123 Medical Plaza, Suite 400');
+VALUES (1000000000, 'HealthFlow Downtown Clinic', 'HF-DOWNTOWN', '+1-555-0199', 'contact@healthflow.com', '123 Medical Plaza, Suite 400');
 
 -- 2. Table: permissions (Granular privilege flags)
 CREATE TABLE permissions (
@@ -82,7 +82,7 @@ WHERE r.name = 'STAFF' AND p.name IN ('READ_PATIENT', 'WRITE_PATIENT', 'WRITE_BI
 -- 5. Table: users (Internal staff and clinicians)
 CREATE TABLE users (
     id BIGSERIAL PRIMARY KEY,
-    clinic_id BIGINT NOT NULL DEFAULT 1,
+    clinic_id BIGINT NOT NULL DEFAULT 1000000000,
     email VARCHAR(150) NOT NULL UNIQUE,
     password VARCHAR(100) NOT NULL,
     first_name VARCHAR(100) NOT NULL,
@@ -108,7 +108,7 @@ CREATE TABLE user_roles (
 
 -- Seed Initial Super Admin User (admin@healthflow.com / AdminPass123!)
 INSERT INTO users (id, clinic_id, email, password, first_name, last_name, phone)
-VALUES (1, 1, 'admin@healthflow.com', '$2a$10$IECeaBY.MVk4eD9tr5Y57OkDL0lbOqPwz4lpxUT0dmzsGYNAo0Yq2', 'System', 'Administrator', '+1-555-0100');
+VALUES (1, 1000000000, 'admin@healthflow.com', '$2a$10$IECeaBY.MVk4eD9tr5Y57OkDL0lbOqPwz4lpxUT0dmzsGYNAo0Yq2', 'System', 'Administrator', '+1-555-0100');
 
 INSERT INTO user_roles (user_id, role_id)
 SELECT u.id, r.id FROM users u, roles r WHERE u.email = 'admin@healthflow.com' AND r.name = 'ADMIN';
@@ -127,7 +127,7 @@ CREATE INDEX idx_pwd_tokens_value ON password_reset_tokens(token);
 -- 8. Table: doctors (Specialized details for physicians)
 CREATE TABLE doctors (
     id BIGSERIAL PRIMARY KEY,
-    clinic_id BIGINT NOT NULL DEFAULT 1,
+    clinic_id BIGINT NOT NULL DEFAULT 1000000000,
     user_id BIGINT UNIQUE, -- Nullable if doctor is a contractor without an app user account
     first_name VARCHAR(100) NOT NULL,
     last_name VARCHAR(100) NOT NULL,
@@ -148,18 +148,18 @@ CREATE INDEX idx_doctors_email ON doctors(email);
 
 -- Seed Default Doctor User & Detail (doctor@healthflow.com / DoctorPass123!)
 INSERT INTO users (id, clinic_id, email, password, first_name, last_name, phone)
-VALUES (2, 1, 'doctor@healthflow.com', '$2a$10$IECeaBY.MVk4eD9tr5Y57OkDL0lbOqPwz4lpxUT0dmzsGYNAo0Yq2', 'Sarah', 'Mitchell', '+1-555-0101');
+VALUES (2, 1000000000, 'doctor@healthflow.com', '$2a$10$IECeaBY.MVk4eD9tr5Y57OkDL0lbOqPwz4lpxUT0dmzsGYNAo0Yq2', 'Sarah', 'Mitchell', '+1-555-0101');
 
 INSERT INTO user_roles (user_id, role_id)
 SELECT u.id, r.id FROM users u, roles r WHERE u.email = 'doctor@healthflow.com' AND r.name = 'DOCTOR';
 
 INSERT INTO doctors (id, clinic_id, user_id, first_name, last_name, email, phone, specialization, license_number)
-SELECT 1, 1, u.id, 'Sarah', 'Mitchell', 'doctor@healthflow.com', '+1-555-0101', 'General Practitioner', 'LIC-GP-94021'
+SELECT 1, 1000000000, u.id, 'Sarah', 'Mitchell', 'doctor@healthflow.com', '+1-555-0101', 'General Practitioner', 'LIC-GP-94021'
 FROM users u WHERE u.email = 'doctor@healthflow.com';
 
 -- Seed Default Staff User (staff@healthflow.com / StaffPass123!)
 INSERT INTO users (id, clinic_id, email, password, first_name, last_name, phone)
-VALUES (3, 1, 'staff@healthflow.com', '$2a$10$IECeaBY.MVk4eD9tr5Y57OkDL0lbOqPwz4lpxUT0dmzsGYNAo0Yq2', 'Alex', 'Rivera', '+1-555-0102');
+VALUES (3, 1000000000, 'staff@healthflow.com', '$2a$10$IECeaBY.MVk4eD9tr5Y57OkDL0lbOqPwz4lpxUT0dmzsGYNAo0Yq2', 'Alex', 'Rivera', '+1-555-0102');
 
 INSERT INTO user_roles (user_id, role_id)
 SELECT u.id, r.id FROM users u, roles r WHERE u.email = 'staff@healthflow.com' AND r.name = 'STAFF';
@@ -167,7 +167,7 @@ SELECT u.id, r.id FROM users u, roles r WHERE u.email = 'staff@healthflow.com' A
 -- 9. Table: patients (Clinical Demographics)
 CREATE TABLE patients (
     id BIGSERIAL PRIMARY KEY,
-    clinic_id BIGINT NOT NULL DEFAULT 1,
+    clinic_id BIGINT NOT NULL DEFAULT 1000000000,
     patient_code VARCHAR(50) NOT NULL,
     full_name VARCHAR(200) NOT NULL,
     date_of_birth DATE NOT NULL,
@@ -200,15 +200,15 @@ CREATE INDEX idx_patients_soft_delete ON patients(is_deleted);
 
 -- Seed Sample Patient Records
 INSERT INTO patients (id, clinic_id, patient_code, full_name, date_of_birth, gender, mobile, email, address, emergency_contact_name, emergency_contact_phone, allergies, existing_diseases, clinical_notes) VALUES
-(1, 1, 'PID-94021', 'James Dalton', '1984-06-12', 'MALE', '+1-555-4432', 'j.dalton@gmail.com', '458 Birch St, Apt B', 'Emily Dalton', '+1-555-4433', 'Penicillin', 'Hypertension', 'Patient has a history of high blood pressure. Monitors at home.'),
-(2, 1, 'PID-94025', 'Elena Larsson', '1992-11-23', 'FEMALE', '+1-555-8912', 'elena.larsson@outlook.com', '789 Oak Ave', 'Sven Larsson', '+1-555-8910', 'None', 'None', 'Annual physical examinations only.'),
-(3, 1, 'PID-93988', 'Robert Moore', '1971-03-05', 'MALE', '+1-555-2231', 'rmoore71@yahoo.com', '12 Pine Dr', 'Linda Moore', '+1-555-2232', 'Peanuts', 'Type-2 Diabetes', 'On Metformin regimen. Blood sugar is well controlled.'),
-(4, 1, 'PID-94030', 'Sofia Cheng', '1995-08-19', 'FEMALE', '+1-555-7761', 'sofia.cheng@gmail.com', '88 Maple Lane', 'Ken Cheng', '+1-555-7760', 'Shellfish', 'Asthma', 'Uses Albuterol inhaler as needed for seasonal symptoms.');
+(1, 1000000000, 'PID-94021', 'James Dalton', '1984-06-12', 'MALE', '+1-555-4432', 'j.dalton@gmail.com', '458 Birch St, Apt B', 'Emily Dalton', '+1-555-4433', 'Penicillin', 'Hypertension', 'Patient has a history of high blood pressure. Monitors at home.'),
+(2, 1000000000, 'PID-94025', 'Elena Larsson', '1992-11-23', 'FEMALE', '+1-555-8912', 'elena.larsson@outlook.com', '789 Oak Ave', 'Sven Larsson', '+1-555-8910', 'None', 'None', 'Annual physical examinations only.'),
+(3, 1000000000, 'PID-93988', 'Robert Moore', '1971-03-05', 'MALE', '+1-555-2231', 'rmoore71@yahoo.com', '12 Pine Dr', 'Linda Moore', '+1-555-2232', 'Peanuts', 'Type-2 Diabetes', 'On Metformin regimen. Blood sugar is well controlled.'),
+(4, 1000000000, 'PID-94030', 'Sofia Cheng', '1995-08-19', 'FEMALE', '+1-555-7761', 'sofia.cheng@gmail.com', '88 Maple Lane', 'Ken Cheng', '+1-555-7760', 'Shellfish', 'Asthma', 'Uses Albuterol inhaler as needed for seasonal symptoms.');
 
 -- 10. Table: patient_files (Metadata for clinical files, PDFs, Scans)
 CREATE TABLE patient_files (
     id BIGSERIAL PRIMARY KEY,
-    clinic_id BIGINT NOT NULL DEFAULT 1,
+    clinic_id BIGINT NOT NULL DEFAULT 1000000000,
     patient_id BIGINT NOT NULL,
     file_name VARCHAR(255) NOT NULL,
     file_type VARCHAR(100) NOT NULL,
@@ -228,7 +228,7 @@ CREATE INDEX idx_files_clinic ON patient_files(clinic_id);
 -- 11. Table: appointments (Scheduling transactions)
 CREATE TABLE appointments (
     id BIGSERIAL PRIMARY KEY,
-    clinic_id BIGINT NOT NULL DEFAULT 1,
+    clinic_id BIGINT NOT NULL DEFAULT 1000000000,
     appointment_code VARCHAR(50) NOT NULL,
     patient_id BIGINT NOT NULL,
     doctor_id BIGINT NOT NULL,
@@ -256,15 +256,15 @@ CREATE INDEX idx_appointments_code ON appointments(appointment_code);
 
 -- Seed Dynamic Mock Appointments
 INSERT INTO appointments (id, clinic_id, appointment_code, patient_id, doctor_id, appointment_date_time, status, appointment_reason, notes) VALUES
-(1, 1, 'APT-10001', 1, 1, '2026-07-02 09:30:00+00', 'COMPLETED', 'Follow-up: Hypertension check', 'BP was high. Advised lifestyle changes.'),
-(2, 1, 'APT-10002', 2, 1, '2026-07-03 10:15:00+00', 'SCHEDULED', 'Annual Wellness Exam', 'Check-up package selected.'),
-(3, 1, 'APT-10003', 3, 1, '2026-07-03 11:00:00+00', 'SCHEDULED', 'Acute Sinusitis (Urgent)', 'Has severe cold symptoms for 4 days.'),
-(4, 1, 'APT-10004', 4, 1, '2026-07-03 11:45:00+00', 'SCHEDULED', 'Lab Result Review', 'Discuss metabolic panel.');
+(1, 1000000000, 'APT-10001', 1, 1, '2026-07-02 09:30:00+00', 'COMPLETED', 'Follow-up: Hypertension check', 'BP was high. Advised lifestyle changes.'),
+(2, 1000000000, 'APT-10002', 2, 1, '2026-07-03 10:15:00+00', 'SCHEDULED', 'Annual Wellness Exam', 'Check-up package selected.'),
+(3, 1000000000, 'APT-10003', 3, 1, '2026-07-03 11:00:00+00', 'SCHEDULED', 'Acute Sinusitis (Urgent)', 'Has severe cold symptoms for 4 days.'),
+(4, 1000000000, 'APT-10004', 4, 1, '2026-07-03 11:45:00+00', 'SCHEDULED', 'Lab Result Review', 'Discuss metabolic panel.');
 
 -- 12. Table: medical_records (Diagnostic medical log / chart notes)
 CREATE TABLE medical_records (
     id BIGSERIAL PRIMARY KEY,
-    clinic_id BIGINT NOT NULL DEFAULT 1,
+    clinic_id BIGINT NOT NULL DEFAULT 1000000000,
     patient_id BIGINT NOT NULL,
     doctor_id BIGINT NOT NULL,
     visit_date TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -284,12 +284,12 @@ CREATE INDEX idx_records_patient_id ON medical_records(patient_id);
 
 -- Seed Medical Record for first patient
 INSERT INTO medical_records (id, clinic_id, patient_id, doctor_id, visit_date, symptoms, diagnosis, treatment_plan, notes) VALUES
-(1, 1, 1, 1, '2026-07-02 09:30:00+00', 'Mild headaches, pressure in chest during workout.', 'Primary Hypertension', 'Increase Lissinopril to 10mg. Reduce salt intake. Return in 4 weeks.', 'Patient agrees to lifestyle changes.');
+(1, 1000000000, 1, 1, '2026-07-02 09:30:00+00', 'Mild headaches, pressure in chest during workout.', 'Primary Hypertension', 'Increase Lissinopril to 10mg. Reduce salt intake. Return in 4 weeks.', 'Patient agrees to lifestyle changes.');
 
 -- 13. Table: prescriptions (E-prescriptions linked to visits)
 CREATE TABLE prescriptions (
     id BIGSERIAL PRIMARY KEY,
-    clinic_id BIGINT NOT NULL DEFAULT 1,
+    clinic_id BIGINT NOT NULL DEFAULT 1000000000,
     prescription_code VARCHAR(50) NOT NULL,
     patient_id BIGINT NOT NULL,
     doctor_id BIGINT NOT NULL,
@@ -320,7 +320,7 @@ CREATE INDEX idx_prescriptions_date ON prescriptions(prescription_date);
 
 -- Seed Prescription Linked to James Dalton
 INSERT INTO prescriptions (id, clinic_id, prescription_code, patient_id, doctor_id, appointment_id, prescription_date, clinical_notes, pdf_url, diagnosis, symptoms, status) VALUES
-(1, 1, 'RX-10001', 1, 1, 1, '2026-07-02', 'Lisinopril regimen adjustment.', 'prescriptions/rx-dalton-20260702.pdf', 'Primary Hypertension', 'Mild headaches, pressure in chest', 'SAVED');
+(1, 1000000000, 'RX-10001', 1, 1, 1, '2026-07-02', 'Lisinopril regimen adjustment.', 'prescriptions/rx-dalton-20260702.pdf', 'Primary Hypertension', 'Mild headaches, pressure in chest', 'SAVED');
 
 -- 14. Table: prescription_medicines (Individual drugs on prescription)
 CREATE TABLE prescription_medicines (
@@ -344,7 +344,7 @@ INSERT INTO prescription_medicines (id, prescription_id, medicine_name, dosage, 
 -- 15. Table: invoices (Financial accounts receivables)
 CREATE TABLE invoices (
     id BIGSERIAL PRIMARY KEY,
-    clinic_id BIGINT NOT NULL DEFAULT 1,
+    clinic_id BIGINT NOT NULL DEFAULT 1000000000,
     invoice_number VARCHAR(100) NOT NULL,
     patient_id BIGINT NOT NULL,
     doctor_id BIGINT NOT NULL,
@@ -375,7 +375,7 @@ CREATE INDEX idx_invoices_date ON invoices(invoice_date);
 
 -- Seed Invoices for Patient James Dalton
 INSERT INTO invoices (id, clinic_id, invoice_number, patient_id, doctor_id, invoice_date, grand_total, tax_total, discount_total, subtotal, paid_amount, pending_amount, status, payment_mode, reference_no, pdf_url) VALUES
-(1, 1, 'INV-2026-0001', 1, 1, '2026-07-02', 150.00, 10.00, 0.00, 140.00, 150.00, 0.00, 'Paid', 'CARD', 'TXN-90248231', 'billing/inv-2026-0001.pdf');
+(1, 1000000000, 'INV-2026-0001', 1, 1, '2026-07-02', 150.00, 10.00, 0.00, 140.00, 150.00, 0.00, 'Paid', 'CARD', 'TXN-90248231', 'billing/inv-2026-0001.pdf');
 
 -- 16. Table: invoice_items (Individual line items in an invoice)
 CREATE TABLE invoice_items (
@@ -383,7 +383,7 @@ CREATE TABLE invoice_items (
     invoice_id BIGINT NOT NULL,
     item_name VARCHAR(255) NOT NULL,
     rate DECIMAL(10,2) NOT NULL,
-    quantity INT4 NOT NULL DEFAULT 1,
+    quantity INT4 NOT NULL DEFAULT 1000000000,
     total DECIMAL(10,2) NOT NULL,
     discount_percent DECIMAL(5,2) NOT NULL DEFAULT 0.00,
     tax_percent DECIMAL(5,2) NOT NULL DEFAULT 0.00,
@@ -398,7 +398,7 @@ INSERT INTO invoice_items (id, invoice_id, item_name, rate, quantity, total, dis
 -- 17. Table: payments (Cashier transactions)
 CREATE TABLE payments (
     id BIGSERIAL PRIMARY KEY,
-    clinic_id BIGINT NOT NULL DEFAULT 1,
+    clinic_id BIGINT NOT NULL DEFAULT 1000000000,
     invoice_id BIGINT NOT NULL,
     payment_date TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
     amount DECIMAL(10,2) NOT NULL,
@@ -415,12 +415,12 @@ CREATE INDEX idx_payments_clinic ON payments(clinic_id);
 CREATE INDEX idx_payments_invoice ON payments(invoice_id);
 
 INSERT INTO payments (id, clinic_id, invoice_id, amount, payment_method, transaction_reference, notes) VALUES
-(1, 1, 1, 150.00, 'CARD', 'TXN-90248231', 'Full payment for doctor visit.');
+(1, 1000000000, 1, 150.00, 'CARD', 'TXN-90248231', 'Full payment for doctor visit.');
 
 -- 18. Table: clinic_settings (Custom properties for general clinic)
 CREATE TABLE clinic_settings (
     id BIGSERIAL PRIMARY KEY,
-    clinic_id BIGINT NOT NULL DEFAULT 1,
+    clinic_id BIGINT NOT NULL DEFAULT 1000000000,
     setting_key VARCHAR(100) NOT NULL,
     setting_value TEXT NOT NULL,
     created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -432,14 +432,14 @@ CREATE TABLE clinic_settings (
 CREATE INDEX idx_clinic_settings_parent ON clinic_settings(clinic_id);
 
 INSERT INTO clinic_settings (id, clinic_id, setting_key, setting_value) VALUES
-(1, 1, 'operating_hours', '{"monday_to_friday": "08:00 AM - 05:00 PM", "saturday": "09:00 AM - 01:00 PM", "sunday": "Closed"}'),
-(2, 1, 'alert_threshold_inventory', '15'),
-(3, 1, 'enable_auto_sms_reminders', 'true');
+(1, 1000000000, 'operating_hours', '{"monday_to_friday": "08:00 AM - 05:00 PM", "saturday": "09:00 AM - 01:00 PM", "sunday": "Closed"}'),
+(2, 1000000000, 'alert_threshold_inventory', '15'),
+(3, 1000000000, 'enable_auto_sms_reminders', 'true');
 
 -- 19. Table: billing_settings (Default rates & invoicing variables)
 CREATE TABLE billing_settings (
     id BIGSERIAL PRIMARY KEY,
-    clinic_id BIGINT NOT NULL DEFAULT 1,
+    clinic_id BIGINT NOT NULL DEFAULT 1000000000,
     tax_rate DECIMAL(5,2) NOT NULL DEFAULT 0.00, -- e.g. 5.00 for 5%
     currency VARCHAR(10) NOT NULL DEFAULT 'USD',
     invoice_prefix VARCHAR(20) NOT NULL DEFAULT 'INV',
@@ -450,12 +450,12 @@ CREATE TABLE billing_settings (
 );
 
 INSERT INTO billing_settings (id, clinic_id, tax_rate, currency, invoice_prefix) VALUES
-(1, 1, 7.50, 'USD', 'INV');
+(1, 1000000000, 7.50, 'USD', 'INV');
 
 -- 20. Table: audit_logs (System-wide tracking & activity history)
 CREATE TABLE audit_logs (
     id BIGSERIAL PRIMARY KEY,
-    clinic_id BIGINT NOT NULL DEFAULT 1,
+    clinic_id BIGINT NOT NULL DEFAULT 1000000000,
     user_id BIGINT,
     action VARCHAR(100) NOT NULL, -- e.g., 'CREATE_PATIENT', 'UPDATE_INVOICE'
     entity_name VARCHAR(100) NOT NULL, -- e.g., 'patients', 'invoices'
@@ -472,4 +472,4 @@ CREATE INDEX idx_audit_logs_user ON audit_logs(user_id);
 CREATE INDEX idx_audit_logs_created_at ON audit_logs(created_at);
 
 INSERT INTO audit_logs (id, clinic_id, user_id, action, entity_name, entity_id, payload, ip_address) VALUES
-(1, 1, 1, 'SEED_DATABASE', 'clinics', 1, '{"message": "Database successfully seeded with default configuration."}', '127.0.0.1');
+(1, 1000000000, 1, 'SEED_DATABASE', 'clinics', 1000000000, '{"message": "Database successfully seeded with default configuration."}', '127.0.0.1');

@@ -1,7 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { RotateCcw, Search, Calendar, User, UserCheck } from 'lucide-react';
-import { mockDoctorsApi } from '../../doctors/utils/mockDoctorsApi';
-import { DoctorProfileExtended } from '../../doctors/types';
 import { BillingFilters as FiltersType } from '../types';
 import { PaymentStatus } from '../../../types';
 
@@ -9,24 +7,20 @@ interface BillingFiltersProps {
   initialFilters: FiltersType;
   onApplyFilters: (filters: FiltersType) => void;
   onResetFilters: () => void;
+  doctors: string[];
 }
 
 export const BillingFilters: React.FC<BillingFiltersProps> = ({
   initialFilters,
   onApplyFilters,
   onResetFilters,
+  doctors = []
 }) => {
   const [patientOrInvoiceId, setPatientOrInvoiceId] = useState(initialFilters.patientOrInvoiceId);
   const [fromDate, setFromDate] = useState(initialFilters.fromDate);
   const [toDate, setToDate] = useState(initialFilters.toDate);
   const [status, setStatus] = useState<PaymentStatus | 'ALL'>(initialFilters.status);
-  const [doctorId, setDoctorId] = useState(initialFilters.doctorId);
-  const [doctors, setDoctors] = useState<DoctorProfileExtended[]>([]);
-
-  useEffect(() => {
-    // Load doctors dynamically
-    mockDoctorsApi.getDoctors().then(setDoctors).catch(err => console.error(err));
-  }, []);
+  const [doctorName, setDoctorName] = useState(initialFilters.doctorName);
 
   // Update component states if parent states change
   useEffect(() => {
@@ -34,7 +28,7 @@ export const BillingFilters: React.FC<BillingFiltersProps> = ({
     setFromDate(initialFilters.fromDate);
     setToDate(initialFilters.toDate);
     setStatus(initialFilters.status);
-    setDoctorId(initialFilters.doctorId);
+    setDoctorName(initialFilters.doctorName);
   }, [initialFilters]);
 
   const handleApply = () => {
@@ -43,7 +37,7 @@ export const BillingFilters: React.FC<BillingFiltersProps> = ({
       fromDate,
       toDate,
       status,
-      doctorId,
+      doctorName,
     });
   };
 
@@ -52,26 +46,26 @@ export const BillingFilters: React.FC<BillingFiltersProps> = ({
     setFromDate('');
     setToDate('');
     setStatus('ALL');
-    setDoctorId('');
+    setDoctorName('');
     onResetFilters();
   };
 
   return (
-    <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm space-y-4">
+    <div className="bg-white border border-slate-150 rounded-xl p-5 shadow-xs space-y-4">
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
         {/* Search */}
         <div className="space-y-1.5">
           <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider">
-            Patient / Invoice ID
+            Search Patient/Invoice
           </label>
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4" />
             <input
               type="text"
-              placeholder="Search..."
+              placeholder="Name, ID or Invoice No."
               value={patientOrInvoiceId}
               onChange={(e) => setPatientOrInvoiceId(e.target.value)}
-              className="w-full pl-9 pr-3 h-10 bg-slate-50 border border-slate-200 rounded-lg text-sm outline-none focus:border-brand-primary focus:bg-white focus:ring-1 focus:ring-brand-primary transition-all text-slate-700 font-medium"
+              className="w-full pl-9 pr-3 h-10 bg-slate-50 border border-slate-200 rounded-lg text-sm outline-none focus:border-brand-primary focus:bg-white focus:ring-1 focus:ring-brand-primary transition-all text-slate-700 font-medium placeholder-slate-400"
             />
           </div>
         </div>
@@ -79,10 +73,10 @@ export const BillingFilters: React.FC<BillingFiltersProps> = ({
         {/* From Date */}
         <div className="space-y-1.5">
           <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider">
-            From
+            From Date
           </label>
           <div className="relative">
-            <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+            <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4" />
             <input
               type="date"
               value={fromDate}
@@ -95,10 +89,10 @@ export const BillingFilters: React.FC<BillingFiltersProps> = ({
         {/* To Date */}
         <div className="space-y-1.5">
           <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider">
-            To
+            To Date
           </label>
           <div className="relative">
-            <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+            <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4" />
             <input
               type="date"
               value={toDate}
@@ -108,10 +102,10 @@ export const BillingFilters: React.FC<BillingFiltersProps> = ({
           </div>
         </div>
 
-        {/* Status */}
+        {/* Payment Status */}
         <div className="space-y-1.5">
           <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider">
-            Status
+            Payment Status
           </label>
           <div className="relative">
             <select
@@ -119,7 +113,7 @@ export const BillingFilters: React.FC<BillingFiltersProps> = ({
               onChange={(e) => setStatus(e.target.value as PaymentStatus | 'ALL')}
               className="w-full pl-3 pr-8 h-10 bg-slate-50 border border-slate-200 rounded-lg text-sm outline-none appearance-none focus:border-brand-primary focus:bg-white focus:ring-1 focus:ring-brand-primary transition-all text-slate-700 font-medium cursor-pointer"
             >
-              <option value="ALL">All Status</option>
+              <option value="ALL">All Statuses</option>
               <option value="PAID">Paid</option>
               <option value="PARTIAL">Partial</option>
               <option value="PENDING">Pending</option>
@@ -137,14 +131,14 @@ export const BillingFilters: React.FC<BillingFiltersProps> = ({
           </label>
           <div className="relative">
             <select
-              value={doctorId}
-              onChange={(e) => setDoctorId(e.target.value)}
+              value={doctorName}
+              onChange={(e) => setDoctorName(e.target.value)}
               className="w-full pl-3 pr-8 h-10 bg-slate-50 border border-slate-200 rounded-lg text-sm outline-none appearance-none focus:border-brand-primary focus:bg-white focus:ring-1 focus:ring-brand-primary transition-all text-slate-700 font-medium cursor-pointer"
             >
               <option value="">All Doctors</option>
-              {doctors.map((doc) => (
-                <option key={doc.id} value={doc.id}>
-                  {doc.name}
+              {doctors.map((name) => (
+                <option key={name} value={name}>
+                  {name}
                 </option>
               ))}
             </select>

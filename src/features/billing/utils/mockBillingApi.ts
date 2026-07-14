@@ -66,9 +66,35 @@ function mapToBackend(invoice: BillingInvoice): InvoiceRequestDto {
 }
 
 export const mockBillingApi = {
-  async getInvoices(): Promise<BillingInvoice[]> {
-    const data = await billingService.getInvoices(1, { size: 1000 });
-    return (data.content || []).map(mapToFrontend);
+  async getInvoices(params?: {
+    pageNo?: number;
+    pageSize?: number;
+    patientSearch?: string;
+    fromDate?: string;
+    toDate?: string;
+    status?: string;
+    doctorName?: string;
+  }): Promise<any> {
+    if (!params) {
+      const data = await billingService.getInvoices(1000000000, { size: 1000 });
+      return (data.content || []).map(mapToFrontend);
+    }
+    const res = await billingService.getInvoices(1000000000, {
+      page: params.pageNo,
+      size: params.pageSize,
+      patientSearch: params.patientSearch,
+      fromDate: params.fromDate,
+      toDate: params.toDate,
+      status: params.status === 'ALL' ? undefined : params.status,
+      doctorName: params.doctorName === 'ALL' ? undefined : params.doctorName,
+    });
+    return {
+      items: (res.content || []).map(mapToFrontend),
+      totalItems: res.totalElements || 0,
+      totalPages: res.totalPages || 1,
+      pageNo: res.number || 0,
+      pageSize: res.size || 10,
+    };
   },
 
   async getInvoiceById(id: string): Promise<BillingInvoice | undefined> {
@@ -81,11 +107,11 @@ export const mockBillingApi = {
   },
 
   async addInvoice(invoice: BillingInvoice): Promise<void> {
-    await billingService.createInvoice(1, mapToBackend(invoice));
+    await billingService.createInvoice(1000000000, mapToBackend(invoice));
   },
 
   async getStats(): Promise<BillingStats> {
-    const stats = await billingService.getStats(1);
+    const stats = await billingService.getStats(1000000000);
     return {
       revenueToday: Number(stats.revenueToday || 0),
       pendingPayments: Number(stats.pendingPayments || 0),

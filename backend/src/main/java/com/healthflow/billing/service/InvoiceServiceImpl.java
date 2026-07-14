@@ -94,22 +94,21 @@ public class InvoiceServiceImpl implements InvoiceService {
     @Override
     public Page<InvoiceResponseDto> getFilteredInvoices(
             Long clinicId,
-            String patientName,
-            String invoiceSearch,
+            String patientSearch,
             LocalDate fromDate,
             LocalDate toDate,
             String status,
-            Long doctorId,
+            String doctorName,
             Pageable pageable) {
-        log.info("Querying filtered invoices - patientName: {}, search: {}, fromDate: {}, toDate: {}, status: {}, doctorId: {}", 
-                patientName, invoiceSearch, fromDate, toDate, status, doctorId);
+        log.info("Querying filtered invoices - searchPrefix: {}, fromDate: {}, toDate: {}, status: {}, doctorName: {}", 
+                patientSearch, fromDate, toDate, status, doctorName);
         
-        String normalizedPatient = (patientName != null && !patientName.trim().isEmpty()) ? patientName.trim() : null;
-        String normalizedSearch = (invoiceSearch != null && !invoiceSearch.trim().isEmpty()) ? invoiceSearch.trim() : null;
+        String normalizedSearch = (patientSearch != null && !patientSearch.trim().isEmpty()) ? patientSearch.trim() : null;
         String normalizedStatus = (status != null && !status.trim().isEmpty() && !status.equalsIgnoreCase("all")) ? status.trim() : null;
+        String normalizedDoctor = (doctorName != null && !doctorName.trim().isEmpty() && !doctorName.equalsIgnoreCase("all")) ? doctorName.trim() : null;
 
         Page<Invoice> page = invoiceRepository.findFilteredInvoices(
-                clinicId, normalizedPatient, normalizedSearch, fromDate, toDate, normalizedStatus, doctorId, pageable);
+                clinicId, normalizedSearch, fromDate, toDate, normalizedStatus, normalizedDoctor, pageable);
         return page.map(InvoiceMapper::toResponseDto);
     }
 

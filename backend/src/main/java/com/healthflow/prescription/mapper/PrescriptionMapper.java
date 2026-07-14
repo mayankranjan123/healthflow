@@ -42,6 +42,7 @@ public class PrescriptionMapper {
         dto.setNextVisitDate(prescription.getNextVisitDate());
         dto.setStatus(prescription.getStatus());
         dto.setPdfUrl(prescription.getPdfUrl());
+        dto.setHeaderLayout(prescription.getHeaderLayout());
         dto.setCreatedAt(prescription.getCreatedAt());
         dto.setUpdatedAt(prescription.getUpdatedAt());
 

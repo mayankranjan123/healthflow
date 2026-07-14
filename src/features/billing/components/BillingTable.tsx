@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Eye, Download, AlertCircle } from 'lucide-react';
+import React from 'react';
+import { Eye, Download } from 'lucide-react';
 import { BillingInvoice } from '../types';
 import { Pagination } from '../../../components/ui/Pagination';
 
@@ -10,6 +10,11 @@ interface BillingTableProps {
   isLoading?: boolean;
   isError?: boolean;
   errorMessage?: string;
+  totalItems: number;
+  totalPages: number;
+  currentPage: number;
+  onPageChange: (page: number) => void;
+  itemsPerPage: number;
 }
 
 export const BillingTable: React.FC<BillingTableProps> = ({
@@ -19,20 +24,12 @@ export const BillingTable: React.FC<BillingTableProps> = ({
   isLoading = false,
   isError = false,
   errorMessage = 'Failed to load invoices. Please try again.',
+  totalItems,
+  totalPages,
+  currentPage,
+  onPageChange,
+  itemsPerPage,
 }) => {
-  const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 6;
-
-  const totalItems = invoices.length;
-  const totalPages = Math.ceil(totalItems / itemsPerPage) || 1;
-
-  // Make sure page is inside range if items change
-  const activePage = currentPage > totalPages ? totalPages : currentPage;
-
-  const startIndex = (activePage - 1) * itemsPerPage;
-  const endIndex = startIndex + itemsPerPage;
-  const paginatedInvoices = invoices.slice(startIndex, endIndex);
-
   const getStatusBadgeClass = (status: string) => {
     switch (status) {
       case 'PAID':
@@ -60,6 +57,8 @@ export const BillingTable: React.FC<BillingTableProps> = ({
     }
   };
 
+  const paginatedInvoices = invoices;
+
   return (
     <div className="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden flex flex-col justify-between">
       <div className="overflow-x-auto">
@@ -79,13 +78,13 @@ export const BillingTable: React.FC<BillingTableProps> = ({
                 Doctor
               </th>
               <th className="px-6 py-4.5 text-xs font-bold text-slate-400 uppercase tracking-wider text-right">
-                Total
+                Grand Total
               </th>
               <th className="px-6 py-4.5 text-xs font-bold text-slate-400 uppercase tracking-wider text-right">
-                Paid
+                Paid Amount
               </th>
               <th className="px-6 py-4.5 text-xs font-bold text-slate-400 uppercase tracking-wider text-right">
-                Pending
+                Pending Amount
               </th>
               <th className="px-6 py-4.5 text-xs font-bold text-slate-400 uppercase tracking-wider text-center">
                 Status
@@ -95,100 +94,59 @@ export const BillingTable: React.FC<BillingTableProps> = ({
               </th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-150">
+          <tbody className="divide-y divide-slate-100 text-sm text-slate-700">
             {isLoading ? (
-              Array.from({ length: 4 }).map((_, idx) => (
-                <tr key={idx} className="animate-pulse">
-                  <td className="px-6 py-5"><div className="h-4 bg-slate-200 rounded w-16" /></td>
-                  <td className="px-6 py-5"><div className="h-4 bg-slate-200 rounded w-28" /></td>
-                  <td className="px-6 py-5"><div className="h-4 bg-slate-200 rounded w-20" /></td>
-                  <td className="px-6 py-5"><div className="h-4 bg-slate-200 rounded w-24" /></td>
-                  <td className="px-6 py-5"><div className="h-4 bg-slate-200 rounded w-16 ml-auto" /></td>
-                  <td className="px-6 py-5"><div className="h-4 bg-slate-200 rounded w-16 ml-auto" /></td>
-                  <td className="px-6 py-5"><div className="h-4 bg-slate-200 rounded w-16 ml-auto" /></td>
-                  <td className="px-6 py-5"><div className="h-6 bg-slate-200 rounded-full w-14 mx-auto" /></td>
-                  <td className="px-6 py-5"><div className="h-4 bg-slate-200 rounded w-12 mx-auto" /></td>
-                </tr>
-              ))
+              <tr>
+                <td colSpan={9} className="py-10 text-center text-slate-400">
+                  <div className="flex justify-center items-center gap-2">
+                    <div className="w-5 h-5 border-2 border-brand-primary border-t-transparent rounded-full animate-spin" />
+                    <span>Loading Invoices...</span>
+                  </div>
+                </td>
+              </tr>
             ) : isError ? (
               <tr>
-                <td colSpan={9} className="text-center py-12 text-slate-500 font-medium text-sm">
-                  <div className="flex flex-col items-center gap-2 justify-center text-rose-500">
-                    <AlertCircle className="w-8 h-8 stroke-[2.25]" />
-                    <span className="font-bold text-slate-800">Connection Error</span>
-                    <span className="text-xs text-slate-400 font-medium">{errorMessage}</span>
-                  </div>
+                <td colSpan={9} className="py-10 text-center text-rose-500 font-medium">
+                  {errorMessage}
                 </td>
               </tr>
             ) : paginatedInvoices.length === 0 ? (
               <tr>
-                <td colSpan={9} className="text-center py-10 text-slate-400 font-medium text-sm">
-                  No invoices match your filters.
+                <td colSpan={9} className="py-10 text-center text-slate-400 font-medium">
+                  No invoices found.
                 </td>
               </tr>
             ) : (
               paginatedInvoices.map((inv) => (
                 <tr key={inv.id} className="hover:bg-slate-50/50 transition-colors">
-                  {/* Invoice No */}
-                  <td className="px-6 py-4.5 whitespace-nowrap">
-                    <span
-                      onClick={() => onViewInvoice(inv)}
-                      className="font-mono text-xs font-bold text-brand-primary cursor-pointer hover:underline"
-                    >
-                      {inv.invoiceNumber}
-                    </span>
+                  <td className="px-6 py-4.5 whitespace-nowrap font-bold text-slate-800 font-mono">
+                    {inv.invoiceNumber}
                   </td>
-
-                  {/* Patient Name */}
                   <td className="px-6 py-4.5 whitespace-nowrap">
-                    <div className="flex flex-col">
-                      <span className="font-bold text-slate-800 text-sm">{inv.patientName}</span>
-                      <span className="text-[11px] text-slate-400 font-semibold font-mono">
-                        {inv.patientId}
-                      </span>
-                    </div>
+                    <div className="font-bold text-slate-800">{inv.patientName}</div>
+                    <div className="text-xs text-slate-400 font-bold font-mono">{inv.patientId}</div>
                   </td>
-
-                  {/* Date */}
+                  <td className="px-6 py-4.5 whitespace-nowrap text-slate-500 font-medium">
+                    {getFormattedDate(inv.date)}
+                  </td>
                   <td className="px-6 py-4.5 whitespace-nowrap">
-                    <span className="text-sm font-semibold text-slate-600">
-                      {getFormattedDate(inv.date)}
-                    </span>
+                    <div className="font-semibold text-slate-700">{inv.doctorName}</div>
+                    <div className="text-xs text-slate-400 font-medium">{inv.doctorSpecialization}</div>
                   </td>
-
-                  {/* Doctor */}
-                  <td className="px-6 py-4.5 whitespace-nowrap">
-                    <div className="flex flex-col">
-                      <span className="text-sm font-semibold text-slate-700">{inv.doctorName}</span>
-                      <span className="text-[11px] text-slate-400 font-medium">
-                        {inv.doctorSpecialization}
-                      </span>
-                    </div>
-                  </td>
-
-                  {/* Total */}
-                  <td className="px-6 py-4.5 whitespace-nowrap text-right font-semibold text-slate-900 font-mono text-sm">
+                  <td className="px-6 py-4.5 whitespace-nowrap text-right font-extrabold text-slate-800 font-mono text-sm">
                     ₹{inv.grandTotal.toLocaleString('en-IN')}
                   </td>
-
-                  {/* Paid */}
-                  <td className="px-6 py-4.5 whitespace-nowrap text-right font-semibold text-emerald-600 font-mono text-sm">
+                  <td className="px-6 py-4.5 whitespace-nowrap text-right font-bold text-emerald-600 font-mono text-sm">
                     ₹{inv.paidAmount.toLocaleString('en-IN')}
                   </td>
-
-                  {/* Pending */}
                   <td className="px-6 py-4.5 whitespace-nowrap text-right font-semibold text-rose-500 font-mono text-sm">
                     ₹{inv.pendingAmount.toLocaleString('en-IN')}
                   </td>
-
-                  {/* Status */}
                   <td className="px-6 py-4.5 whitespace-nowrap text-center">
                     <span className={`px-2.5 py-1 text-xs font-bold rounded-full uppercase tracking-wide inline-block ${getStatusBadgeClass(inv.status)}`}>
                       {inv.status}
                     </span>
                   </td>
-
-                  {/* Actions */}
                   <td className="px-6 py-4.5 whitespace-nowrap text-center">
                     <div className="flex items-center justify-center gap-2">
                       <button
@@ -216,9 +174,9 @@ export const BillingTable: React.FC<BillingTableProps> = ({
 
       {totalItems > 0 && (
         <Pagination
-          currentPage={activePage}
+          currentPage={currentPage}
           totalPages={totalPages}
-          onPageChange={setCurrentPage}
+          onPageChange={onPageChange}
           totalItems={totalItems}
           itemsPerPage={itemsPerPage}
           itemNameSingular="invoice"

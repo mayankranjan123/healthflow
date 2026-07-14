@@ -1,11 +1,12 @@
-import React, { useState } from 'react';
-import { useSearchParams, Link } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useSearchParams, Link, useNavigate } from 'react-router-dom';
 import { Eye, EyeOff, Lock, CheckCircle2, AlertCircle, Activity, ArrowRight } from 'lucide-react';
 import { Button } from '../../../components/ui/Button';
 import { Input } from '../../../components/ui/Input';
 import { authService } from '../../../lib/apiClient';
 
 export const SetPasswordPage: React.FC = () => {
+  const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const token = searchParams.get('token') || '';
   const email = searchParams.get('email') || '';
@@ -17,6 +18,15 @@ export const SetPasswordPage: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [error, setError] = useState('');
+
+  useEffect(() => {
+    if (isSuccess) {
+      const timer = setTimeout(() => {
+        navigate('/login');
+      }, 2500);
+      return () => clearTimeout(timer);
+    }
+  }, [isSuccess, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -37,8 +47,8 @@ export const SetPasswordPage: React.FC = () => {
     setError('');
 
     try {
-      // POST request to backend auth endpoint to set password
-      const response = await fetch('http://localhost:8080/api/v1/auth/set-password', {
+      // POST request to backend auth endpoint to set password using relative URL
+      const response = await fetch('/api/v1/auth/set-password', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -148,7 +158,7 @@ export const SetPasswordPage: React.FC = () => {
               <div>
                 <h3 className="font-bold text-slate-800 text-lg">Onboarding Complete!</h3>
                 <p className="text-xs text-slate-500 leading-relaxed max-w-xs mx-auto mt-1">
-                  Your credentials have been configured successfully. You can now access your dashboard.
+                  Your credentials have been configured successfully. Redirecting you to the login page...
                 </p>
               </div>
 

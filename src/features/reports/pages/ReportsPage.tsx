@@ -37,7 +37,7 @@ export const ReportsPage: React.FC = () => {
     
     const loadReports = async () => {
       try {
-        const reportData = await reportService.getReportData(1, activeFilters);
+        const reportData = await reportService.getReportData(1000000000, activeFilters);
         if (!active) return;
         setData(reportData);
       } catch (err) {

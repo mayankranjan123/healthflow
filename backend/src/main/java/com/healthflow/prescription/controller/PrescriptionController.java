@@ -1,5 +1,7 @@
 package com.healthflow.prescription.controller;
 
+import com.healthflow.security.AuthorizationHelper;
+
 import com.healthflow.common.dto.ApiResponse;
 import com.healthflow.prescription.dto.PrescriptionRequestDto;
 import com.healthflow.prescription.dto.PrescriptionResponseDto;
@@ -22,15 +24,19 @@ public class PrescriptionController {
 
     private final PrescriptionService prescriptionService;
 
-    public PrescriptionController(PrescriptionService prescriptionService) {
+    private final AuthorizationHelper authHelper;
+
+    public PrescriptionController(PrescriptionService prescriptionService, AuthorizationHelper authHelper) {
         this.prescriptionService = prescriptionService;
+        this.authHelper = authHelper;
     }
 
     // 1. Create Prescription / Save Prescription
     @PostMapping
     public ResponseEntity<ApiResponse<PrescriptionResponseDto>> createPrescription(
-            @RequestParam(value = "clinicId", defaultValue = "1") Long clinicId,
+            @RequestParam(value = "clinicId", defaultValue = "1000000000") Long clinicId,
             @Valid @RequestBody PrescriptionRequestDto request) {
+        if (!authHelper.isAuthorized(clinicId, "ADMIN", "DOCTOR", "STAFF")) { return ResponseEntity.status(403).body(ApiResponse.error("Unauthorized access to clinic")); }
         PrescriptionResponseDto response = prescriptionService.createPrescription(clinicId, request);
         return new ResponseEntity<>(
                 ApiResponse.success("Prescription generated successfully", response),
@@ -42,7 +48,8 @@ public class PrescriptionController {
     @GetMapping("/{id}")
     public ResponseEntity<ApiResponse<PrescriptionResponseDto>> getPrescriptionById(
             @PathVariable("id") Long prescriptionId,
-            @RequestParam(value = "clinicId", defaultValue = "1") Long clinicId) {
+            @RequestParam(value = "clinicId", defaultValue = "1000000000") Long clinicId) {
+        if (!authHelper.isAuthorized(clinicId, "ADMIN", "DOCTOR", "STAFF")) { return ResponseEntity.status(403).body(ApiResponse.error("Unauthorized access to clinic")); }
         PrescriptionResponseDto response = prescriptionService.getPrescriptionById(clinicId, prescriptionId);
         return ResponseEntity.ok(ApiResponse.success("Prescription details retrieved successfully", response));
     }
@@ -50,7 +57,7 @@ public class PrescriptionController {
     // 3. List and filter prescriptions (e.g. by patient in timeline format, with doctor, fromDate, toDate)
     @GetMapping
     public ResponseEntity<ApiResponse<Page<PrescriptionResponseDto>>> getPrescriptions(
-            @RequestParam(value = "clinicId", defaultValue = "1") Long clinicId,
+            @RequestParam(value = "clinicId", defaultValue = "1000000000") Long clinicId,
             @RequestParam(value = "patientId", required = false) Long patientId,
             @RequestParam(value = "doctor", required = false) Long doctorId,
             @RequestParam(value = "fromDate", required = false) LocalDate fromDate,
@@ -60,6 +67,7 @@ public class PrescriptionController {
             @RequestParam(value = "sortBy", defaultValue = "prescriptionDate") String sortBy,
             @RequestParam(value = "sortDir", defaultValue = "desc") String sortDir) {
 
+        if (!authHelper.isAuthorized(clinicId, "ADMIN", "DOCTOR", "STAFF")) { return ResponseEntity.status(403).body(ApiResponse.error("Unauthorized access to clinic")); }
         // Default to sorting by prescriptionDate desc for timeline format list
         Sort sort = sortDir.equalsIgnoreCase(Sort.Direction.ASC.name())
                 ? Sort.by(sortBy).ascending()
@@ -76,8 +84,9 @@ public class PrescriptionController {
     @PutMapping("/{id}")
     public ResponseEntity<ApiResponse<PrescriptionResponseDto>> updatePrescription(
             @PathVariable("id") Long prescriptionId,
-            @RequestParam(value = "clinicId", defaultValue = "1") Long clinicId,
+            @RequestParam(value = "clinicId", defaultValue = "1000000000") Long clinicId,
             @Valid @RequestBody PrescriptionRequestDto request) {
+        if (!authHelper.isAuthorized(clinicId, "ADMIN", "DOCTOR", "STAFF")) { return ResponseEntity.status(403).body(ApiResponse.error("Unauthorized access to clinic")); }
         PrescriptionResponseDto response = prescriptionService.updatePrescription(clinicId, prescriptionId, request);
         return ResponseEntity.ok(ApiResponse.success("Prescription updated successfully", response));
     }
@@ -85,8 +94,9 @@ public class PrescriptionController {
     // 5. Preview data endpoint (in-memory preview without saving to DB)
     @PostMapping("/preview")
     public ResponseEntity<ApiResponse<PrescriptionResponseDto>> previewPrescription(
-            @RequestParam(value = "clinicId", defaultValue = "1") Long clinicId,
+            @RequestParam(value = "clinicId", defaultValue = "1000000000") Long clinicId,
             @Valid @RequestBody PrescriptionRequestDto request) {
+        if (!authHelper.isAuthorized(clinicId, "ADMIN", "DOCTOR", "STAFF")) { return ResponseEntity.status(403).body(ApiResponse.error("Unauthorized access to clinic")); }
         PrescriptionResponseDto preview = prescriptionService.previewPrescription(clinicId, request);
         return ResponseEntity.ok(ApiResponse.success("Prescription preview generated successfully", preview));
     }
@@ -95,7 +105,8 @@ public class PrescriptionController {
     @PostMapping("/{id}/pdf")
     public ResponseEntity<ApiResponse<Map<String, String>>> generatePdf(
             @PathVariable("id") Long prescriptionId,
-            @RequestParam(value = "clinicId", defaultValue = "1") Long clinicId) {
+            @RequestParam(value = "clinicId", defaultValue = "1000000000") Long clinicId) {
+        if (!authHelper.isAuthorized(clinicId, "ADMIN", "DOCTOR", "STAFF")) { return ResponseEntity.status(403).body(ApiResponse.error("Unauthorized access to clinic")); }
         String pdfUrl = prescriptionService.generatePdfUrl(clinicId, prescriptionId);
         return ResponseEntity.ok(ApiResponse.success(
                 "Prescription PDF document created successfully",

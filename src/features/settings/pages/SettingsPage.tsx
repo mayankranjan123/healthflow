@@ -8,42 +8,63 @@ import { SettingsState, ClinicSettings, BillingSettings, PrescriptionSettings } 
 import { UsersPage } from '../../users/pages/UsersPage';
 
 export const SettingsPage: React.FC = () => {
-  const [settings, setSettings] = useState<SettingsState | null>(null);
   const [activeTab, setActiveTab] = useState<'CLINIC' | 'USERS' | 'BILLING' | 'PRESCRIPTION'>('CLINIC');
-  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [clinic, setClinic] = useState<ClinicSettings | null>(null);
+  const [billing, setBilling] = useState<BillingSettings | null>(null);
+  const [prescription, setPrescription] = useState<PrescriptionSettings | null>(null);
 
+  const [isLoadingClinic, setIsLoadingClinic] = useState(false);
+  const [isLoadingBilling, setIsLoadingBilling] = useState(false);
+  const [isLoadingPrescription, setIsLoadingPrescription] = useState(false);
+
+  // Load Clinic Settings (needed for CLINIC, BILLING, and PRESCRIPTION tabs)
   React.useEffect(() => {
-    mockSettingsApi.getSettings().then(data => {
-      setSettings(data);
-      setIsLoading(false);
-    }).catch(() => {
-      setIsLoading(false);
-    });
-  }, []);
+    const tabsNeedingClinic = ['CLINIC', 'BILLING', 'PRESCRIPTION'];
+    if (tabsNeedingClinic.includes(activeTab) && !clinic && !isLoadingClinic) {
+      setIsLoadingClinic(true);
+      mockSettingsApi.getClinicSettings().then(data => {
+        setClinic(data);
+        setIsLoadingClinic(false);
+      }).catch(() => setIsLoadingClinic(false));
+    }
+  }, [activeTab, clinic, isLoadingClinic]);
+
+  // Load Billing Settings (needed for BILLING tab only)
+  React.useEffect(() => {
+    if (activeTab === 'BILLING' && !billing && !isLoadingBilling) {
+      setIsLoadingBilling(true);
+      mockSettingsApi.getBillingSettings().then(data => {
+        setBilling(data);
+        setIsLoadingBilling(false);
+      }).catch(() => setIsLoadingBilling(false));
+    }
+  }, [activeTab, billing, isLoadingBilling]);
+
+  // Load Prescription Settings (needed for PRESCRIPTION tab only)
+  React.useEffect(() => {
+    if (activeTab === 'PRESCRIPTION' && !prescription && !isLoadingPrescription) {
+      setIsLoadingPrescription(true);
+      mockSettingsApi.getPrescriptionSettings().then(data => {
+        setPrescription(data);
+        setIsLoadingPrescription(false);
+      }).catch(() => setIsLoadingPrescription(false));
+    }
+  }, [activeTab, prescription, isLoadingPrescription]);
 
   const handleSaveClinic = async (updatedClinic: ClinicSettings) => {
     const updated = await mockSettingsApi.updateClinicSettings(updatedClinic);
-    setSettings(updated);
+    setClinic(updated.clinic);
   };
 
   const handleSaveBilling = async (updatedBilling: BillingSettings) => {
     const updated = await mockSettingsApi.updateBillingSettings(updatedBilling);
-    setSettings(updated);
+    setBilling(updated.billing);
   };
 
   const handleSavePrescription = async (updatedPrescription: PrescriptionSettings) => {
     const updated = await mockSettingsApi.updatePrescriptionSettings(updatedPrescription);
-    setSettings(updated);
+    setPrescription(updated.prescription);
   };
-
-  if (isLoading || !settings) {
-    return (
-      <div className="flex flex-col justify-center items-center py-20">
-        <div className="w-10 h-10 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin" />
-        <span className="text-slate-500 font-semibold mt-4 text-sm">Loading Settings...</span>
-      </div>
-    );
-  }
 
   return (
     <div className="space-y-6 animate-fade-in-up">
@@ -88,7 +109,7 @@ export const SettingsPage: React.FC = () => {
             <span>Users & Roles</span>
           </button>
 
-          {/* Tab 2: Billing Settings */}
+          {/* Tab 3: Billing Settings */}
           <button
             onClick={() => setActiveTab('BILLING')}
             className={`pb-3.5 text-xs font-bold uppercase tracking-wider flex items-center gap-2 border-b-2 transition-all cursor-pointer ${
@@ -101,7 +122,7 @@ export const SettingsPage: React.FC = () => {
             <span>Billing Settings</span>
           </button>
 
-          {/* Tab 3: Prescription Settings */}
+          {/* Tab 4: Prescription Settings */}
           <button
             onClick={() => setActiveTab('PRESCRIPTION')}
             className={`pb-3.5 text-xs font-bold uppercase tracking-wider flex items-center gap-2 border-b-2 transition-all cursor-pointer ${
@@ -120,10 +141,17 @@ export const SettingsPage: React.FC = () => {
       {/* Render Active Tab Component */}
       <div className="pt-2">
         {activeTab === 'CLINIC' && (
-          <ClinicSettingsTab
-            initialSettings={settings.clinic}
-            onSave={handleSaveClinic}
-          />
+          !clinic ? (
+            <div className="flex flex-col justify-center items-center py-20">
+              <div className="w-10 h-10 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin" />
+              <span className="text-slate-500 font-semibold mt-4 text-sm">Loading Clinic Settings...</span>
+            </div>
+          ) : (
+            <ClinicSettingsTab
+              initialSettings={clinic}
+              onSave={handleSaveClinic}
+            />
+          )
         )}
 
         {activeTab === 'USERS' && (
@@ -131,24 +159,38 @@ export const SettingsPage: React.FC = () => {
         )}
 
         {activeTab === 'BILLING' && (
-          <BillingSettingsTab
-            initialSettings={settings.billing}
-            clinicName={settings.clinic.name}
-            clinicAddress={`${settings.clinic.addressLine}, ${settings.clinic.city}, ${settings.clinic.state} - ${settings.clinic.pincode}`}
-            clinicPhone={settings.clinic.phone}
-            clinicGst={settings.clinic.gstNumber}
-            onSave={handleSaveBilling}
-          />
+          (!clinic || !billing) ? (
+            <div className="flex flex-col justify-center items-center py-20">
+              <div className="w-10 h-10 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin" />
+              <span className="text-slate-500 font-semibold mt-4 text-sm">Loading Billing Settings...</span>
+            </div>
+          ) : (
+            <BillingSettingsTab
+              initialSettings={billing}
+              clinicName={clinic.name}
+              clinicAddress={`${clinic.addressLine}, ${clinic.city}, ${clinic.state} - ${clinic.pincode}`}
+              clinicPhone={clinic.phone}
+              clinicGst={clinic.gstNumber}
+              onSave={handleSaveBilling}
+            />
+          )
         )}
 
         {activeTab === 'PRESCRIPTION' && (
-          <PrescriptionSettingsTab
-            initialSettings={settings.prescription}
-            clinicName={settings.clinic.name}
-            clinicAddress={`${settings.clinic.addressLine}, ${settings.clinic.city}`}
-            clinicPhone={settings.clinic.phone}
-            onSave={handleSavePrescription}
-          />
+          (!clinic || !prescription) ? (
+            <div className="flex flex-col justify-center items-center py-20">
+              <div className="w-10 h-10 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin" />
+              <span className="text-slate-500 font-semibold mt-4 text-sm">Loading Prescription Settings...</span>
+            </div>
+          ) : (
+            <PrescriptionSettingsTab
+              initialSettings={prescription}
+              clinicName={clinic.name}
+              clinicAddress={`${clinic.addressLine}, ${clinic.city}`}
+              clinicPhone={clinic.phone}
+              onSave={handleSavePrescription}
+            />
+          )
         )}
       </div>
 

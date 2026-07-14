@@ -53,26 +53,55 @@ const INITIAL_PERMISSIONS: ModulePermission[] = [
 ];
 
 export const mockUsersApi = {
-  async getAdmins(): Promise<AdminUser[]> {
-    const list = await userService.getUsers();
-    return list
-      .filter((u) => u.role === 'ADMIN')
-      .map((u) => ({
-        id: u.id,
-        name: u.name,
-        email: u.email,
-        mobile: u.mobile,
-        avatarUrl: u.avatarUrl || 'https://images.unsplash.com/photo-1537368910025-700350fe46c7?q=80&w=120&auto=format&fit=crop',
-        isActive: u.isActive,
-        gender: u.gender,
-        dateOfBirth: u.dateOfBirth,
-      }));
+  async getAdmins(params: { pageNo: number; pageSize: number; status?: string; search?: string }): Promise<{
+    items: AdminUser[];
+    totalItems: number;
+    totalPages: number;
+    pageNo: number;
+    pageSize: number;
+  }> {
+    const backendParams: any = {
+      pageNo: params.pageNo,
+      pageSize: params.pageSize,
+      user_role: 'ADMIN'
+    };
+    if (params.status && params.status !== 'ALL') {
+      backendParams.status = params.status;
+    }
+    if (params.search) {
+      if (params.search.includes('@')) {
+        backendParams.user_email = params.search;
+      } else {
+        backendParams.user_name = params.search;
+      }
+    }
+
+    const res = await userService.getUsers(backendParams);
+    const items = res.data.map((u) => ({
+      id: u.id,
+      name: u.name,
+      email: u.email,
+      mobile: u.mobile,
+      avatarUrl: u.avatarUrl || 'https://images.unsplash.com/photo-1537368910025-700350fe46c7?q=80&w=120&auto=format&fit=crop',
+      isActive: u.isActive,
+      gender: u.gender,
+      dateOfBirth: u.dateOfBirth,
+    }));
+
+    return {
+      items,
+      totalItems: res.totalItems,
+      totalPages: res.totalPages,
+      pageNo: res.pageNo,
+      pageSize: res.pageSize
+    };
   },
 
-  async saveAdmins(admins: AdminUser[]): Promise<void> {
+  async saveAdmins(admins: AdminUser[]): Promise<string | undefined> {
+    let link: string | undefined = undefined;
     for (const admin of admins) {
       if (admin.id.startsWith('temp-') || admin.id.startsWith('ADM-temp-')) {
-        await userService.createUser({
+        const res = await userService.createUser({
           name: admin.name,
           email: admin.email,
           mobile: admin.mobile,
@@ -81,6 +110,7 @@ export const mockUsersApi = {
           gender: admin.gender,
           dateOfBirth: admin.dateOfBirth,
         });
+        link = res.setPasswordLink;
       } else {
         await userService.updateUser(admin.id, {
           name: admin.name,
@@ -92,41 +122,70 @@ export const mockUsersApi = {
         });
       }
     }
+    return link;
   },
 
-  async getDoctors(): Promise<DoctorUser[]> {
-    const users = await userService.getUsers();
-    const docUsers = users.filter((u) => u.role === 'DOCTOR');
-    const docs = await doctorService.getDoctors(1);
+  async getDoctors(params: { pageNo: number; pageSize: number; status?: string; search?: string }): Promise<{
+    items: DoctorUser[];
+    totalItems: number;
+    totalPages: number;
+    pageNo: number;
+    pageSize: number;
+  }> {
+    const backendParams: any = {
+      pageNo: params.pageNo,
+      pageSize: params.pageSize,
+      user_role: 'DOCTOR'
+    };
+    if (params.status && params.status !== 'ALL') {
+      backendParams.status = params.status;
+    }
+    if (params.search) {
+      if (params.search.includes('@')) {
+        backendParams.user_email = params.search;
+      } else {
+        backendParams.user_name = params.search;
+      }
+    }
 
-    return docUsers.map((u) => {
-      const details = docs.find((d) => d.email.toLowerCase() === u.email.toLowerCase());
+    const res = await userService.getUsers(backendParams);
+
+    const items = res.data.map((u) => {
       return {
         id: u.id,
         name: u.name,
         email: u.email,
         mobile: u.mobile,
-        specialization: details?.specialization || 'General Physician',
-        qualification: details?.qualification || 'MBBS, MD',
-        experience: details?.experience || '10 Years',
-        fee: Number(details?.fee || 100),
-        followupFee: Number(u.followupFee || details?.followupFee || 60),
-        workingHours: details?.workingHours || '09:00 AM - 05:00 PM',
+        specialization: 'General Physician',
+        qualification: 'MBBS, MD',
+        experience: '10 Years',
+        fee: 100,
+        followupFee: Number(u.followupFee || 60),
+        workingHours: '09:00 AM - 05:00 PM',
         isActive: u.isActive,
-        registrationNumber: details?.registrationNumber || 'REG-12345',
-        totalConsultations: details?.completedConsultations ?? details?.totalCompletedConsultations ?? 0,
+        registrationNumber: 'REG-12345',
+        totalConsultations: 0,
         joiningDate: '2024-01-01',
-        gender: u.gender || details?.gender || 'Female',
+        gender: u.gender || 'Female',
         dateOfBirth: u.dateOfBirth || '',
-        avatarUrl: u.avatarUrl || details?.avatarUrl || 'https://images.unsplash.com/photo-1559839734-2b71ea197ec2?q=80&w=120&auto=format&fit=crop',
+        avatarUrl: u.avatarUrl || 'https://images.unsplash.com/photo-1559839734-2b71ea197ec2?q=80&w=120&auto=format&fit=crop',
       };
     });
+
+    return {
+      items,
+      totalItems: res.totalItems,
+      totalPages: res.totalPages,
+      pageNo: res.pageNo,
+      pageSize: res.pageSize
+    };
   },
 
-  async saveDoctors(doctors: DoctorUser[]): Promise<void> {
+  async saveDoctors(doctors: DoctorUser[]): Promise<string | undefined> {
+    let link: string | undefined = undefined;
     for (const doc of doctors) {
       if (doc.id.startsWith('temp-') || doc.id.startsWith('DOC-temp-')) {
-        await userService.createUser({
+        const res = await userService.createUser({
           name: doc.name,
           email: doc.email,
           mobile: doc.mobile,
@@ -144,6 +203,7 @@ export const mockUsersApi = {
           totalConsultations: doc.totalConsultations ? doc.totalConsultations.toString() : undefined,
           joiningDate: doc.joiningDate,
         });
+        link = res.setPasswordLink;
       } else {
         await userService.updateUser(doc.id, {
           name: doc.name,
@@ -164,28 +224,58 @@ export const mockUsersApi = {
         });
       }
     }
+    return link;
   },
 
-  async getStaff(): Promise<StaffUser[]> {
-    const list = await userService.getUsers();
-    return list
-      .filter((u) => u.role === 'STAFF')
-      .map((u) => ({
-        id: u.id,
-        name: u.name,
-        email: u.email,
-        mobile: u.mobile,
-        avatarUrl: u.avatarUrl || 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?q=80&w=120&auto=format&fit=crop',
-        isActive: u.isActive,
-        gender: u.gender,
-        dateOfBirth: u.dateOfBirth,
-      }));
+  async getStaff(params: { pageNo: number; pageSize: number; status?: string; search?: string }): Promise<{
+    items: StaffUser[];
+    totalItems: number;
+    totalPages: number;
+    pageNo: number;
+    pageSize: number;
+  }> {
+    const backendParams: any = {
+      pageNo: params.pageNo,
+      pageSize: params.pageSize,
+      user_role: 'STAFF'
+    };
+    if (params.status && params.status !== 'ALL') {
+      backendParams.status = params.status;
+    }
+    if (params.search) {
+      if (params.search.includes('@')) {
+        backendParams.user_email = params.search;
+      } else {
+        backendParams.user_name = params.search;
+      }
+    }
+
+    const res = await userService.getUsers(backendParams);
+    const items = res.data.map((u) => ({
+      id: u.id,
+      name: u.name,
+      email: u.email,
+      mobile: u.mobile,
+      avatarUrl: u.avatarUrl || 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?q=80&w=120&auto=format&fit=crop',
+      isActive: u.isActive,
+      gender: u.gender,
+      dateOfBirth: u.dateOfBirth,
+    }));
+
+    return {
+      items,
+      totalItems: res.totalItems,
+      totalPages: res.totalPages,
+      pageNo: res.pageNo,
+      pageSize: res.pageSize
+    };
   },
 
-  async saveStaff(staff: StaffUser[]): Promise<void> {
+  async saveStaff(staff: StaffUser[]): Promise<string | undefined> {
+    let link: string | undefined = undefined;
     for (const s of staff) {
       if (s.id.startsWith('temp-') || s.id.startsWith('STF-temp-')) {
-        await userService.createUser({
+        const res = await userService.createUser({
           name: s.name,
           email: s.email,
           mobile: s.mobile,
@@ -194,6 +284,7 @@ export const mockUsersApi = {
           gender: s.gender,
           dateOfBirth: s.dateOfBirth,
         });
+        link = res.setPasswordLink;
       } else {
         await userService.updateUser(s.id, {
           name: s.name,
@@ -205,6 +296,7 @@ export const mockUsersApi = {
         });
       }
     }
+    return link;
   },
 
   async getPermissions(): Promise<ModulePermission[]> {

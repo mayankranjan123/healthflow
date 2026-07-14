@@ -44,7 +44,7 @@ export interface PrescriptionSettings {
   prefix: string;
   startingNumber: number;
   autoGenerateNumber: boolean;
-  headerLayout: 'CLASSIC_LEFT' | 'CENTERED_PROFESSIONAL' | 'MODERN_MINIMAL';
+  headerLayout: 'CLASSIC_LEFT' | 'CENTERED_PROFESSIONAL';
   showClinicLogo: boolean;
   showDoctorQualifications: boolean;
   showDoctorDepartment: boolean;

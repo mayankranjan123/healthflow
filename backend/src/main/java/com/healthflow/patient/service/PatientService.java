@@ -16,7 +16,14 @@ public interface PatientService {
 
     Page<PatientResponseDto> getPatients(Long clinicId, Pageable pageable);
 
-    Page<PatientResponseDto> searchPatients(Long clinicId, String searchTerm, Pageable pageable);
+    Page<PatientResponseDto> getFilteredPatients(
+            Long clinicId,
+            String patientId,
+            String patientMobile,
+            String patientName,
+            String gender,
+            Pageable pageable
+    );
 
     MobileCheckResultDto checkMobileDuplicate(Long clinicId, String mobile);
 

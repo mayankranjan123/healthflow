@@ -3,12 +3,42 @@ import axios from 'axios';
 // Resolve API base URL based on environment context
 const API_BASE_URL = (import.meta as any).env?.VITE_API_URL || '/api/v1';
 
+export const DEFAULT_CLINIC_ID = 1000000000;
+
 export const apiClient = axios.create({
   baseURL: API_BASE_URL,
   headers: {
     'Content-Type': 'application/json',
   },
 });
+
+// Promise cache map to deduplicate concurrent GET requests (e.g. StrictMode mount spikes)
+const inflightRequests = new Map<string, Promise<any>>();
+const originalGet = apiClient.get.bind(apiClient);
+
+apiClient.get = function <T = any, R = any, D = any>(
+  url: string,
+  config?: any
+): Promise<R> {
+  const key = `get:${url}:${config?.params ? JSON.stringify(config.params) : ''}`;
+  if (inflightRequests.has(key)) {
+    return inflightRequests.get(key) as Promise<R>;
+  }
+
+  const promise = originalGet(url, config).then(
+    (response) => {
+      inflightRequests.delete(key);
+      return response;
+    },
+    (error) => {
+      inflightRequests.delete(key);
+      throw error;
+    }
+  );
+
+  inflightRequests.set(key, promise);
+  return promise as Promise<R>;
+} as any;
 
 // Request Interceptor: Inject JWT token securely on all requests
 apiClient.interceptors.request.use(
@@ -93,6 +123,16 @@ export interface PatientResponseDto {
   updatedAt: string;
 }
 
+export interface PatientFile {
+  id: number | string;
+  patientId: number | string;
+  fileName: string;
+  uploadedDate: string; // YYYY-MM-DD
+  category: string;
+  size: string;
+  fileType: string;
+}
+
 export interface MobileCheckResultDto {
   duplicate: boolean;
   message: string;
@@ -100,7 +140,7 @@ export interface MobileCheckResultDto {
 }
 
 export const patientService = {
-  createPatient: async (clinicId: number = 1, request: PatientRequestDto) => {
+  createPatient: async (clinicId: number = DEFAULT_CLINIC_ID, request: PatientRequestDto) => {
     const response = await apiClient.post<{ data: PatientResponseDto }>(
       `/patients?clinicId=${clinicId}`,
       request
@@ -108,7 +148,7 @@ export const patientService = {
     return response.data.data;
   },
 
-  updatePatient: async (patientId: number | string, clinicId: number = 1, request: PatientRequestDto) => {
+  updatePatient: async (patientId: number | string, clinicId: number = DEFAULT_CLINIC_ID, request: PatientRequestDto) => {
     const response = await apiClient.put<{ data: PatientResponseDto }>(
       `/patients/${patientId}?clinicId=${clinicId}`,
       request
@@ -116,7 +156,7 @@ export const patientService = {
     return response.data.data;
   },
 
-  getPatientById: async (patientId: number | string, clinicId: number = 1) => {
+  getPatientById: async (patientId: number | string, clinicId: number = DEFAULT_CLINIC_ID) => {
     const response = await apiClient.get<{ data: PatientResponseDto }>(
       `/patients/${patientId}?clinicId=${clinicId}`
     );
@@ -124,9 +164,12 @@ export const patientService = {
   },
 
   getPatients: async (
-    clinicId: number = 1,
+    clinicId: number = DEFAULT_CLINIC_ID,
     params: {
-      search?: string;
+      patientId?: string;
+      patientMobile?: string;
+      patientName?: string;
+      gender?: string;
       page?: number;
       size?: number;
       sortBy?: string;
@@ -144,9 +187,12 @@ export const patientService = {
     }>(`/patients`, {
       params: {
         clinicId,
-        search: params.search,
+        patientId: params.patientId,
+        patientMobile: params.patientMobile,
+        patientName: params.patientName,
+        gender: params.gender,
         page: params.page ?? 0,
-        size: params.size ?? 10,
+        size: params.size ?? 5,
         sortBy: params.sortBy ?? 'id',
         sortDir: params.sortDir ?? 'desc',
       },
@@ -154,7 +200,55 @@ export const patientService = {
     return response.data.data;
   },
 
-  checkMobileDuplicate: async (mobile: string, clinicId: number = 1) => {
+  getFiles: async (
+    patientId: number | string,
+    params: {
+      fileName?: string;
+      page?: number;
+      size?: number;
+    } = {}
+  ) => {
+    const response = await apiClient.post<{
+      data: {
+        content: PatientFile[];
+        totalElements: number;
+        totalPages: number;
+        number: number;
+        size: number;
+      };
+    }>(`/patients/${patientId}/files/search`, {
+      fileName: params.fileName
+    }, {
+      params: {
+        page: params.page ?? 0,
+        size: params.size ?? 5,
+      }
+    });
+    return response.data.data;
+  },
+
+  uploadFile: async (
+    patientId: number | string,
+    file: Omit<PatientFile, 'id' | 'patientId'>
+  ) => {
+    const response = await apiClient.post<{ data: PatientFile }>(
+      `/patients/${patientId}/files`,
+      file
+    );
+    return response.data.data;
+  },
+
+  deleteFile: async (
+    patientId: number | string,
+    fileId: number | string
+  ) => {
+    const response = await apiClient.delete<{ message: string }>(
+      `/patients/${patientId}/files/${fileId}`
+    );
+    return response.data;
+  },
+
+  checkMobileDuplicate: async (mobile: string, clinicId: number = DEFAULT_CLINIC_ID) => {
     const response = await apiClient.get<{ data: MobileCheckResultDto }>(
       `/patients/check-mobile`,
       {
@@ -164,14 +258,14 @@ export const patientService = {
     return response.data.data;
   },
 
-  deletePatient: async (patientId: number, clinicId: number = 1) => {
+  deletePatient: async (patientId: number, clinicId: number = DEFAULT_CLINIC_ID) => {
     const response = await apiClient.delete<{ message: string }>(
       `/patients/${patientId}?clinicId=${clinicId}`
     );
     return response.data;
   },
 
-  updateStatus: async (patientId: number, status: string, clinicId: number = 1) => {
+  updateStatus: async (patientId: number, status: string, clinicId: number = DEFAULT_CLINIC_ID) => {
     const response = await apiClient.patch<{ data: PatientResponseDto }>(
       `/patients/${patientId}/status`,
       null,
@@ -219,7 +313,7 @@ export interface AppointmentResponseDto {
 }
 
 export const appointmentService = {
-  createAppointment: async (clinicId: number = 1, request: AppointmentRequestDto) => {
+  createAppointment: async (clinicId: number = DEFAULT_CLINIC_ID, request: AppointmentRequestDto) => {
     const response = await apiClient.post<{ data: AppointmentResponseDto }>(
       `/appointments?clinicId=${clinicId}`,
       request
@@ -227,7 +321,7 @@ export const appointmentService = {
     return response.data.data;
   },
 
-  getAppointmentById: async (appointmentId: number | string, clinicId: number = 1) => {
+  getAppointmentById: async (appointmentId: number | string, clinicId: number = DEFAULT_CLINIC_ID) => {
     const response = await apiClient.get<{ data: AppointmentResponseDto }>(
       `/appointments/${appointmentId}?clinicId=${clinicId}`
     );
@@ -235,13 +329,17 @@ export const appointmentService = {
   },
 
   getAppointments: async (
-    clinicId: number = 1,
+    clinicId: number = DEFAULT_CLINIC_ID,
     params: {
-      doctorId?: number | string;
+      doctorName?: string;
       status?: string;
       fromDate?: string; // Instant ISO
       toDate?: string; // Instant ISO
-      patient?: string;
+      patientName?: string;
+      patientMobile?: string;
+      visitType?: string;
+      patientId?: number | string;
+      doctorId?: number | string;
       page?: number;
       size?: number;
       sortBy?: string;
@@ -259,13 +357,17 @@ export const appointmentService = {
     }>(`/appointments`, {
       params: {
         clinicId,
-        doctor: params.doctorId,
+        doctorName: params.doctorName,
         status: params.status,
         fromDate: params.fromDate,
         toDate: params.toDate,
-        patient: params.patient,
+        patientName: params.patientName,
+        patientMobile: params.patientMobile,
+        visitType: params.visitType,
+        patientId: params.patientId,
+        doctorId: params.doctorId,
         page: params.page ?? 0,
-        size: params.size ?? 10,
+        size: params.size ?? 5,
         sortBy: params.sortBy ?? 'appointmentDateTime',
         sortDir: params.sortDir ?? 'asc',
       },
@@ -275,7 +377,7 @@ export const appointmentService = {
 
   updateAppointment: async (
     appointmentId: number | string,
-    clinicId: number = 1,
+    clinicId: number = DEFAULT_CLINIC_ID,
     request: AppointmentRequestDto
   ) => {
     const response = await apiClient.put<{ data: AppointmentResponseDto }>(
@@ -287,7 +389,7 @@ export const appointmentService = {
 
   cancelAppointment: async (
     appointmentId: number | string,
-    clinicId: number = 1,
+    clinicId: number = DEFAULT_CLINIC_ID,
     request: AppointmentCancelRequestDto
   ) => {
     const response = await apiClient.post<{ data: AppointmentResponseDto }>(
@@ -299,7 +401,7 @@ export const appointmentService = {
 
   completeAppointment: async (
     appointmentId: number | string,
-    clinicId: number = 1
+    clinicId: number = DEFAULT_CLINIC_ID
   ) => {
     const response = await apiClient.post<{ data: AppointmentResponseDto }>(
       `/appointments/${appointmentId}/complete?clinicId=${clinicId}`
@@ -377,7 +479,7 @@ export interface InvoiceStatsDto {
 }
 
 export const billingService = {
-  createInvoice: async (clinicId: number = 1, request: InvoiceRequestDto) => {
+  createInvoice: async (clinicId: number = DEFAULT_CLINIC_ID, request: InvoiceRequestDto) => {
     const response = await apiClient.post<{ data: InvoiceResponseDto }>(
       `/invoices?clinicId=${clinicId}`,
       request
@@ -385,7 +487,7 @@ export const billingService = {
     return response.data.data;
   },
 
-  getInvoiceById: async (invoiceId: number | string, clinicId: number = 1) => {
+  getInvoiceById: async (invoiceId: number | string, clinicId: number = DEFAULT_CLINIC_ID) => {
     const response = await apiClient.get<{ data: InvoiceResponseDto }>(
       `/invoices/${invoiceId}?clinicId=${clinicId}`
     );
@@ -393,14 +495,13 @@ export const billingService = {
   },
 
   getInvoices: async (
-    clinicId: number = 1,
+    clinicId: number = DEFAULT_CLINIC_ID,
     params: {
-      patientName?: string;
-      invoiceNumber?: string;
+      patientSearch?: string;
       fromDate?: string; // LocalDate
       toDate?: string; // LocalDate
-      paymentStatus?: string;
-      doctorId?: number | string;
+      status?: string;
+      doctorName?: string;
       page?: number;
       size?: number;
       sortBy?: string;
@@ -418,12 +519,11 @@ export const billingService = {
     }>(`/invoices`, {
       params: {
         clinicId,
-        patientName: params.patientName,
-        invoiceNumber: params.invoiceNumber,
+        patientSearch: params.patientSearch,
         fromDate: params.fromDate,
         toDate: params.toDate,
-        paymentStatus: params.paymentStatus,
-        doctor: params.doctorId,
+        status: params.status,
+        doctorName: params.doctorName,
         page: params.page ?? 0,
         size: params.size ?? 10,
         sortBy: params.sortBy ?? 'id',
@@ -433,7 +533,7 @@ export const billingService = {
     return response.data.data;
   },
 
-  getStats: async (clinicId: number = 1) => {
+  getStats: async (clinicId: number = DEFAULT_CLINIC_ID) => {
     const response = await apiClient.get<{ data: InvoiceStatsDto }>(
       `/invoices/stats`,
       {
@@ -443,7 +543,7 @@ export const billingService = {
     return response.data.data;
   },
 
-  previewInvoice: async (clinicId: number = 1, request: InvoiceRequestDto) => {
+  previewInvoice: async (clinicId: number = DEFAULT_CLINIC_ID, request: InvoiceRequestDto) => {
     const response = await apiClient.post<{ data: InvoiceResponseDto }>(
       `/invoices/preview?clinicId=${clinicId}`,
       request
@@ -451,7 +551,7 @@ export const billingService = {
     return response.data.data;
   },
 
-  generatePdf: async (invoiceId: number, clinicId: number = 1) => {
+  generatePdf: async (invoiceId: number, clinicId: number = DEFAULT_CLINIC_ID) => {
     const response = await apiClient.post<{ data: { pdfUrl: string } }>(
       `/invoices/${invoiceId}/pdf?clinicId=${clinicId}`
     );
@@ -483,6 +583,7 @@ export interface PrescriptionRequestDto {
   advice?: string;
   nextVisitDate?: string; // LocalDate
   status?: string;
+  headerLayout?: string;
   medicines: PrescriptionMedicineRequestDto[];
 }
 
@@ -517,13 +618,14 @@ export interface PrescriptionResponseDto {
   nextVisitDate?: string; // LocalDate
   status: string;
   pdfUrl?: string;
+  headerLayout?: string;
   medicines: PrescriptionMedicineResponseDto[];
   createdAt: string;
   updatedAt: string;
 }
 
 export const prescriptionService = {
-  createPrescription: async (clinicId: number = 1, request: PrescriptionRequestDto) => {
+  createPrescription: async (clinicId: number = DEFAULT_CLINIC_ID, request: PrescriptionRequestDto) => {
     const response = await apiClient.post<{ data: PrescriptionResponseDto }>(
       `/prescriptions?clinicId=${clinicId}`,
       request
@@ -531,7 +633,7 @@ export const prescriptionService = {
     return response.data.data;
   },
 
-  getPrescriptionById: async (prescriptionId: number, clinicId: number = 1) => {
+  getPrescriptionById: async (prescriptionId: number, clinicId: number = DEFAULT_CLINIC_ID) => {
     const response = await apiClient.get<{ data: PrescriptionResponseDto }>(
       `/prescriptions/${prescriptionId}?clinicId=${clinicId}`
     );
@@ -539,7 +641,7 @@ export const prescriptionService = {
   },
 
   getPrescriptions: async (
-    clinicId: number = 1,
+    clinicId: number = DEFAULT_CLINIC_ID,
     params: {
       patientId?: number;
       doctorId?: number;
@@ -575,7 +677,7 @@ export const prescriptionService = {
     return response.data.data;
   },
 
-  previewPrescription: async (clinicId: number = 1, request: PrescriptionRequestDto) => {
+  previewPrescription: async (clinicId: number = DEFAULT_CLINIC_ID, request: PrescriptionRequestDto) => {
     const response = await apiClient.post<{ data: PrescriptionResponseDto }>(
       `/prescriptions/preview?clinicId=${clinicId}`,
       request
@@ -583,7 +685,7 @@ export const prescriptionService = {
     return response.data.data;
   },
 
-  generatePdf: async (prescriptionId: number, clinicId: number = 1) => {
+  generatePdf: async (prescriptionId: number, clinicId: number = DEFAULT_CLINIC_ID) => {
     const response = await apiClient.post<{ data: { pdfUrl: string } }>(
       `/prescriptions/${prescriptionId}/pdf?clinicId=${clinicId}`
     );
@@ -616,14 +718,33 @@ export interface DoctorResponseDto {
 }
 
 export const doctorService = {
-  getDoctors: async (clinicId: number = 1) => {
-    const response = await apiClient.get<{ data: DoctorResponseDto[] }>(
-      `/doctors?clinicId=${clinicId}`
-    );
-    return response.data.data;
+  getDoctors: async (clinicId: number = DEFAULT_CLINIC_ID, params?: { pageNo?: number; pageSize?: number; searchPrefix?: string; specialization?: string; status?: string }) => {
+    const response = await apiClient.get<{
+      data: {
+        content: DoctorResponseDto[];
+        totalPages: number;
+        totalElements: string | number;
+        size: number;
+        numberOfElements: number;
+      };
+    }>(`/doctors?clinicId=${clinicId}`, { params });
+    
+    const pageData = response.data.data;
+    const dataList = pageData?.content || [];
+    const totalItems = Number(pageData?.totalElements || 0);
+    const pageSize = Number(pageData?.size || params?.pageSize || 10);
+    const totalPages = Math.ceil(totalItems / pageSize) || 1;
+
+    return {
+      data: dataList,
+      pageNo: Number(params?.pageNo || 0),
+      pageSize: pageSize,
+      totalItems: totalItems,
+      totalPages: totalPages,
+    };
   },
 
-  createDoctor: async (clinicId: number = 1, doctor: Partial<DoctorResponseDto>) => {
+  createDoctor: async (clinicId: number = DEFAULT_CLINIC_ID, doctor: Partial<DoctorResponseDto>) => {
     const response = await apiClient.post<{ data: DoctorResponseDto }>(
       `/doctors?clinicId=${clinicId}`,
       doctor
@@ -631,10 +752,17 @@ export const doctorService = {
     return response.data.data;
   },
 
-  updateDoctor: async (doctorId: number, clinicId: number = 1, doctor: Partial<DoctorResponseDto>) => {
+  updateDoctor: async (doctorId: number, clinicId: number = DEFAULT_CLINIC_ID, doctor: Partial<DoctorResponseDto>) => {
     const response = await apiClient.put<{ data: DoctorResponseDto }>(
       `/doctors/${doctorId}?clinicId=${clinicId}`,
       doctor
+    );
+    return response.data.data;
+  },
+
+  getDoctorByEmail: async (email: string) => {
+    const response = await apiClient.get<{ data: DoctorResponseDto }>(
+      `/doctors/email/${email}`
     );
     return response.data.data;
   }
@@ -674,12 +802,42 @@ export interface UserResponseDto {
   gender?: string;
   dateOfBirth?: string;
   followupFee?: string;
+  setPasswordLink?: string;
+  specialization?: string;
+  qualification?: string;
+  experience?: string;
+  fee?: string;
+  workingHours?: string;
+  registrationNumber?: string;
+  totalConsultations?: string;
+  joiningDate?: string;
 }
 
 export const userService = {
-  getUsers: async () => {
-    const response = await apiClient.get<{ data: UserResponseDto[] }>('/users');
-    return response.data.data;
+  getUsers: async (params?: { pageNo?: number; pageSize?: number; status?: string; user_name?: string; user_email?: string; user_role?: string }) => {
+    const response = await apiClient.get<{
+      data: {
+        content: UserResponseDto[];
+        totalPages: number;
+        totalElements: string | number;
+        size: number;
+        numberOfElements: number;
+      };
+    }>('/users', { params });
+    
+    const pageData = response.data.data;
+    const dataList = pageData?.content || [];
+    const totalItems = Number(pageData?.totalElements || 0);
+    const pageSize = Number(pageData?.size || params?.pageSize || 5);
+    const totalPages = Math.ceil(totalItems / pageSize) || 1;
+
+    return {
+      data: dataList,
+      pageNo: Number(params?.pageNo || 0),
+      pageSize: pageSize,
+      totalItems: totalItems,
+      totalPages: totalPages,
+    };
   },
   createUser: async (user: Partial<UserResponseDto>) => {
     const response = await apiClient.post<{ data: UserResponseDto }>('/users', user);
@@ -770,7 +928,7 @@ export interface DashboardDataDto {
 }
 
 export const reportService = {
-  getReportData: async (clinicId: number = 1, filters: { quickFilter: string; fromDate?: string; toDate?: string }) => {
+  getReportData: async (clinicId: number = DEFAULT_CLINIC_ID, filters: { quickFilter: string; fromDate?: string; toDate?: string }) => {
     const response = await apiClient.get<{ data: ReportsDataDto }>('/reports', {
       params: {
         clinicId,
@@ -782,7 +940,7 @@ export const reportService = {
     return response.data.data;
   },
 
-  getDashboardData: async (clinicId: number = 1, params: { fromDate: string; toDate: string }) => {
+  getDashboardData: async (clinicId: number = DEFAULT_CLINIC_ID, params: { fromDate: string; toDate: string }) => {
     const response = await apiClient.get<{ data: DashboardDataDto }>('/reports/dashboard', {
       params: {
         clinicId,

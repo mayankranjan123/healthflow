@@ -71,6 +71,7 @@ public class PrescriptionServiceImpl implements PrescriptionService {
         prescription.setTestsRecommended(request.getTestsRecommended());
         prescription.setAdvice(request.getAdvice());
         prescription.setNextVisitDate(request.getNextVisitDate());
+        prescription.setHeaderLayout(request.getHeaderLayout());
         
         if (request.getStatus() != null && !request.getStatus().isBlank()) {
             prescription.setStatus(request.getStatus().trim().toUpperCase());

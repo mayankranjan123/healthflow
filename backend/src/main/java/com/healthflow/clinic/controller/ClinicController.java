@@ -1,5 +1,7 @@
 package com.healthflow.clinic.controller;
 
+import com.healthflow.security.AuthorizationHelper;
+
 import com.healthflow.common.dto.ApiResponse;
 import org.springframework.http.ResponseEntity;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -13,13 +15,16 @@ import java.util.Map;
 public class ClinicController {
 
     private final JdbcTemplate jdbcTemplate;
+    private final AuthorizationHelper authHelper;
 
-    public ClinicController(JdbcTemplate jdbcTemplate) {
+    public ClinicController(JdbcTemplate jdbcTemplate, AuthorizationHelper authHelper) {
         this.jdbcTemplate = jdbcTemplate;
+        this.authHelper = authHelper;
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<ApiResponse<Map<String, Object>>> getClinicSettings(@PathVariable("id") Long id) {
+        if (!authHelper.isAuthorized(id, "ADMIN", "DOCTOR", "STAFF")) { return ResponseEntity.status(403).body(ApiResponse.error("Unauthorized access to clinic")); }
         String sql = "SELECT name, phone, email, logo_url, website, gst_number, registration_number, " +
                      "address_line, city, state, country, pincode, currency, language FROM clinics WHERE id = ?";
         try {
@@ -48,6 +53,7 @@ public class ClinicController {
 
     @PutMapping("/{id}")
     public ResponseEntity<ApiResponse<Void>> updateClinicSettings(@PathVariable("id") Long id, @RequestBody Map<String, Object> request) {
+        if (!authHelper.isAuthorized(id, "ADMIN")) { return ResponseEntity.status(403).body(ApiResponse.error("Unauthorized access to clinic")); }
         String sql = "UPDATE clinics SET name = ?, phone = ?, email = ?, logo_url = ?, website = ?, gst_number = ?, " +
                      "registration_number = ?, address_line = ?, city = ?, state = ?, country = ?, pincode = ?, " +
                      "currency = ?, language = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?";
@@ -75,6 +81,7 @@ public class ClinicController {
         }
     }    @GetMapping("/{id}/billing")
     public ResponseEntity<ApiResponse<Map<String, Object>>> getBillingSettings(@PathVariable("id") Long id) {
+        if (!authHelper.isAuthorized(id, "ADMIN", "DOCTOR", "STAFF")) { return ResponseEntity.status(403).body(ApiResponse.error("Unauthorized access to clinic")); }
         String sql = "SELECT invoice_prefix, starting_invoice_number, auto_generate_invoice_number, " +
                      "default_tax_percent, tax_label, enable_item_level_tax, enable_invoice_level_discount, " +
                      "selected_template_id, show_clinic_logo, show_clinic_address, show_clinic_contact, " +
@@ -109,6 +116,7 @@ public class ClinicController {
 
     @PutMapping("/{id}/billing")
     public ResponseEntity<ApiResponse<Void>> updateBillingSettings(@PathVariable("id") Long id, @RequestBody Map<String, Object> request) {
+        if (!authHelper.isAuthorized(id, "ADMIN")) { return ResponseEntity.status(403).body(ApiResponse.error("Unauthorized access to clinic")); }
         String sql = "UPDATE billing_settings SET invoice_prefix = ?, starting_invoice_number = ?, " +
                      "auto_generate_invoice_number = ?, default_tax_percent = ?, tax_label = ?, enable_item_level_tax = ?, " +
                      "enable_invoice_level_discount = ?, selected_template_id = ?, show_clinic_logo = ?, show_clinic_address = ?, " +
@@ -144,6 +152,7 @@ public class ClinicController {
 
     @GetMapping("/{id}/prescription")
     public ResponseEntity<ApiResponse<Map<String, Object>>> getPrescriptionSettings(@PathVariable("id") Long id) {
+        if (!authHelper.isAuthorized(id, "ADMIN", "DOCTOR", "STAFF")) { return ResponseEntity.status(403).body(ApiResponse.error("Unauthorized access to clinic")); }
         String sql = "SELECT prefix, starting_number, auto_generate_number, header_layout, show_clinic_logo, " +
                      "show_doctor_qualifications, show_doctor_department, show_vitals, show_patient_history, " +
                      "show_diagnosis, show_duration, show_dosage_instructions, default_footer_note FROM prescription_settings WHERE clinic_id = ?";
@@ -172,6 +181,7 @@ public class ClinicController {
 
     @PutMapping("/{id}/prescription")
     public ResponseEntity<ApiResponse<Void>> updatePrescriptionSettings(@PathVariable("id") Long id, @RequestBody Map<String, Object> request) {
+        if (!authHelper.isAuthorized(id, "ADMIN")) { return ResponseEntity.status(403).body(ApiResponse.error("Unauthorized access to clinic")); }
         String sql = "UPDATE prescription_settings SET prefix = ?, starting_number = ?, auto_generate_number = ?, " +
                      "header_layout = ?, show_clinic_logo = ?, show_doctor_qualifications = ?, show_doctor_department = ?, " +
                      "show_vitals = ?, show_patient_history = ?, show_diagnosis = ?, show_duration = ?, " +
@@ -196,6 +206,81 @@ public class ClinicController {
             return ResponseEntity.ok(ApiResponse.success("Prescription settings updated successfully", null));
         } catch (Exception e) {
             return ResponseEntity.status(500).body(ApiResponse.error("Failed to update prescription settings: " + e.getMessage()));
+        }
+    }
+
+    @PostMapping
+    public ResponseEntity<ApiResponse<Map<String, Object>>> createClinic(@RequestBody Map<String, Object> request) {
+        org.springframework.security.core.Authentication auth = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
+        if (auth == null || !auth.isAuthenticated() || !auth.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"))) { return ResponseEntity.status(403).body(ApiResponse.error("Unauthorized to create clinic")); }
+        String name = (String) request.get("name");
+        String code = (String) request.get("code");
+        String phone = (String) request.get("phone");
+        String email = (String) request.get("email");
+        String address = (String) request.get("address");
+
+        if (name == null || name.trim().isEmpty()) {
+            return ResponseEntity.badRequest().body(ApiResponse.error("Clinic name is required"));
+        }
+        if (code == null || code.trim().isEmpty()) {
+            return ResponseEntity.badRequest().body(ApiResponse.error("Clinic code is required"));
+        }
+
+        // Generate a unique 10-digit ID (starts with a digit from 1-9)
+        Long clinicId = generateUnique10DigitId();
+
+        // 1. Insert into clinics
+        String insertClinicSql = "INSERT INTO clinics (id, name, code, phone, email, address) VALUES (?, ?, ?, ?, ?, ?)";
+        // 2. Insert into billing_settings
+        String insertBillingSql = "INSERT INTO billing_settings (clinic_id) VALUES (?)";
+        // 3. Insert into prescription_settings
+        String insertPrescriptionSql = "INSERT INTO prescription_settings (clinic_id) VALUES (?)";
+        // 4. Insert into clinic_settings
+        String insertClinicSettingsSql = "INSERT INTO clinic_settings (clinic_id, setting_key, setting_value) VALUES (?, ?, ?)";
+
+        try {
+            // Check if code already exists
+            String checkCodeSql = "SELECT COUNT(*) FROM clinics WHERE code = ?";
+            Integer count = jdbcTemplate.queryForObject(checkCodeSql, Integer.class, code);
+            if (count != null && count > 0) {
+                return ResponseEntity.badRequest().body(ApiResponse.error("Clinic code already exists: " + code));
+            }
+
+            jdbcTemplate.update(insertClinicSql, clinicId, name, code, phone, email, address);
+            jdbcTemplate.update(insertBillingSql, clinicId);
+            jdbcTemplate.update(insertPrescriptionSql, clinicId);
+            
+            // Seed clinic settings
+            jdbcTemplate.update(insertClinicSettingsSql, clinicId, "operating_hours", 
+                "{\"monday_to_friday\": \"08:00 AM - 05:00 PM\", \"saturday\": \"09:00 AM - 01:00 PM\", \"sunday\": \"Closed\"}");
+            jdbcTemplate.update(insertClinicSettingsSql, clinicId, "alert_threshold_inventory", "15");
+            jdbcTemplate.update(insertClinicSettingsSql, clinicId, "enable_auto_sms_reminders", "true");
+
+            Map<String, Object> response = new HashMap<>();
+            response.put("id", clinicId);
+            response.put("name", name);
+            response.put("code", code);
+            response.put("phone", phone != null ? phone : "");
+            response.put("email", email != null ? email : "");
+            response.put("address", address != null ? address : "");
+
+            return ResponseEntity.status(201).body(ApiResponse.success("Clinic created successfully", response));
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body(ApiResponse.error("Failed to create clinic: " + e.getMessage()));
+        }
+    }
+
+    private Long generateUnique10DigitId() {
+        java.util.Random random = new java.util.Random();
+        while (true) {
+            // Generate a 10-digit number (1000000000 to 9999999999)
+            long val = 1000000000L + (Math.abs(random.nextLong()) % 9000000000L);
+            // Verify uniqueness in database
+            String checkIdSql = "SELECT COUNT(*) FROM clinics WHERE id = ?";
+            Integer count = jdbcTemplate.queryForObject(checkIdSql, Integer.class, val);
+            if (count == null || count == 0) {
+                return val;
+            }
         }
     }
 }

@@ -109,23 +109,33 @@ public class AppointmentServiceImpl implements AppointmentService {
     @Override
     public Page<AppointmentResponseDto> getFilteredAppointments(
             Long clinicId,
-            Long doctorId,
+            String doctorName,
             String status,
             Instant fromDate,
             Instant toDate,
-            String patientQuery,
+            String patientName,
+            String patientMobile,
+            String visitType,
+            Long patientId,
+            Long doctorId,
             Pageable pageable) {
         
-        log.info("Listing appointments dynamically with filters - doctorId: {}, status: {}, patientQuery: {}, in clinic: {}", 
-                doctorId, status, patientQuery, clinicId);
+        log.info("Listing appointments dynamically with filters - doctorName: {}, status: {}, patientName: {}, patientMobile: {}, visitType: {}, patientId: {}, doctorId: {}", 
+                doctorName, status, patientName, patientMobile, visitType, patientId, doctorId);
                 
         StringBuilder jpql = new StringBuilder("SELECT a FROM Appointment a ");
         jpql.append("LEFT JOIN FETCH a.patient p ");
         jpql.append("LEFT JOIN FETCH a.doctor d ");
         jpql.append("WHERE a.clinicId = :clinicId ");
         
+        if (patientId != null) {
+            jpql.append("AND a.patientId = :patientId ");
+        }
         if (doctorId != null) {
             jpql.append("AND a.doctorId = :doctorId ");
+        }
+        if (doctorName != null && !doctorName.trim().isEmpty() && !"all".equalsIgnoreCase(doctorName)) {
+            jpql.append("AND (LOWER(d.firstName) LIKE :doctorPattern OR LOWER(d.lastName) LIKE :doctorPattern OR LOWER(CONCAT(d.firstName, ' ', d.lastName)) LIKE :doctorPattern) ");
         }
         if (status != null && !status.trim().isEmpty() && !status.equalsIgnoreCase("all")) {
             jpql.append("AND LOWER(a.status) = LOWER(:status) ");
@@ -136,10 +146,14 @@ public class AppointmentServiceImpl implements AppointmentService {
         if (toDate != null) {
             jpql.append("AND a.appointmentDateTime <= :toDate ");
         }
-        if (patientQuery != null && !patientQuery.trim().isEmpty()) {
-            jpql.append("AND (LOWER(p.fullName) LIKE :patientQueryPattern OR ");
-            jpql.append("     LOWER(p.mobile) LIKE :patientQueryPattern OR ");
-            jpql.append("     CAST(p.id AS string) = :patientQuery) ");
+        if (patientName != null && !patientName.trim().isEmpty()) {
+            jpql.append("AND (LOWER(p.fullName) LIKE :patientNamePattern OR CAST(p.id AS string) = :patientNameQuery) ");
+        }
+        if (patientMobile != null && !patientMobile.trim().isEmpty()) {
+            jpql.append("AND LOWER(p.mobile) LIKE :patientMobilePattern ");
+        }
+        if (visitType != null && !visitType.trim().isEmpty() && !"all".equalsIgnoreCase(visitType)) {
+            jpql.append("AND LOWER(a.visitType) = LOWER(:visitType) ");
         }
         
         // Add sorting
@@ -158,8 +172,14 @@ public class AppointmentServiceImpl implements AppointmentService {
         
         // Bind parameters
         query.setParameter("clinicId", clinicId);
+        if (patientId != null) {
+            query.setParameter("patientId", patientId);
+        }
         if (doctorId != null) {
             query.setParameter("doctorId", doctorId);
+        }
+        if (doctorName != null && !doctorName.trim().isEmpty() && !"all".equalsIgnoreCase(doctorName)) {
+            query.setParameter("doctorPattern", "%" + doctorName.trim().toLowerCase() + "%");
         }
         if (status != null && !status.trim().isEmpty() && !status.equalsIgnoreCase("all")) {
             query.setParameter("status", status.trim());
@@ -170,13 +190,18 @@ public class AppointmentServiceImpl implements AppointmentService {
         if (toDate != null) {
             query.setParameter("toDate", toDate);
         }
-        if (patientQuery != null && !patientQuery.trim().isEmpty()) {
-            String pattern = "%" + patientQuery.trim().toLowerCase() + "%";
-            query.setParameter("patientQueryPattern", pattern);
-            query.setParameter("patientQuery", patientQuery.trim());
+        if (patientName != null && !patientName.trim().isEmpty()) {
+            query.setParameter("patientNamePattern", "%" + patientName.trim().toLowerCase() + "%");
+            query.setParameter("patientNameQuery", patientName.trim());
+        }
+        if (patientMobile != null && !patientMobile.trim().isEmpty()) {
+            query.setParameter("patientMobilePattern", "%" + patientMobile.trim().toLowerCase() + "%");
+        }
+        if (visitType != null && !visitType.trim().isEmpty() && !"all".equalsIgnoreCase(visitType)) {
+            query.setParameter("visitType", visitType.trim());
         }
         
-        // Fetch full matching list for total count (standard in pagination mapping context)
+        // Fetch full matching list for total count
         List<Appointment> allMatching = query.getResultList();
         int totalRows = allMatching.size();
         

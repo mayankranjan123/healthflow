@@ -10,18 +10,24 @@ import java.util.Collections;
 public class UserPrincipal implements UserDetails {
 
     private final Long id;
+    private final Long clinicId;
     private final String email;
     private final String password;
     private final Collection<? extends GrantedAuthority> authorities;
     private final boolean isActive;
 
-    public UserPrincipal(Long id, String email, String password, String roleName, boolean isActive) {
+    public UserPrincipal(Long id, Long clinicId, String email, String password, String roleName, boolean isActive) {
         this.id = id;
+        this.clinicId = clinicId;
         this.email = email;
         this.password = password;
         this.isActive = isActive;
         // In Spring Security, roles are traditionally prefixed with 'ROLE_'
         this.authorities = Collections.singletonList(new SimpleGrantedAuthority("ROLE_" + roleName));
+    }
+
+    public Long getClinicId() {
+        return clinicId;
     }
 
     public Long getId() {

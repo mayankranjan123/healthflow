@@ -22,6 +22,7 @@ import {
 } from 'lucide-react';
 import { DoctorProfileExtended, DoctorCalendarAppointment } from '../types';
 import { mockDoctorsApi } from '../utils/mockDoctorsApi';
+import { doctorService } from '../../../lib/apiClient';
 import { DoctorFilters } from '../components/DoctorFilters';
 import { WeeklyCalendar } from '../components/WeeklyCalendar';
 import { Badge } from '../../../components/ui/Badge';
@@ -74,57 +75,110 @@ export const DoctorsPage: React.FC = () => {
     avatarUrl: ''
   });
 
-  // Load from API
+  const [specializations, setSpecializations] = useState<string[]>([
+    'Cardiologist',
+    'Neurologist',
+    'Pediatrician',
+    'Dermatologist',
+    'Orthopedic',
+    'General Practitioner'
+  ]);
+  const [isLoadingDoctors, setIsLoadingDoctors] = useState(false);
+  const [totalElements, setTotalElements] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
+
+  // Fetch unique specializations once on mount
   useEffect(() => {
-    mockDoctorsApi.getDoctors().then(setDoctors);
-    mockDoctorsApi.getAppointments().then(setAppointments);
+    doctorService.getDoctors(1000000000, { pageNo: 0, pageSize: 1000 })
+      .then((res) => {
+        const specs = Array.from(new Set((res.data || []).map((d: any) => d.specialization))).filter(Boolean);
+        if (specs.length > 0) {
+          setSpecializations(specs as string[]);
+        }
+      })
+      .catch((err) => console.error(err));
   }, []);
+
+  // Search Debounce hook
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm);
+      setCurrentPage(1);
+    }, 400);
+    return () => clearTimeout(handler);
+  }, [searchTerm]);
+
+  // Load paginated/filtered doctor list from API
+  useEffect(() => {
+    setIsLoadingDoctors(true);
+    mockDoctorsApi.getDoctors({
+      pageNo: currentPage - 1,
+      pageSize: rowsPerPage,
+      searchPrefix: debouncedSearchTerm,
+      specialization: selectedSpecialization === 'All' ? 'ALL' : selectedSpecialization,
+      status: selectedStatus === 'All' ? 'ALL' : selectedStatus
+    })
+    .then((res) => {
+      setDoctors(res.items);
+      setTotalElements(res.totalItems);
+      setTotalPages(res.totalPages);
+      setIsLoadingDoctors(false);
+    })
+    .catch((err) => {
+      console.error(err);
+      setIsLoadingDoctors(false);
+    });
+  }, [currentPage, rowsPerPage, debouncedSearchTerm, selectedSpecialization, selectedStatus]);
+
+  // Load appointments for active selected doctor only when appointments tab is selected
+  useEffect(() => {
+    if (selectedDoctorId && profileTab === 'appointments') {
+      mockDoctorsApi.getAppointmentsForDoctor(selectedDoctorId)
+        .then(setAppointments)
+        .catch(err => console.error(err));
+    }
+  }, [selectedDoctorId, profileTab]);
+
+  // Refresh Doctors list
+  const refreshDoctorsList = () => {
+    mockDoctorsApi.getDoctors({
+      pageNo: currentPage - 1,
+      pageSize: rowsPerPage,
+      searchPrefix: debouncedSearchTerm,
+      specialization: selectedSpecialization === 'All' ? 'ALL' : selectedSpecialization,
+      status: selectedStatus === 'All' ? 'ALL' : selectedStatus
+    })
+    .then((res) => {
+      setDoctors(res.items);
+      setTotalElements(res.totalItems);
+      setTotalPages(res.totalPages);
+    })
+    .catch(err => console.error(err));
+  };
 
   // Save changes back to localStorage
   const handleSaveDoctorsList = (updated: DoctorProfileExtended[]) => {
     setDoctors(updated);
     mockDoctorsApi.saveDoctors(updated).then(() => {
-      mockDoctorsApi.getDoctors().then(setDoctors);
+      refreshDoctorsList();
     });
   };
 
   const handleSaveAppointmentsList = (updated: DoctorCalendarAppointment[]) => {
     setAppointments(updated);
     mockDoctorsApi.saveAppointments(updated).then(() => {
-      mockDoctorsApi.getAppointments().then(setAppointments);
+      if (selectedDoctorId) {
+        mockDoctorsApi.getAppointmentsForDoctor(selectedDoctorId).then(setAppointments);
+      }
     });
   };
 
-  // Get list of unique specializations
-  const specializations = Array.from(
-    new Set(doctors.map((d) => d.specialization))
-  ).filter(Boolean);
-
-  // Filter logic
-  const filteredDoctors = doctors.filter((doc) => {
-    const searchLower = searchTerm.toLowerCase();
-    const matchesSearch =
-      doc.name.toLowerCase().includes(searchLower) ||
-      doc.id.toLowerCase().includes(searchLower) ||
-      doc.email.toLowerCase().includes(searchLower);
-
-    const matchesSpecialization =
-      selectedSpecialization === 'All' || doc.specialization === selectedSpecialization;
-
-    const matchesStatus =
-      selectedStatus === 'All' ||
-      (selectedStatus === 'Active' && doc.isActive) ||
-      (selectedStatus === 'Inactive' && !doc.isActive);
-
-    return matchesSearch && matchesSpecialization && matchesStatus;
-  });
-
   // Pagination calculations
-  const totalRows = filteredDoctors.length;
+  const totalRows = totalElements;
   const startIndex = (currentPage - 1) * rowsPerPage;
   const endIndex = Math.min(startIndex + rowsPerPage, totalRows);
-  const paginatedDoctors = filteredDoctors.slice(startIndex, endIndex);
-  const totalPages = Math.ceil(totalRows / rowsPerPage) || 1;
+  const paginatedDoctors = doctors;
 
   const handleResetFilters = () => {
     setSearchTerm('');
@@ -299,7 +353,7 @@ export const DoctorsPage: React.FC = () => {
 
                         {/* 5. Consultation Fee */}
                         <td className="py-3 px-4 text-right font-extrabold text-blue-600">
-                          ${doc.fee.toFixed(2)}
+                          ₹{doc.fee.toFixed(2)}
                         </td>
 
                         {/* 6. Total Completed Consultations */}
@@ -309,7 +363,7 @@ export const DoctorsPage: React.FC = () => {
 
                         {/* 7. Followup Fee */}
                         <td className="py-3 px-4 text-right font-bold text-blue-600">
-                          ${doc.followupFee ? doc.followupFee.toFixed(2) : (doc.fee * 0.6).toFixed(2)}
+                          ₹{doc.followupFee.toFixed(2)}
                         </td>
 
                         {/* 8. Working Hours */}
@@ -461,14 +515,14 @@ export const DoctorsPage: React.FC = () => {
               <div className="text-center">
                 <div className="text-xs font-bold text-slate-400 uppercase tracking-wider">Followup Fee</div>
                 <div className="text-xl font-extrabold text-slate-800 mt-1">
-                  ${activeDoctor.followupFee}
+                  ₹{activeDoctor.followupFee}
                 </div>
               </div>
               <div className="w-px h-8 bg-slate-200" />
               <div className="text-center">
                 <div className="text-xs font-bold text-slate-400 uppercase tracking-wider">Consultation Fee</div>
                 <div className="text-xl font-extrabold text-blue-600 mt-1">
-                  ${activeDoctor.fee}
+                  ₹{activeDoctor.fee}
                 </div>
               </div>
               <div className="w-px h-8 bg-slate-200" />
@@ -617,7 +671,7 @@ export const DoctorsPage: React.FC = () => {
                   </div>
                   <div className="space-y-1">
                     <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block text-blue-500">Consultation Fees</span>
-                    <span className="font-extrabold text-blue-600 text-lg">${activeDoctor.fee}</span>
+                    <span className="font-extrabold text-blue-600 text-lg">₹{activeDoctor.fee}</span>
                   </div>
                   <div className="space-y-1">
                     <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block">Total Completed Consultations</span>
@@ -625,7 +679,7 @@ export const DoctorsPage: React.FC = () => {
                   </div>
                   <div className="space-y-1">
                     <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block">Followup Fees</span>
-                    <span className="font-extrabold text-slate-700">${activeDoctor.followupFee}</span>
+                    <span className="font-extrabold text-slate-700">₹{activeDoctor.followupFee}</span>
                   </div>
                 </div>
               </div>
@@ -700,7 +754,7 @@ export const DoctorsPage: React.FC = () => {
             <Input
               id="doc-mobile"
               label="Contact Mobile"
-              placeholder="e.g. +1 (555) 0123-4567"
+              placeholder="e.g. +91 99999 99999"
               value={doctorForm.mobile}
               onChange={(e) => setDoctorForm({ ...doctorForm, mobile: e.target.value })}
               required
@@ -743,7 +797,7 @@ export const DoctorsPage: React.FC = () => {
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <Input
               id="doc-fee"
-              label="Consultation Fee ($)"
+              label="Consultation Fee (₹)"
               type="number"
               placeholder="120"
               value={doctorForm.fee}
@@ -752,7 +806,7 @@ export const DoctorsPage: React.FC = () => {
             />
             <Input
               id="doc-followup"
-              label="Followup Fee ($)"
+              label="Followup Fee (₹)"
               type="number"
               placeholder="80"
               value={doctorForm.followupFee}

@@ -1,5 +1,7 @@
 package com.healthflow.doctor.controller;
 
+import com.healthflow.security.AuthorizationHelper;
+
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.healthflow.appointment.repository.AppointmentRepository;
 import com.healthflow.common.dto.ApiResponse;
@@ -18,10 +20,15 @@ public class DoctorController {
 
     private final DoctorRepository doctorRepository;
     private final AppointmentRepository appointmentRepository;
+    private final AuthorizationHelper authHelper;
 
-    public DoctorController(DoctorRepository doctorRepository, AppointmentRepository appointmentRepository) {
+    @jakarta.persistence.PersistenceContext
+    private jakarta.persistence.EntityManager entityManager;
+
+    public DoctorController(DoctorRepository doctorRepository, AppointmentRepository appointmentRepository, AuthorizationHelper authHelper) {
         this.doctorRepository = doctorRepository;
         this.appointmentRepository = appointmentRepository;
+        this.authHelper = authHelper;
     }
 
     private Long getCurrentDoctorUserId() {
@@ -38,25 +45,115 @@ public class DoctorController {
     }
 
     @GetMapping
-    public ResponseEntity<ApiResponse<List<DoctorDto>>> getDoctors(
-            @RequestParam(value = "clinicId", defaultValue = "1") Long clinicId) {
-        List<Doctor> doctors = doctorRepository.findAll();
-        
-        Long currentDocUserId = getCurrentDoctorUserId();
-        
-        List<DoctorDto> dtos = doctors.stream()
-                .filter(d -> d.getClinicId().equals(clinicId))
-                .filter(d -> currentDocUserId == null || (d.getUserId() != null && d.getUserId().equals(currentDocUserId)))
-                .map(this::mapToDto)
-                .collect(Collectors.toList());
+    public ResponseEntity<ApiResponse<java.util.Map<String, Object>>> getDoctors(
+            @RequestParam(value = "clinicId", defaultValue = "1000000000") Long clinicId,
+            @RequestParam(value = "pageNo", defaultValue = "0") int pageNo,
+            @RequestParam(value = "pageSize", defaultValue = "10") int pageSize,
+            @RequestParam(value = "searchPrefix", required = false) String searchPrefix,
+            @RequestParam(value = "specialization", required = false) String specialization,
+            @RequestParam(value = "status", required = false) String status) {
 
-        return ResponseEntity.ok(ApiResponse.success("Doctors retrieved successfully", dtos));
+        if (!authHelper.isAuthorized(clinicId, "ADMIN", "DOCTOR", "STAFF")) { return ResponseEntity.status(403).body(ApiResponse.error("Unauthorized access to clinic")); }
+        StringBuilder jpql = new StringBuilder("SELECT d FROM Doctor d WHERE d.clinicId = :clinicId");
+
+        // Filter current doctor if needed
+        Long currentDocUserId = getCurrentDoctorUserId();
+        if (currentDocUserId != null) {
+            jpql.append(" AND d.userId = :currentDocUserId");
+        }
+
+        if (specialization != null && !specialization.isBlank() && !"ALL".equalsIgnoreCase(specialization)) {
+            jpql.append(" AND LOWER(d.specialization) = LOWER(:specialization)");
+        }
+
+        if (status != null && !status.isBlank() && !"ALL".equalsIgnoreCase(status)) {
+            jpql.append(" AND d.isActive = :isActive");
+        }
+
+        if (searchPrefix != null && !searchPrefix.isBlank()) {
+            jpql.append(" AND (LOWER(d.firstName) LIKE LOWER(:search) OR LOWER(d.lastName) LIKE LOWER(:search) OR LOWER(d.email) LIKE LOWER(:search) OR CAST(d.id AS string) LIKE :search)");
+        }
+
+        // Count query
+        String countJpql = jpql.toString().replace("SELECT d", "SELECT COUNT(d)");
+        jakarta.persistence.TypedQuery<Long> countQuery = entityManager.createQuery(countJpql, Long.class);
+        countQuery.setParameter("clinicId", clinicId);
+        if (currentDocUserId != null) {
+            countQuery.setParameter("currentDocUserId", currentDocUserId);
+        }
+        if (specialization != null && !specialization.isBlank() && !"ALL".equalsIgnoreCase(specialization)) {
+            countQuery.setParameter("specialization", specialization.trim());
+        }
+        if (status != null && !status.isBlank() && !"ALL".equalsIgnoreCase(status)) {
+            countQuery.setParameter("isActive", "ACTIVE".equalsIgnoreCase(status));
+        }
+        if (searchPrefix != null && !searchPrefix.isBlank()) {
+            countQuery.setParameter("search", "%" + searchPrefix.trim() + "%");
+        }
+
+        Long totalItems = countQuery.getSingleResult();
+
+        // Data query
+        jakarta.persistence.TypedQuery<Doctor> query = entityManager.createQuery(jpql.toString(), Doctor.class);
+        query.setParameter("clinicId", clinicId);
+        if (currentDocUserId != null) {
+            query.setParameter("currentDocUserId", currentDocUserId);
+        }
+        if (specialization != null && !specialization.isBlank() && !"ALL".equalsIgnoreCase(specialization)) {
+            query.setParameter("specialization", specialization.trim());
+        }
+        if (status != null && !status.isBlank() && !"ALL".equalsIgnoreCase(status)) {
+            query.setParameter("isActive", "ACTIVE".equalsIgnoreCase(status));
+        }
+        if (searchPrefix != null && !searchPrefix.isBlank()) {
+            query.setParameter("search", "%" + searchPrefix.trim() + "%");
+        }
+
+        // Pagination limits
+        query.setFirstResult(pageNo * pageSize);
+        query.setMaxResults(pageSize);
+
+        List<Doctor> doctors = query.getResultList();
+        List<DoctorDto> dtos = doctors.stream().map(this::mapToDto).collect(Collectors.toList());
+
+        int totalPages = (int) Math.ceil((double) totalItems / pageSize);
+        if (totalPages == 0) totalPages = 1;
+
+        java.util.Map<String, Object> pageData = new java.util.HashMap<>();
+        pageData.put("content", dtos);
+        pageData.put("totalPages", totalPages);
+        pageData.put("totalElements", String.valueOf(totalItems));
+        pageData.put("size", pageSize);
+
+        java.util.Map<String, Object> sortMap = new java.util.HashMap<>();
+        sortMap.put("empty", false);
+        sortMap.put("sorted", true);
+        sortMap.put("unsorted", false);
+        pageData.put("sort", sortMap);
+
+        pageData.put("numberOfElements", dtos.size());
+
+        return ResponseEntity.ok(ApiResponse.success("Doctors retrieved successfully", pageData));
+    }
+
+    @GetMapping("/email/{email}")
+    public ResponseEntity<ApiResponse<DoctorDto>> getDoctorByEmail(
+            @PathVariable("email") String email) {
+        Optional<Doctor> existingOpt = doctorRepository.findByEmail(email);
+        if (existingOpt.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+        if (!authHelper.isAuthorized(existingOpt.get().getClinicId(), "ADMIN", "DOCTOR", "STAFF")) {
+            return ResponseEntity.status(403).body(ApiResponse.error("Unauthorized access to clinic"));
+        }
+        return ResponseEntity.ok(ApiResponse.success("Doctor retrieved successfully", mapToDto(existingOpt.get())));
     }
 
     @PostMapping
     public ResponseEntity<ApiResponse<DoctorDto>> createDoctor(
-            @RequestParam(value = "clinicId", defaultValue = "1") Long clinicId,
+            @RequestParam(value = "clinicId", defaultValue = "1000000000") Long clinicId,
             @RequestBody DoctorDto dto) {
+        if (!authHelper.isAuthorized(clinicId, "ADMIN")) { return ResponseEntity.status(403).body(ApiResponse.error("Unauthorized access to clinic")); }
         Doctor doctor = new Doctor();
         doctor.setClinicId(clinicId);
         
@@ -90,8 +187,9 @@ public class DoctorController {
     @PutMapping("/{id}")
     public ResponseEntity<ApiResponse<DoctorDto>> updateDoctor(
             @PathVariable("id") Long doctorId,
-            @RequestParam(value = "clinicId", defaultValue = "1") Long clinicId,
+            @RequestParam(value = "clinicId", defaultValue = "1000000000") Long clinicId,
             @RequestBody DoctorDto dto) {
+        if (!authHelper.isAuthorized(clinicId, "ADMIN")) { return ResponseEntity.status(403).body(ApiResponse.error("Unauthorized access to clinic")); }
         Optional<Doctor> existingOpt = doctorRepository.findById(doctorId);
         if (existingOpt.isEmpty()) {
             return ResponseEntity.notFound().build();

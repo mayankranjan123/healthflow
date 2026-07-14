@@ -43,6 +43,7 @@ export interface PatientPrescription {
   testsRecommended?: string;
   advice?: string;
   nextVisitDate?: string; // YYYY-MM-DD
+  headerLayout?: 'CLASSIC_LEFT' | 'CENTERED_PROFESSIONAL';
 }
 
 export interface PatientProfileExtended {

@@ -82,7 +82,7 @@ export const DashboardPage: React.FC = () => {
           if (parsed?.name) setUserName(parsed.name);
         }
 
-        const dashboardData = await reportService.getDashboardData(1, { fromDate, toDate });
+        const dashboardData = await reportService.getDashboardData(1000000000, { fromDate, toDate });
 
         if (!active) return;
 
@@ -134,14 +134,14 @@ export const DashboardPage: React.FC = () => {
       endOfDay.setHours(23, 59, 59, 999);
       const endIso = endOfDay.toISOString();
 
-      const apptData = await appointmentService.getAppointments(1, {
+      const apptData = await appointmentService.getAppointments(1000000000, {
         fromDate: startIso,
         toDate: endIso,
         size: 1000,
       });
       const apptsList = apptData.content || [];
 
-      const headers = ["Appointment Code", "Patient Name", "Doctor Name", "Date/Time", "Status", "Reason", "Notes"];
+      const headers = ["Appointment Code", "Patient Name", "Doctor Name", "Date/Time", "Status", "Reason", "Visit Type"];
       const rows = apptsList.map(appt => [
         appt.appointmentCode || appt.id.toString(),
         appt.patientName,
@@ -149,7 +149,7 @@ export const DashboardPage: React.FC = () => {
         new Date(appt.appointmentDateTime).toLocaleString(),
         appt.status,
         appt.appointmentReason || '',
-        appt.notes || ''
+        appt.visitType || ''
       ]);
 
       const content = [headers.join(","), ...rows.map(e => e.map(val => `"${val.replace(/"/g, '""')}"`).join(","))].join("\n");

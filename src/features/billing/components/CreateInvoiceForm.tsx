@@ -152,7 +152,7 @@ export const CreateInvoiceForm: React.FC<CreateInvoiceFormProps> = ({
         if (lowerName === 'consultation fee') {
           rate = selectedDoctor.fee || 100;
           updated.rate = rate;
-        } else if (lowerName === 'follow-up fee' || lowerName === 'followup fee') {
+        } else if (lowerName === 'follow-up fee' || lowerName === 'followup fee' || lowerName === 'follow-up charges' || lowerName === 'followup charges') {
           rate = selectedDoctor.followupFee || 60;
           updated.rate = rate;
         }
@@ -428,7 +428,7 @@ export const CreateInvoiceForm: React.FC<CreateInvoiceFormProps> = ({
                                     let newRate = item.rate;
                                     if (lowerName === 'consultation fee') {
                                       newRate = doc.fee || 100;
-                                    } else if (lowerName === 'follow-up fee' || lowerName === 'followup fee') {
+                                    } else if (lowerName === 'follow-up fee' || lowerName === 'followup fee' || lowerName === 'follow-up charges' || lowerName === 'followup charges') {
                                       newRate = doc.followupFee || 60;
                                     }
                                     return {

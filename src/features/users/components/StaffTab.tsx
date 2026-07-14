@@ -5,6 +5,14 @@ import { StaffUser } from '../types';
 
 interface StaffTabProps {
   staffList: StaffUser[];
+  totalItems: number;
+  totalPages: number;
+  currentPage: number;
+  searchTerm: string;
+  setSearchTerm: (s: string) => void;
+  statusFilter: 'ALL' | 'ACTIVE' | 'INACTIVE';
+  setStatusFilter: (s: 'ALL' | 'ACTIVE' | 'INACTIVE') => void;
+  onPageChange: (p: number) => void;
   onToggleStatus: (id: string) => void;
   onEdit: (staff: StaffUser) => void;
   onAdd: () => void;
@@ -13,38 +21,21 @@ interface StaffTabProps {
 
 export const StaffTab: React.FC<StaffTabProps> = ({
   staffList,
+  totalItems,
+  totalPages,
+  currentPage,
+  searchTerm,
+  setSearchTerm,
+  statusFilter,
+  setStatusFilter,
+  onPageChange,
   onToggleStatus,
   onEdit,
   onAdd,
   onView,
 }) => {
-  const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState<'ALL' | 'ACTIVE' | 'INACTIVE'>('ALL');
-  const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 3;
-
-  // Filter staff
-  const filtered = staffList.filter((staff) => {
-    const matchesSearch =
-      staff.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      staff.email.toLowerCase().includes(searchTerm.toLowerCase());
-    
-    if (statusFilter === 'ACTIVE') return matchesSearch && staff.isActive;
-    if (statusFilter === 'INACTIVE') return matchesSearch && !staff.isActive;
-    return matchesSearch;
-  });
-
-  // Paginate staff
-  const totalItems = filtered.length;
-  const totalPages = Math.ceil(totalItems / itemsPerPage) || 1;
+  const itemsPerPage = 5;
   const startIndex = (currentPage - 1) * itemsPerPage;
-  const paginatedStaff = filtered.slice(startIndex, startIndex + itemsPerPage);
-
-  const handlePageChange = (page: number) => {
-    if (page >= 1 && page <= totalPages) {
-      setCurrentPage(page);
-    }
-  };
 
   return (
     <div className="space-y-4 animate-fade-in">
@@ -59,7 +50,7 @@ export const StaffTab: React.FC<StaffTabProps> = ({
               value={searchTerm}
               onChange={(e) => {
                 setSearchTerm(e.target.value);
-                setCurrentPage(1);
+                onPageChange(1);
               }}
               className="w-full pl-10 pr-4 py-2 bg-white border border-slate-200 rounded-lg text-sm outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 transition-all text-slate-700 font-medium"
             />
@@ -70,7 +61,7 @@ export const StaffTab: React.FC<StaffTabProps> = ({
               value={statusFilter}
               onChange={(e) => {
                 setStatusFilter(e.target.value as any);
-                setCurrentPage(1);
+                onPageChange(1);
               }}
               className="bg-white border border-slate-200 rounded-lg text-xs font-semibold px-3 py-2 outline-none text-slate-700 focus:border-blue-600"
             >
@@ -104,14 +95,14 @@ export const StaffTab: React.FC<StaffTabProps> = ({
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {paginatedStaff.length === 0 ? (
+              {staffList.length === 0 ? (
                 <tr>
                   <td colSpan={6} className="px-6 py-10 text-center text-sm text-slate-400 font-medium">
                     No staff accounts found.
                   </td>
                 </tr>
               ) : (
-                paginatedStaff.map((staff) => (
+                staffList.map((staff) => (
                   <tr key={staff.id} className="hover:bg-slate-50/50 transition-colors">
                     {/* Profile */}
                     <td className="px-6 py-4.5">
@@ -187,7 +178,7 @@ export const StaffTab: React.FC<StaffTabProps> = ({
           {totalPages > 1 && (
             <div className="flex items-center gap-1.5">
               <button
-                onClick={() => handlePageChange(currentPage - 1)}
+                onClick={() => onPageChange(currentPage - 1)}
                 disabled={currentPage === 1}
                 className={`p-1.5 rounded-lg border border-slate-200 bg-white text-slate-500 transition-all ${
                   currentPage === 1 ? 'opacity-40 cursor-not-allowed' : 'hover:bg-slate-50 cursor-pointer'
@@ -198,7 +189,7 @@ export const StaffTab: React.FC<StaffTabProps> = ({
               {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
                 <button
                   key={page}
-                  onClick={() => handlePageChange(page)}
+                  onClick={() => onPageChange(page)}
                   className={`w-8 h-8 rounded-lg text-xs font-bold transition-all ${
                     page === currentPage
                       ? 'bg-blue-600 text-white shadow-sm'
@@ -209,7 +200,7 @@ export const StaffTab: React.FC<StaffTabProps> = ({
                 </button>
               ))}
               <button
-                onClick={() => handlePageChange(currentPage + 1)}
+                onClick={() => onPageChange(currentPage + 1)}
                 disabled={currentPage === totalPages}
                 className={`p-1.5 rounded-lg border border-slate-200 bg-white text-slate-500 transition-all ${
                   currentPage === totalPages ? 'opacity-40 cursor-not-allowed' : 'hover:bg-slate-50 cursor-pointer'

@@ -10,6 +10,11 @@ interface AppointmentsTableProps {
   isLoading?: boolean;
   isError?: boolean;
   errorMessage?: string;
+  totalItems: number;
+  totalPages: number;
+  currentPage: number;
+  onPageChange: (page: number) => void;
+  itemsPerPage: number;
 }
 
 export const AppointmentsTable: React.FC<AppointmentsTableProps> = ({
@@ -18,13 +23,14 @@ export const AppointmentsTable: React.FC<AppointmentsTableProps> = ({
   isLoading = false,
   isError = false,
   errorMessage = 'Failed to load appointments. Please try again.',
+  totalItems,
+  totalPages,
+  currentPage,
+  onPageChange,
+  itemsPerPage,
 }) => {
   // Sorting State
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
-
-  // Pagination State
-  const [currentPage, setCurrentPage] = useState<number>(1);
-  const itemsPerPage = 5;
 
   // Toggle sorting direction
   const handleSortToggle = () => {
@@ -32,7 +38,7 @@ export const AppointmentsTable: React.FC<AppointmentsTableProps> = ({
   };
 
   // Sorted appointments
-  const sortedAppointments = useMemo(() => {
+  const paginatedAppointments = useMemo(() => {
     const list = [...appointments];
     list.sort((a, b) => {
       // Combine date and time to parse correctly
@@ -55,21 +61,6 @@ export const AppointmentsTable: React.FC<AppointmentsTableProps> = ({
     });
     return list;
   }, [appointments, sortDirection]);
-
-  // Paginated appointments
-  const paginatedAppointments = useMemo(() => {
-    const startIndex = (currentPage - 1) * itemsPerPage;
-    return sortedAppointments.slice(startIndex, startIndex + itemsPerPage);
-  }, [sortedAppointments, currentPage]);
-
-  const totalPages = Math.max(1, Math.ceil(appointments.length / itemsPerPage));
-
-  // Reset page if data length changes significantly
-  React.useEffect(() => {
-    if (currentPage > totalPages) {
-      setCurrentPage(totalPages);
-    }
-  }, [appointments.length, totalPages, currentPage]);
 
   const getStatusStyle = (status: string) => {
     switch (status) {
@@ -297,20 +288,20 @@ export const AppointmentsTable: React.FC<AppointmentsTableProps> = ({
       </div>
 
       {/* Pagination Footer */}
-      {appointments.length > 0 && (
+      {totalItems > 0 && (
         <div className="px-6 py-4 bg-slate-50 border-t border-slate-100 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div className="text-sm text-slate-500 font-medium">
-            Showing <span className="font-semibold text-slate-700">{Math.min(appointments.length, (currentPage - 1) * itemsPerPage + 1)}</span> to{' '}
+            Showing <span className="font-semibold text-slate-700">{Math.min(totalItems, (currentPage - 1) * itemsPerPage + 1)}</span> to{' '}
             <span className="font-semibold text-slate-700">
-              {Math.min(appointments.length, currentPage * itemsPerPage)}
+              {Math.min(totalItems, currentPage * itemsPerPage)}
             </span>{' '}
-            of <span className="font-semibold text-slate-700">{appointments.length}</span> results
+            of <span className="font-semibold text-slate-700">{totalItems}</span> results
           </div>
 
           <div className="flex items-center gap-1.5 self-center sm:self-auto select-none">
             {/* Prev Button */}
             <button
-              onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+              onClick={() => onPageChange(Math.max(1, currentPage - 1))}
               disabled={currentPage === 1}
               className={`p-1.5 rounded-lg border border-slate-200 transition-all ${
                 currentPage === 1
@@ -327,7 +318,7 @@ export const AppointmentsTable: React.FC<AppointmentsTableProps> = ({
               return (
                 <button
                   key={pageNum}
-                  onClick={() => setCurrentPage(pageNum)}
+                  onClick={() => onPageChange(pageNum)}
                   className={`w-8 h-8 text-xs font-semibold rounded-lg border transition-all cursor-pointer ${
                     currentPage === pageNum
                       ? 'bg-brand-primary text-white border-brand-primary shadow-sm'
@@ -341,7 +332,7 @@ export const AppointmentsTable: React.FC<AppointmentsTableProps> = ({
 
             {/* Next Button */}
             <button
-              onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+              onClick={() => onPageChange(Math.min(totalPages, currentPage + 1))}
               disabled={currentPage === totalPages}
               className={`p-1.5 rounded-lg border border-slate-200 transition-all ${
                 currentPage === totalPages

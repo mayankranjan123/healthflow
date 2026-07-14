@@ -17,6 +17,7 @@ import {
   FileText 
 } from 'lucide-react';
 import { mockUsersApi } from '../utils/mockUsersApi';
+import { DoctorResponseDto, doctorService } from '../../../lib/apiClient';
 import { AdminUser, DoctorUser, StaffUser, ModulePermission } from '../types';
 
 // Tab Components
@@ -48,6 +49,8 @@ export const UsersPage: React.FC<UsersPageProps> = ({ hideHeader = false }) => {
   const [doctors, setDoctors] = useState<DoctorUser[]>([]);
   const [staffList, setStaffList] = useState<StaffUser[]>([]);
   const [permissions, setPermissions] = useState<ModulePermission[]>([]);
+  const [createdUserLink, setCreatedUserLink] = useState<string | null>(null);
+  const [createdUserEmail, setCreatedUserEmail] = useState<string | null>(null);
 
   // Modal States
   const [isFormOpen, setIsFormOpen] = useState(false);
@@ -75,33 +78,207 @@ export const UsersPage: React.FC<UsersPageProps> = ({ hideHeader = false }) => {
     }, 400);
   };
 
-  // Load from API
+  const [isLoadingAdmins, setIsLoadingAdmins] = useState(false);
+  const [isLoadingDoctors, setIsLoadingDoctors] = useState(false);
+  const [isLoadingStaff, setIsLoadingStaff] = useState(false);
+  const [isLoadingPermissions, setIsLoadingPermissions] = useState(false);
+
+  // Admin Pagination/Filter States
+  const [adminPage, setAdminPage] = useState(1);
+  const [adminSearch, setAdminSearch] = useState('');
+  const [adminStatus, setAdminStatus] = useState<'ALL' | 'ACTIVE' | 'INACTIVE'>('ALL');
+  const [adminTotalItems, setAdminTotalItems] = useState(0);
+  const [adminTotalPages, setAdminTotalPages] = useState(1);
+
+  // Doctor Pagination/Filter States
+  const [doctorPage, setDoctorPage] = useState(1);
+  const [doctorSearch, setDoctorSearch] = useState('');
+  const [doctorStatus, setDoctorStatus] = useState<'ALL' | 'ACTIVE' | 'INACTIVE'>('ALL');
+  const [doctorTotalItems, setDoctorTotalItems] = useState(0);
+  const [doctorTotalPages, setDoctorTotalPages] = useState(1);
+
+  // Staff Pagination/Filter States
+  const [staffPage, setStaffPage] = useState(1);
+  const [staffSearch, setStaffSearch] = useState('');
+  const [staffStatus, setStaffStatus] = useState<'ALL' | 'ACTIVE' | 'INACTIVE'>('ALL');
+  const [staffTotalItems, setStaffTotalItems] = useState(0);
+  const [staffTotalPages, setStaffTotalPages] = useState(1);
+
+  // Search Debounces
+  const [debouncedAdminSearch, setDebouncedAdminSearch] = useState('');
   useEffect(() => {
-    mockUsersApi.getAdmins().then(setAdmins).catch(err => console.error(err));
-    mockUsersApi.getDoctors().then(setDoctors).catch(err => console.error(err));
-    mockUsersApi.getStaff().then(setStaffList).catch(err => console.error(err));
-    mockUsersApi.getPermissions().then(setPermissions).catch(err => console.error(err));
-  }, []);
+    const handler = setTimeout(() => {
+      setDebouncedAdminSearch(adminSearch);
+      setAdminPage(1);
+    }, 400);
+    return () => clearTimeout(handler);
+  }, [adminSearch]);
+
+  const [debouncedDoctorSearch, setDebouncedDoctorSearch] = useState('');
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedDoctorSearch(doctorSearch);
+      setDoctorPage(1);
+    }, 400);
+    return () => clearTimeout(handler);
+  }, [doctorSearch]);
+
+  const [debouncedStaffSearch, setDebouncedStaffSearch] = useState('');
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedStaffSearch(staffSearch);
+      setStaffPage(1);
+    }, 400);
+    return () => clearTimeout(handler);
+  }, [staffSearch]);
+
+  // Loader Refresh Helpers
+  const refreshAdminsList = () => {
+    mockUsersApi.getAdmins({
+      pageNo: adminPage - 1,
+      pageSize: 5,
+      status: adminStatus,
+      search: debouncedAdminSearch
+    })
+    .then((res) => {
+      setAdmins(res.items);
+      setAdminTotalItems(res.totalItems);
+      setAdminTotalPages(res.totalPages);
+    })
+    .catch(err => console.error(err));
+  };
+
+  const refreshDoctorsList = () => {
+    mockUsersApi.getDoctors({
+      pageNo: doctorPage - 1,
+      pageSize: 5,
+      status: doctorStatus,
+      search: debouncedDoctorSearch
+    })
+    .then((res) => {
+      setDoctors(res.items);
+      setDoctorTotalItems(res.totalItems);
+      setDoctorTotalPages(res.totalPages);
+    })
+    .catch(err => console.error(err));
+  };
+
+  const refreshStaffList = () => {
+    mockUsersApi.getStaff({
+      pageNo: staffPage - 1,
+      pageSize: 5,
+      status: staffStatus,
+      search: debouncedStaffSearch
+    })
+    .then((res) => {
+      setStaffList(res.items);
+      setStaffTotalItems(res.totalItems);
+      setStaffTotalPages(res.totalPages);
+    })
+    .catch(err => console.error(err));
+  };
+
+  // Load Admin list on activeTab changes or state dependencies changes
+  useEffect(() => {
+    if (activeTab === 'admin') {
+      setIsLoadingAdmins(true);
+      mockUsersApi.getAdmins({
+        pageNo: adminPage - 1,
+        pageSize: 5,
+        status: adminStatus,
+        search: debouncedAdminSearch
+      })
+      .then((res) => {
+        setAdmins(res.items);
+        setAdminTotalItems(res.totalItems);
+        setAdminTotalPages(res.totalPages);
+        setIsLoadingAdmins(false);
+      })
+      .catch(err => {
+        console.error(err);
+        setIsLoadingAdmins(false);
+      });
+    }
+  }, [activeTab, adminPage, adminStatus, debouncedAdminSearch]);
+
+  // Load Doctor list on activeTab changes or state dependencies changes
+  useEffect(() => {
+    if (activeTab === 'doctor') {
+      setIsLoadingDoctors(true);
+      mockUsersApi.getDoctors({
+        pageNo: doctorPage - 1,
+        pageSize: 5,
+        status: doctorStatus,
+        search: debouncedDoctorSearch
+      })
+      .then((res) => {
+        setDoctors(res.items);
+        setDoctorTotalItems(res.totalItems);
+        setDoctorTotalPages(res.totalPages);
+        setIsLoadingDoctors(false);
+      })
+      .catch(err => {
+        console.error(err);
+        setIsLoadingDoctors(false);
+      });
+    }
+  }, [activeTab, doctorPage, doctorStatus, debouncedDoctorSearch]);
+
+  // Load Staff list on activeTab changes or state dependencies changes
+  useEffect(() => {
+    if (activeTab === 'staff') {
+      setIsLoadingStaff(true);
+      mockUsersApi.getStaff({
+        pageNo: staffPage - 1,
+        pageSize: 5,
+        status: staffStatus,
+        search: debouncedStaffSearch
+      })
+      .then((res) => {
+        setStaffList(res.items);
+        setStaffTotalItems(res.totalItems);
+        setStaffTotalPages(res.totalPages);
+        setIsLoadingStaff(false);
+      })
+      .catch(err => {
+        console.error(err);
+        setIsLoadingStaff(false);
+      });
+    }
+  }, [activeTab, staffPage, staffStatus, debouncedStaffSearch]);
+
+  // Load Permissions when activeTab is 'roles' (and not already loaded)
+  useEffect(() => {
+    if (activeTab === 'roles' && permissions.length === 0 && !isLoadingPermissions) {
+      setIsLoadingPermissions(true);
+      mockUsersApi.getPermissions()
+        .then((data) => {
+          setPermissions(data);
+          setIsLoadingPermissions(false);
+        })
+        .catch(err => {
+          console.error(err);
+          setIsLoadingPermissions(false);
+        });
+    }
+  }, [activeTab, permissions.length, isLoadingPermissions]);
 
   // Sync to Storage on list changes
   const saveAdminsToStore = (newAdmins: AdminUser[]) => {
-    setAdmins(newAdmins);
     mockUsersApi.saveAdmins(newAdmins).then(() => {
-      mockUsersApi.getAdmins().then(setAdmins);
+      refreshAdminsList();
     }).catch(err => console.error(err));
   };
 
   const saveDoctorsToStore = (newDoctors: DoctorUser[]) => {
-    setDoctors(newDoctors);
     mockUsersApi.saveDoctors(newDoctors).then(() => {
-      mockUsersApi.getDoctors().then(setDoctors);
+      refreshDoctorsList();
     }).catch(err => console.error(err));
   };
 
   const saveStaffToStore = (newStaff: StaffUser[]) => {
-    setStaffList(newStaff);
     mockUsersApi.saveStaff(newStaff).then(() => {
-      mockUsersApi.getStaff().then(setStaffList);
+      refreshStaffList();
     }).catch(err => console.error(err));
   };
 
@@ -140,8 +317,38 @@ export const UsersPage: React.FC<UsersPageProps> = ({ hideHeader = false }) => {
   };
 
   const handleViewClick = (record: any) => {
-    setViewingRecord(record);
-    setIsViewOpen(true);
+    if (activeTab === 'doctor') {
+      setIsViewOpen(true);
+      setViewingRecord({
+        ...record,
+        isLoadingDetails: true
+      });
+      doctorService.getDoctorByEmail(record.email)
+        .then((details) => {
+          setViewingRecord({
+            ...record,
+            specialization: details.specialization || record.specialization || 'General Physician',
+            qualification: details.qualification || record.qualification || 'MBBS, MD',
+            experience: details.experience || record.experience || '10 Years',
+            fee: Number(details.fee || record.fee || 100),
+            followupFee: Number(details.followupFee || record.followupFee || 60),
+            workingHours: details.workingHours || record.workingHours || '09:00 AM - 05:00 PM',
+            registrationNumber: details.registrationNumber || record.registrationNumber || 'REG-12345',
+            totalConsultations: details.completedConsultations ?? details.totalCompletedConsultations ?? record.totalConsultations ?? 0,
+            isLoadingDetails: false
+          });
+        })
+        .catch((err) => {
+          console.error(err);
+          setViewingRecord({
+            ...record,
+            isLoadingDetails: false
+          });
+        });
+    } else {
+      setViewingRecord(record);
+      setIsViewOpen(true);
+    }
   };
 
   const handleSaveAdmin = (data: Omit<AdminUser, 'id'> & { id?: string }) => {
@@ -162,7 +369,14 @@ export const UsersPage: React.FC<UsersPageProps> = ({ hideHeader = false }) => {
         gender: data.gender,
         dateOfBirth: data.dateOfBirth,
       };
-      saveAdminsToStore([newAdmin, ...admins]);
+      setAdmins([newAdmin, ...admins]);
+      mockUsersApi.saveAdmins([newAdmin, ...admins]).then((link) => {
+        refreshAdminsList();
+        if (link) {
+          setCreatedUserLink(link);
+          setCreatedUserEmail(data.email);
+        }
+      }).catch(err => console.error(err));
     }
     closeFormModal();
   };
@@ -193,7 +407,14 @@ export const UsersPage: React.FC<UsersPageProps> = ({ hideHeader = false }) => {
         gender: data.gender,
         dateOfBirth: data.dateOfBirth,
       };
-      saveDoctorsToStore([newDoctor, ...doctors]);
+      setDoctors([newDoctor, ...doctors]);
+      mockUsersApi.saveDoctors([newDoctor, ...doctors]).then((link) => {
+        refreshDoctorsList();
+        if (link) {
+          setCreatedUserLink(link);
+          setCreatedUserEmail(data.email);
+        }
+      }).catch(err => console.error(err));
     }
     closeFormModal();
   };
@@ -216,7 +437,14 @@ export const UsersPage: React.FC<UsersPageProps> = ({ hideHeader = false }) => {
         gender: data.gender,
         dateOfBirth: data.dateOfBirth,
       };
-      saveStaffToStore([newStaff, ...staffList]);
+      setStaffList([newStaff, ...staffList]);
+      mockUsersApi.saveStaff([newStaff, ...staffList]).then((link) => {
+        refreshStaffList();
+        if (link) {
+          setCreatedUserLink(link);
+          setCreatedUserEmail(data.email);
+        }
+      }).catch(err => console.error(err));
     }
     closeFormModal();
   };
@@ -290,37 +518,89 @@ export const UsersPage: React.FC<UsersPageProps> = ({ hideHeader = false }) => {
       {/* Active Tab View */}
       <div>
         {activeTab === 'admin' && (
-          <AdminTab
-            admins={admins}
-            onToggleStatus={handleToggleAdminStatus}
-            onEdit={handleEditClick}
-            onAdd={handleAddClick}
-            onView={handleViewClick}
-          />
+          isLoadingAdmins ? (
+            <div className="flex flex-col justify-center items-center py-20 bg-white rounded-xl border border-slate-200">
+              <div className="w-10 h-10 border-4 border-blue-600 border-t-transparent rounded-full animate-spin" />
+              <span className="text-slate-500 font-semibold mt-4 text-sm">Loading Administrators...</span>
+            </div>
+          ) : (
+            <AdminTab
+              admins={admins}
+              totalItems={adminTotalItems}
+              totalPages={adminTotalPages}
+              currentPage={adminPage}
+              searchTerm={adminSearch}
+              setSearchTerm={setAdminSearch}
+              statusFilter={adminStatus}
+              setStatusFilter={setAdminStatus}
+              onPageChange={setAdminPage}
+              onToggleStatus={handleToggleAdminStatus}
+              onEdit={handleEditClick}
+              onAdd={handleAddClick}
+              onView={handleViewClick}
+            />
+          )
         )}
         {activeTab === 'doctor' && (
-          <DoctorTab
-            doctors={doctors}
-            onToggleStatus={handleToggleDoctorStatus}
-            onEdit={handleEditClick}
-            onAdd={handleAddClick}
-            onView={handleViewClick}
-          />
+          isLoadingDoctors ? (
+            <div className="flex flex-col justify-center items-center py-20 bg-white rounded-xl border border-slate-200">
+              <div className="w-10 h-10 border-4 border-blue-600 border-t-transparent rounded-full animate-spin" />
+              <span className="text-slate-500 font-semibold mt-4 text-sm">Loading Doctor Profiles...</span>
+            </div>
+          ) : (
+            <DoctorTab
+              doctors={doctors}
+              totalItems={doctorTotalItems}
+              totalPages={doctorTotalPages}
+              currentPage={doctorPage}
+              searchTerm={doctorSearch}
+              setSearchTerm={setDoctorSearch}
+              statusFilter={doctorStatus}
+              setStatusFilter={setDoctorStatus}
+              onPageChange={setDoctorPage}
+              onToggleStatus={handleToggleDoctorStatus}
+              onEdit={handleEditClick}
+              onAdd={handleAddClick}
+              onView={handleViewClick}
+            />
+          )
         )}
         {activeTab === 'staff' && (
-          <StaffTab
-            staffList={staffList}
-            onToggleStatus={handleToggleStaffStatus}
-            onEdit={handleEditClick}
-            onAdd={handleAddClick}
-            onView={handleViewClick}
-          />
+          isLoadingStaff ? (
+            <div className="flex flex-col justify-center items-center py-20 bg-white rounded-xl border border-slate-200">
+              <div className="w-10 h-10 border-4 border-blue-600 border-t-transparent rounded-full animate-spin" />
+              <span className="text-slate-500 font-semibold mt-4 text-sm">Loading Staff List...</span>
+            </div>
+          ) : (
+            <StaffTab
+              staffList={staffList}
+              totalItems={staffTotalItems}
+              totalPages={staffTotalPages}
+              currentPage={staffPage}
+              searchTerm={staffSearch}
+              setSearchTerm={setStaffSearch}
+              statusFilter={staffStatus}
+              setStatusFilter={setStaffStatus}
+              onPageChange={setStaffPage}
+              onToggleStatus={handleToggleStaffStatus}
+              onEdit={handleEditClick}
+              onAdd={handleAddClick}
+              onView={handleViewClick}
+            />
+          )
         )}
         {activeTab === 'roles' && (
-          <RolesTab
-            permissions={permissions}
-            onSave={savePermissionsToStore}
-          />
+          isLoadingPermissions ? (
+            <div className="flex flex-col justify-center items-center py-20 bg-white rounded-xl border border-slate-200">
+              <div className="w-10 h-10 border-4 border-blue-600 border-t-transparent rounded-full animate-spin" />
+              <span className="text-slate-500 font-semibold mt-4 text-sm">Loading Module Permissions...</span>
+            </div>
+          ) : (
+            <RolesTab
+              permissions={permissions}
+              onSave={savePermissionsToStore}
+            />
+          )
         )}
       </div>
 
@@ -364,158 +644,196 @@ export const UsersPage: React.FC<UsersPageProps> = ({ hideHeader = false }) => {
         } Details`}
       >
         {viewingRecord && (
-          <div className="space-y-6">
-            <div className="flex items-center gap-4 pb-4 border-b border-slate-100">
-              <div className="w-16 h-16 rounded-full overflow-hidden bg-slate-100 border border-slate-200">
-                {viewingRecord.avatarUrl ? (
-                  <img src={viewingRecord.avatarUrl} alt="" className="w-full h-full object-cover" />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center font-bold text-slate-500 uppercase text-lg">
-                    {viewingRecord.name ? viewingRecord.name.replace('Dr. ', '').split(' ').map((n: any) => n[0]).join('') : 'U'}
-                  </div>
-                )}
-              </div>
-              <div>
-                <h4 className="font-bold text-slate-800 text-lg">{viewingRecord.name}</h4>
-                <p className="text-xs text-slate-400 font-bold font-mono">{viewingRecord.id}</p>
-                <span className={`inline-flex items-center gap-1.5 mt-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${
-                  viewingRecord.isActive ? 'bg-emerald-50 text-emerald-700 border border-emerald-100' : 'bg-slate-100 text-slate-500 border border-slate-200'
-                }`}>
-                  <span className={`w-1.5 h-1.5 rounded-full ${viewingRecord.isActive ? 'bg-emerald-500 animate-pulse' : 'bg-slate-400'}`} />
-                  {viewingRecord.isActive ? 'Active Authorization' : 'Inactive'}
-                </span>
-              </div>
+          viewingRecord.isLoadingDetails ? (
+            <div className="flex flex-col justify-center items-center py-20">
+              <div className="w-10 h-10 border-4 border-blue-600 border-t-transparent rounded-full animate-spin" />
+              <span className="text-slate-500 font-semibold mt-4 text-sm">Loading Doctor details...</span>
             </div>
+          ) : (
+            <div className="space-y-6">
+              <div className="flex items-center gap-4 pb-4 border-b border-slate-100">
+                <div className="w-16 h-16 rounded-full overflow-hidden bg-slate-100 border border-slate-200">
+                  {viewingRecord.avatarUrl ? (
+                    <img src={viewingRecord.avatarUrl} alt="" className="w-full h-full object-cover" />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center font-bold text-slate-500 uppercase text-lg">
+                      {viewingRecord.name ? viewingRecord.name.replace('Dr. ', '').split(' ').map((n: any) => n[0]).join('') : 'U'}
+                    </div>
+                  )}
+                </div>
+                <div>
+                  <h4 className="font-bold text-slate-800 text-lg">{viewingRecord.name}</h4>
+                  <p className="text-xs text-slate-400 font-bold font-mono">{viewingRecord.id}</p>
+                  <span className={`inline-flex items-center gap-1.5 mt-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${
+                    viewingRecord.isActive ? 'bg-emerald-50 text-emerald-700 border border-emerald-100' : 'bg-slate-100 text-slate-500 border border-slate-200'
+                  }`}>
+                    <span className={`w-1.5 h-1.5 rounded-full ${viewingRecord.isActive ? 'bg-emerald-500 animate-pulse' : 'bg-slate-400'}`} />
+                    {viewingRecord.isActive ? 'Active Authorization' : 'Inactive'}
+                  </span>
+                </div>
+              </div>
 
-            {/* Doctor Extended Fields */}
-            {viewingRecordType === 'doctor' ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-4 gap-x-6 text-sm">
-                <div className="space-y-1">
-                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block">Specialization</span>
-                  <div className="font-semibold text-slate-700 flex items-center gap-2">
-                    <Activity className="w-4 h-4 text-blue-600" />
-                    <span>{viewingRecord.specialization}</span>
+              {/* Doctor Extended Fields */}
+              {viewingRecordType === 'doctor' ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-4 gap-x-6 text-sm">
+                  <div className="space-y-1">
+                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block">Specialization</span>
+                    <div className="font-semibold text-slate-700 flex items-center gap-2">
+                      <Activity className="w-4 h-4 text-blue-600" />
+                      <span>{viewingRecord.specialization}</span>
+                    </div>
+                  </div>
+
+                  <div className="space-y-1">
+                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block">Qualification</span>
+                    <div className="font-semibold text-slate-700 flex items-center gap-2">
+                      <Briefcase className="w-4 h-4 text-blue-600" />
+                      <span>{viewingRecord.qualification}</span>
+                    </div>
+                  </div>
+
+                  <div className="space-y-1">
+                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block">Experience</span>
+                    <div className="font-semibold text-slate-700">{viewingRecord.experience} in medicine</div>
+                  </div>
+
+                  <div className="space-y-1">
+                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block">Consultation Fee</span>
+                    <div className="font-bold text-blue-600 flex items-center gap-1">
+                      <DollarSign className="w-4 h-4 text-blue-600" />
+                      <span>${typeof viewingRecord.fee === 'number' ? viewingRecord.fee.toFixed(2) : '0.00'}</span>
+                    </div>
+                  </div>
+
+                  <div className="space-y-1">
+                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block">Follow-up Fee</span>
+                    <div className="font-bold text-blue-600 flex items-center gap-1">
+                      <DollarSign className="w-4 h-4 text-blue-600" />
+                      <span>${typeof viewingRecord.followupFee === 'number' ? viewingRecord.followupFee.toFixed(2) : (Number(viewingRecord.followupFee || 60).toFixed(2))}</span>
+                    </div>
+                  </div>
+
+                  <div className="space-y-1">
+                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block">Total Completed Consultations</span>
+                    <div className="font-semibold text-slate-700 flex items-center gap-2">
+                      <Activity className="w-4 h-4 text-blue-600" />
+                      <span>{viewingRecord.totalConsultations?.toLocaleString() ?? 0}</span>
+                    </div>
+                  </div>
+
+                  <div className="space-y-1">
+                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block">Working Hours</span>
+                    <div className="font-semibold text-slate-700 flex items-center gap-2">
+                      <Clock className="w-4 h-4 text-blue-600" />
+                      <span>{viewingRecord.workingHours}</span>
+                    </div>
+                  </div>
+
+                  <div className="space-y-1">
+                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block">Registration Number</span>
+                    <div className="font-semibold text-slate-700 flex items-center gap-2">
+                      <FileText className="w-4 h-4 text-blue-600" />
+                      <span className="font-mono">{viewingRecord.registrationNumber}</span>
+                    </div>
+                  </div>
+
+                  <div className="space-y-1">
+                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block">Joining Date</span>
+                    <div className="font-semibold text-slate-700">{viewingRecord.joiningDate}</div>
+                  </div>
+
+                  <div className="space-y-1 sm:col-span-2">
+                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block">Contact Coordinates</span>
+                    <div className="space-y-1.5 mt-1 font-medium text-slate-600">
+                      <div className="flex items-center gap-2">
+                        <Mail className="w-4 h-4 text-slate-400" />
+                        <span>{viewingRecord.email}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Phone className="w-4 h-4 text-slate-400" />
+                        <span>{viewingRecord.mobile}</span>
+                      </div>
+                    </div>
                   </div>
                 </div>
-
-                <div className="space-y-1">
-                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block">Qualification</span>
-                  <div className="font-semibold text-slate-700 flex items-center gap-2">
-                    <Briefcase className="w-4 h-4 text-blue-600" />
-                    <span>{viewingRecord.qualification}</span>
-                  </div>
-                </div>
-
-                <div className="space-y-1">
-                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block">Experience</span>
-                  <div className="font-semibold text-slate-700">{viewingRecord.experience} in medicine</div>
-                </div>
-
-                <div className="space-y-1">
-                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block">Consultation Fee</span>
-                  <div className="font-bold text-blue-600 flex items-center gap-1">
-                    <DollarSign className="w-4 h-4 text-blue-600" />
-                    <span>${typeof viewingRecord.fee === 'number' ? viewingRecord.fee.toFixed(2) : '0.00'}</span>
-                  </div>
-                </div>
-
-                <div className="space-y-1">
-                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block">Follow-up Fee</span>
-                  <div className="font-bold text-blue-600 flex items-center gap-1">
-                    <DollarSign className="w-4 h-4 text-blue-600" />
-                    <span>${typeof viewingRecord.followupFee === 'number' ? viewingRecord.followupFee.toFixed(2) : (Number(viewingRecord.followupFee || 60).toFixed(2))}</span>
-                  </div>
-                </div>
-
-                <div className="space-y-1">
-                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block">Gender</span>
-                  <div className="font-semibold text-slate-700">{viewingRecord.gender || 'Not specified'}</div>
-                </div>
-
-                <div className="space-y-1">
-                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block">Date of Birth</span>
-                  <div className="font-semibold text-slate-700">{viewingRecord.dateOfBirth || 'Not specified'}</div>
-                </div>
-
-                <div className="space-y-1">
-                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block">Total Completed Consultations</span>
-                  <div className="font-semibold text-slate-700 flex items-center gap-2">
-                    <Activity className="w-4 h-4 text-blue-600" />
-                    <span>{viewingRecord.totalConsultations?.toLocaleString() ?? 0}</span>
-                  </div>
-                </div>
-
-                <div className="space-y-1">
-                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block">Working Hours</span>
-                  <div className="font-semibold text-slate-700 flex items-center gap-2">
-                    <Clock className="w-4 h-4 text-blue-600" />
-                    <span>{viewingRecord.workingHours}</span>
-                  </div>
-                </div>
-
-                <div className="space-y-1">
-                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block">Registration Number</span>
-                  <div className="font-semibold text-slate-700 flex items-center gap-2">
-                    <FileText className="w-4 h-4 text-blue-600" />
-                    <span className="font-mono">{viewingRecord.registrationNumber}</span>
-                  </div>
-                </div>
-
-                <div className="space-y-1">
-                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block">Joining Date</span>
-                  <div className="font-semibold text-slate-700">{viewingRecord.joiningDate}</div>
-                </div>
-
-                <div className="space-y-1 sm:col-span-2">
-                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block">Contact Coordinates</span>
-                  <div className="space-y-1.5 mt-1 font-medium text-slate-600">
-                    <div className="flex items-center gap-2">
-                      <Mail className="w-4 h-4 text-slate-400" />
+              ) : (
+                // Simple Contact Fields for Admin / Staff
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-4 gap-x-6 text-sm">
+                  <div className="space-y-1">
+                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block">Email Address</span>
+                    <div className="font-semibold text-slate-700 flex items-center gap-2">
+                      <Mail className="w-4 h-4 text-blue-600" />
                       <span>{viewingRecord.email}</span>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <Phone className="w-4 h-4 text-slate-400" />
+                  </div>
+
+                  <div className="space-y-1">
+                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block">Mobile Contact</span>
+                    <div className="font-semibold text-slate-700 flex items-center gap-2">
+                      <Phone className="w-4 h-4 text-blue-600" />
                       <span>{viewingRecord.mobile}</span>
                     </div>
                   </div>
-                </div>
-              </div>
-            ) : (
-              // Simple Contact Fields for Admin / Staff
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-4 gap-x-6 text-sm">
-                <div className="space-y-1">
-                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block">Email Address</span>
-                  <div className="font-semibold text-slate-700 flex items-center gap-2">
-                    <Mail className="w-4 h-4 text-blue-600" />
-                    <span>{viewingRecord.email}</span>
+
+                  <div className="space-y-1">
+                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block">Gender</span>
+                    <div className="font-semibold text-slate-700">{viewingRecord.gender || 'Not specified'}</div>
+                  </div>
+
+                  <div className="space-y-1">
+                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block">Date of Birth</span>
+                    <div className="font-semibold text-slate-700">{viewingRecord.dateOfBirth || 'Not specified'}</div>
                   </div>
                 </div>
+              )}
 
-                <div className="space-y-1">
-                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block">Mobile Contact</span>
-                  <div className="font-semibold text-slate-700 flex items-center gap-2">
-                    <Phone className="w-4 h-4 text-blue-600" />
-                    <span>{viewingRecord.mobile}</span>
-                  </div>
-                </div>
-
-                <div className="space-y-1">
-                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block">Gender</span>
-                  <div className="font-semibold text-slate-700">{viewingRecord.gender || 'Not specified'}</div>
-                </div>
-
-                <div className="space-y-1">
-                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block">Date of Birth</span>
-                  <div className="font-semibold text-slate-700">{viewingRecord.dateOfBirth || 'Not specified'}</div>
-                </div>
+              <div className="flex justify-end pt-4 border-t border-slate-100">
+                <Button onClick={closeViewModal}>Close Details</Button>
               </div>
-            )}
-
-            <div className="flex justify-end pt-4 border-t border-slate-100">
-              <Button onClick={closeViewModal}>Close Details</Button>
             </div>
-          </div>
+          )
         )}
+      </Modal>
+
+      {/* Onboarding setPassword link notification modal */}
+      <Modal
+        isOpen={createdUserLink !== null}
+        onClose={() => {
+          setCreatedUserLink(null);
+          setCreatedUserEmail(null);
+        }}
+        title="User Invitation & Password Setup"
+      >
+        <div className="space-y-4 py-2 text-slate-700 text-sm">
+          <p className="font-semibold text-slate-800">
+            A registration email invitation was successfully processed for <strong className="text-blue-600">{createdUserEmail}</strong>.
+          </p>
+          <div className="bg-slate-50 border border-slate-200 p-4 rounded-xl space-y-3">
+            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block">Simulated Invitation Email Link</span>
+            <p className="text-xs text-slate-500 leading-relaxed">
+              For local testing and validation, copy or click on the onboarding link below to configure this user's password:
+            </p>
+            <a 
+              href={createdUserLink || '#'} 
+              target="_blank" 
+              rel="noopener noreferrer" 
+              className="block font-mono text-xs text-blue-600 hover:text-blue-700 hover:underline break-all font-semibold bg-white p-2.5 rounded-lg border border-slate-100 shadow-sm"
+            >
+              {createdUserLink}
+            </a>
+          </div>
+          <div className="flex justify-end gap-2 pt-2">
+            <Button 
+              onClick={() => {
+                setCreatedUserLink(null);
+                setCreatedUserEmail(null);
+              }}
+              className="px-5"
+            >
+              Done
+            </Button>
+          </div>
+        </div>
       </Modal>
     </div>
   );

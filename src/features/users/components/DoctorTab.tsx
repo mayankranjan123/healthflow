@@ -5,6 +5,14 @@ import { DoctorUser } from '../types';
 
 interface DoctorTabProps {
   doctors: DoctorUser[];
+  totalItems: number;
+  totalPages: number;
+  currentPage: number;
+  searchTerm: string;
+  setSearchTerm: (s: string) => void;
+  statusFilter: 'ALL' | 'ACTIVE' | 'INACTIVE';
+  setStatusFilter: (s: 'ALL' | 'ACTIVE' | 'INACTIVE') => void;
+  onPageChange: (p: number) => void;
   onToggleStatus: (id: string) => void;
   onEdit: (doctor: DoctorUser) => void;
   onAdd: () => void;
@@ -13,53 +21,36 @@ interface DoctorTabProps {
 
 export const DoctorTab: React.FC<DoctorTabProps> = ({
   doctors,
+  totalItems,
+  totalPages,
+  currentPage,
+  searchTerm,
+  setSearchTerm,
+  statusFilter,
+  setStatusFilter,
+  onPageChange,
   onToggleStatus,
   onEdit,
   onAdd,
   onView,
 }) => {
-  const [searchTerm, setSearchTerm] = useState('');
   const [specFilter, setSpecFilter] = useState('ALL');
-  const [statusFilter, setStatusFilter] = useState('ALL');
-  const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 3;
+  const itemsPerPage = 5;
+  const startIndex = (currentPage - 1) * itemsPerPage;
 
   // Extract all unique specializations for filter dropdown
   const specializations = Array.from(new Set(doctors.map(d => d.specialization)));
 
-  // Filter doctors
+  // Client-side specialization filter on top of server results
   const filtered = doctors.filter((doc) => {
-    const matchesSearch =
-      doc.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      doc.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      doc.id.toLowerCase().includes(searchTerm.toLowerCase());
-
-    const matchesSpec = specFilter === 'ALL' || doc.specialization === specFilter;
-    
-    let matchesStatus = true;
-    if (statusFilter === 'ACTIVE') matchesStatus = doc.isActive;
-    if (statusFilter === 'INACTIVE') matchesStatus = !doc.isActive;
-
-    return matchesSearch && matchesSpec && matchesStatus;
+    return specFilter === 'ALL' || doc.specialization === specFilter;
   });
-
-  // Paginate doctors
-  const totalItems = filtered.length;
-  const totalPages = Math.ceil(totalItems / itemsPerPage) || 1;
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const paginatedDoctors = filtered.slice(startIndex, startIndex + itemsPerPage);
-
-  const handlePageChange = (page: number) => {
-    if (page >= 1 && page <= totalPages) {
-      setCurrentPage(page);
-    }
-  };
 
   const resetFilters = () => {
     setSearchTerm('');
     setSpecFilter('ALL');
     setStatusFilter('ALL');
-    setCurrentPage(1);
+    onPageChange(1);
   };
 
   return (
@@ -79,7 +70,7 @@ export const DoctorTab: React.FC<DoctorTabProps> = ({
                   value={searchTerm}
                   onChange={(e) => {
                     setSearchTerm(e.target.value);
-                    setCurrentPage(1);
+                    onPageChange(1);
                   }}
                   className="w-full pl-9 pr-4 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:border-blue-600 transition-all font-medium text-slate-700"
                 />
@@ -93,7 +84,7 @@ export const DoctorTab: React.FC<DoctorTabProps> = ({
                 value={specFilter}
                 onChange={(e) => {
                   setSpecFilter(e.target.value);
-                  setCurrentPage(1);
+                  onPageChange(1);
                 }}
                 className="bg-white border border-slate-200 rounded-lg text-sm font-semibold px-3 py-2 outline-none text-slate-700 focus:border-blue-600 h-[38px]"
               >
@@ -112,7 +103,7 @@ export const DoctorTab: React.FC<DoctorTabProps> = ({
                   value={statusFilter}
                   onChange={(e) => {
                     setStatusFilter(e.target.value);
-                    setCurrentPage(1);
+                    onPageChange(1);
                   }}
                   className="bg-white border border-slate-200 rounded-lg text-sm font-semibold px-3 py-2 outline-none text-slate-700 focus:border-blue-600 flex-1 h-[38px]"
                 >
@@ -159,14 +150,14 @@ export const DoctorTab: React.FC<DoctorTabProps> = ({
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {paginatedDoctors.length === 0 ? (
+              {filtered.length === 0 ? (
                 <tr>
                   <td colSpan={10} className="px-6 py-10 text-center text-sm text-slate-400 font-medium">
                     No doctor profiles found.
                   </td>
                 </tr>
               ) : (
-                paginatedDoctors.map((doc) => (
+                filtered.map((doc) => (
                   <tr key={doc.id} className="hover:bg-slate-50/50 transition-colors">
                     {/* Doctor Details */}
                     <td className="px-6 py-4.5">
@@ -200,15 +191,15 @@ export const DoctorTab: React.FC<DoctorTabProps> = ({
                     </td>
                     {/* Consultation Fee */}
                     <td className="px-6 py-4.5 text-sm font-bold text-blue-600 text-right">
-                      ${doc.fee.toFixed(2)}
+                      ₹{doc.fee.toFixed(2)}
                     </td>
                     {/* Total Completed Consultations */}
                     <td className="px-6 py-4.5 text-sm font-bold text-slate-700 text-right">
                       {doc.totalConsultations.toLocaleString()}
                     </td>
-                    {/* Followup Fee (calculated as 1/3 of consultation fee or defaulted to $40.00 for Aisha / Rohit / Samuel / Kavya based on standard clinical math) */}
+                    {/* Followup Fee (calculated as 1/3 of consultation fee or defaulted to ₹40.00 for Aisha / Rohit / Samuel / Kavya based on standard clinical math) */}
                     <td className="px-6 py-4.5 text-sm font-bold text-blue-600 text-right">
-                      ${(doc.fee / 3).toFixed(2)}
+                      ₹{doc.followupFee.toFixed(2)}
                     </td>
                     {/* Working Hours */}
                     <td className="px-6 py-4.5 text-sm text-slate-600 font-medium font-mono">
@@ -217,9 +208,8 @@ export const DoctorTab: React.FC<DoctorTabProps> = ({
                     {/* Status Badge & Toggle */}
                     <td className="px-6 py-4.5 text-center">
                       <div className="flex flex-col items-center gap-1.5 justify-center">
-                        <span className={`inline-flex px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${
-                          doc.isActive ? 'bg-emerald-50 text-emerald-700 border border-emerald-100' : 'bg-slate-100 text-slate-500 border border-slate-200'
-                        }`}>
+                        <span className={`inline-flex px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${doc.isActive ? 'bg-emerald-50 text-emerald-700 border border-emerald-100' : 'bg-slate-100 text-slate-500 border border-slate-200'
+                          }`}>
                           {doc.isActive ? 'Active' : 'Inactive'}
                         </span>
                         <button
@@ -269,33 +259,30 @@ export const DoctorTab: React.FC<DoctorTabProps> = ({
           {totalPages > 1 && (
             <div className="flex items-center gap-1.5">
               <button
-                onClick={() => handlePageChange(currentPage - 1)}
+                onClick={() => onPageChange(currentPage - 1)}
                 disabled={currentPage === 1}
-                className={`p-1.5 rounded-lg border border-slate-200 bg-white text-slate-500 transition-all ${
-                  currentPage === 1 ? 'opacity-40 cursor-not-allowed' : 'hover:bg-slate-50 cursor-pointer'
-                }`}
+                className={`p-1.5 rounded-lg border border-slate-200 bg-white text-slate-500 transition-all ${currentPage === 1 ? 'opacity-40 cursor-not-allowed' : 'hover:bg-slate-50 cursor-pointer'
+                  }`}
               >
                 <ChevronLeft className="w-4 h-4" />
               </button>
               {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
                 <button
                   key={page}
-                  onClick={() => handlePageChange(page)}
-                  className={`w-8 h-8 rounded-lg text-xs font-bold transition-all ${
-                    page === currentPage
+                  onClick={() => onPageChange(page)}
+                  className={`w-8 h-8 rounded-lg text-xs font-bold transition-all ${page === currentPage
                       ? 'bg-blue-600 text-white shadow-sm'
                       : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 cursor-pointer'
-                  }`}
+                    }`}
                 >
                   {page}
                 </button>
               ))}
               <button
-                onClick={() => handlePageChange(currentPage + 1)}
+                onClick={() => onPageChange(currentPage + 1)}
                 disabled={currentPage === totalPages}
-                className={`p-1.5 rounded-lg border border-slate-200 bg-white text-slate-500 transition-all ${
-                  currentPage === totalPages ? 'opacity-40 cursor-not-allowed' : 'hover:bg-slate-50 cursor-pointer'
-                }`}
+                className={`p-1.5 rounded-lg border border-slate-200 bg-white text-slate-500 transition-all ${currentPage === totalPages ? 'opacity-40 cursor-not-allowed' : 'hover:bg-slate-50 cursor-pointer'
+                  }`}
               >
                 <ChevronRight className="w-4 h-4" />
               </button>

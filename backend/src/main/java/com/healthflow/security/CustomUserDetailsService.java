@@ -21,7 +21,7 @@ public class CustomUserDetailsService implements UserDetailsService {
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
         // Query database users table joining role name
-        String sql = "SELECT u.id, u.email, u.password, u.is_active, r.name as role_name " +
+        String sql = "SELECT u.id, u.clinic_id, u.email, u.password, u.is_active, r.name as role_name " +
                      "FROM users u " +
                      "LEFT JOIN user_roles ur ON u.id = ur.user_id " +
                      "LEFT JOIN roles r ON ur.role_id = r.id " +
@@ -45,6 +45,7 @@ public class CustomUserDetailsService implements UserDetailsService {
 
         return new UserPrincipal(
                 ((Number) userMap.get("id")).longValue(),
+                userMap.get("clinic_id") != null ? ((Number) userMap.get("clinic_id")).longValue() : null,
                 (String) userMap.get("email"),
                 (String) userMap.get("password"),
                 role,

@@ -58,7 +58,7 @@ export const DoctorForm: React.FC<DoctorFormProps> = ({ doctor, onSave, onCancel
     } else {
       setName('');
       setEmail('');
-      setMobile('+91 ');
+      setMobile('+91');
       setSpecialization('General Physician');
       setQualification('');
       setExperience('');
@@ -87,6 +87,61 @@ export const DoctorForm: React.FC<DoctorFormProps> = ({ doctor, onSave, onCancel
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    const form = e.currentTarget as HTMLFormElement;
+
+    // Reset Custom Validities
+    const emailInput = form.querySelector('#doctor-email') as HTMLInputElement;
+    const mobileInput = form.querySelector('#doctor-mobile') as HTMLInputElement;
+    const dobInput = form.querySelector('#doctor-dob') as HTMLInputElement;
+
+    if (emailInput) emailInput.setCustomValidity('');
+    if (mobileInput) mobileInput.setCustomValidity('');
+    if (dobInput) dobInput.setCustomValidity('');
+
+    // 1. Email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      if (emailInput) {
+        emailInput.setCustomValidity("Please enter a valid email address.");
+        emailInput.reportValidity();
+      }
+      return;
+    }
+
+    // 2. Indian mobile validation
+    const cleanedMobile = mobile.replace(/[\s\-()]/g, '');
+    const mobileRegex = /^(?:\+?91)?[6789]\d{9}$/;
+    if (!mobileRegex.test(cleanedMobile)) {
+      if (mobileInput) {
+        mobileInput.setCustomValidity("Please enter a valid 10-digit mobile number.");
+        mobileInput.reportValidity();
+      }
+      return;
+    }
+
+    // 3. DOB validation (older than 18, younger than 100)
+    if (!dateOfBirth) {
+      if (dobInput) {
+        dobInput.setCustomValidity("Date of birth is required.");
+        dobInput.reportValidity();
+      }
+      return;
+    }
+    const dobDate = new Date(dateOfBirth);
+    const today = new Date();
+    let age = today.getFullYear() - dobDate.getFullYear();
+    const monthDiff = today.getMonth() - dobDate.getMonth();
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < dobDate.getDate())) {
+      age--;
+    }
+    if (age < 18 || age > 100) {
+      if (dobInput) {
+        dobInput.setCustomValidity("Age must be between 18 and 100 years.");
+        dobInput.reportValidity();
+      }
+      return;
+    }
+
     onSave({
       id: doctor?.id,
       name,
@@ -164,7 +219,7 @@ export const DoctorForm: React.FC<DoctorFormProps> = ({ doctor, onSave, onCancel
         />
 
         <Input
-          label="Consultation Fee ($)"
+          label="Consultation Fee (₹)"
           type="number"
           value={fee}
           onChange={(e) => setFee(Number(e.target.value))}
@@ -173,7 +228,7 @@ export const DoctorForm: React.FC<DoctorFormProps> = ({ doctor, onSave, onCancel
         />
 
         <Input
-          label="Follow-up Fee ($)"
+          label="Follow-up Fee (₹)"
           type="number"
           value={followupFee}
           onChange={(e) => setFollowupFee(Number(e.target.value))}
@@ -197,9 +252,10 @@ export const DoctorForm: React.FC<DoctorFormProps> = ({ doctor, onSave, onCancel
 
         <Input
           label="Date of Birth"
+          id="doctor-dob"
           type="date"
           value={dateOfBirth}
-          onChange={(e) => setDateOfBirth(e.target.value)}
+          onChange={(e) => { setDateOfBirth(e.target.value); e.target.setCustomValidity(''); }}
         />
 
         <Input
@@ -228,8 +284,9 @@ export const DoctorForm: React.FC<DoctorFormProps> = ({ doctor, onSave, onCancel
 
         <Input
           label="Contact Mobile"
+          id="doctor-mobile"
           value={mobile}
-          onChange={(e) => setMobile(e.target.value)}
+          onChange={(e) => { setMobile(e.target.value); e.target.setCustomValidity(''); }}
           required
           placeholder="e.g. +91 98765 00001"
         />
@@ -237,9 +294,10 @@ export const DoctorForm: React.FC<DoctorFormProps> = ({ doctor, onSave, onCancel
         <div className="md:col-span-2">
           <Input
             label="Contact Email"
+            id="doctor-email"
             type="email"
             value={email}
-            onChange={(e) => setEmail(e.target.value)}
+            onChange={(e) => { setEmail(e.target.value); e.target.setCustomValidity(''); }}
             required
             placeholder="e.g. doctor@healthflow.com"
           />

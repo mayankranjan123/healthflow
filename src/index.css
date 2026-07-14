@@ -60,3 +60,43 @@ html, body, #root {
 ::-webkit-scrollbar-thumb:hover {
   background: #94a3b8;
 }
+
+@media print {
+  /* Hide the entire main app root and buttons */
+  #root,
+  .no-print,
+  button,
+  .modal-action-bar {
+    display: none !important;
+  }
+
+  body {
+    background-color: white !important;
+    color: black !important;
+  }
+
+  /* Make sure modal content itself prints clean */
+  div[role="dialog"] {
+    position: absolute !important;
+    left: 0 !important;
+    top: 0 !important;
+    width: 100% !important;
+    background: white !important;
+    border: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    box-shadow: none !important;
+  }
+
+  #invoice-printable-area {
+    visibility: visible !important;
+    display: block !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    border: none !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    background: white !important;
+  }
+}

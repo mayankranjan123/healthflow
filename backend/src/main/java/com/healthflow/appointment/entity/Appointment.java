@@ -15,7 +15,7 @@ public class Appointment extends BaseEntity {
     private Long id;
 
     @Column(name = "clinic_id", nullable = false)
-    private Long clinicId = 1L;
+    private Long clinicId = 1000000000L;
 
     @Column(name = "appointment_code", nullable = false)
     private String appointmentCode;

@@ -17,6 +17,13 @@ export const AppointmentsPage: React.FC = () => {
   const [isCancelOpen, setIsCancelOpen] = useState<boolean>(false);
   const [selectedAppointment, setSelectedAppointment] = useState<ExtendedAppointment | null>(null);
 
+  // Pagination & Loading States
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const [totalElements, setTotalElements] = useState<number>(0);
+  const [totalPages, setTotalPages] = useState<number>(1);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const itemsPerPage = 5;
+
   // Filter state
   const [filters, setFilters] = useState<FilterState>({
     doctorSearch: '',
@@ -27,69 +34,70 @@ export const AppointmentsPage: React.FC = () => {
     visitType: 'ALL',
   });
 
-  // Load appointments on mount
+  // Debouncing filters to prevent multiple API hits
+  const [debouncedDoctorSearch, setDebouncedDoctorSearch] = useState('');
+  const [debouncedPatientSearch, setDebouncedPatientSearch] = useState('');
+
   useEffect(() => {
-    mockAppointmentsApi.getAppointments().then(setAppointments);
-  }, []);
+    const handler = setTimeout(() => {
+      setDebouncedDoctorSearch(filters.doctorSearch);
+      setCurrentPage(1);
+    }, 450);
+    return () => clearTimeout(handler);
+  }, [filters.doctorSearch]);
 
-  // Filtered list of appointments
-  const filteredAppointments = useMemo(() => {
-    return appointments.filter((appt) => {
-      // 1. Doctor Search
-      if (filters.doctorSearch) {
-        const query = filters.doctorSearch.toLowerCase();
-        if (!appt.doctorName.toLowerCase().includes(query)) {
-          return false;
-        }
-      }
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedPatientSearch(filters.patientSearch);
+      setCurrentPage(1);
+    }, 450);
+    return () => clearTimeout(handler);
+  }, [filters.patientSearch]);
 
-      // 2. Patient Search (Name, Phone, ID, Number)
-      if (filters.patientSearch) {
-        const query = filters.patientSearch.toLowerCase();
-        const matchesName = appt.patientName.toLowerCase().includes(query);
-        const matchesId = appt.patientId.toLowerCase().includes(query);
-        const matchesNum = appt.patientNumber.toLowerCase().includes(query);
-        const matchesPhone = appt.patientPhone.toLowerCase().includes(query);
-        if (!matchesName && !matchesId && !matchesNum && !matchesPhone) {
-          return false;
-        }
-      }
+  // Load appointments dynamically
+  const loadAppointments = () => {
+    setIsLoading(true);
+    // Convert LocalDate string range to Instant string (beginning & end of days) if set
+    let parsedFrom: string | undefined = undefined;
+    if (filters.fromDate) {
+      parsedFrom = new Date(filters.fromDate + 'T00:00:00Z').toISOString();
+    }
+    let parsedTo: string | undefined = undefined;
+    if (filters.toDate) {
+      parsedTo = new Date(filters.toDate + 'T23:59:59Z').toISOString();
+    }
 
-      // 3. Status Search
-      if (filters.status !== 'ALL') {
-        if (appt.status !== filters.status) {
-          return false;
-        }
-      }
-
-      // 4. From Date Range
-      if (filters.fromDate) {
-        if (appt.appointmentDate < filters.fromDate) {
-          return false;
-        }
-      }
-
-      // 5. To Date Range
-      if (filters.toDate) {
-        if (appt.appointmentDate > filters.toDate) {
-          return false;
-        }
-      }
-
-      // 6. Visit Type Search
-      if (filters.visitType && filters.visitType !== 'ALL') {
-        if (appt.visitType !== filters.visitType) {
-          return false;
-        }
-      }
-
-      return true;
+    mockAppointmentsApi.getAppointments({
+      pageNo: currentPage - 1,
+      pageSize: itemsPerPage,
+      doctorName: debouncedDoctorSearch,
+      status: filters.status,
+      fromDate: parsedFrom,
+      toDate: parsedTo,
+      patientName: debouncedPatientSearch,
+      patientMobile: debouncedPatientSearch,
+      visitType: filters.visitType
+    })
+    .then((res: any) => {
+      setAppointments(res.items || []);
+      setTotalElements(res.totalItems || 0);
+      setTotalPages(res.totalPages || 1);
+      setIsLoading(false);
+    })
+    .catch((err) => {
+      console.error(err);
+      setIsLoading(false);
     });
-  }, [appointments, filters]);
+  };
+
+  useEffect(() => {
+    loadAppointments();
+  }, [currentPage, debouncedDoctorSearch, debouncedPatientSearch, filters.fromDate, filters.toDate, filters.status, filters.visitType]);
 
   // Handle apply filters
   const handleApplyFilters = (newFilters: FilterState) => {
     setFilters(newFilters);
+    setCurrentPage(1);
   };
 
   // Handle reset filters
@@ -102,6 +110,7 @@ export const AppointmentsPage: React.FC = () => {
       status: 'ALL',
       visitType: 'ALL',
     });
+    setCurrentPage(1);
   };
 
   // Handle booking action
@@ -139,7 +148,7 @@ export const AppointmentsPage: React.FC = () => {
     };
 
     mockAppointmentsApi.addAppointment(newAppt).then(() => {
-      mockAppointmentsApi.getAppointments().then(setAppointments);
+      loadAppointments();
     });
     setIsAddOpen(false);
   };
@@ -167,7 +176,7 @@ export const AppointmentsPage: React.FC = () => {
     };
 
     mockAppointmentsApi.deleteAppointment(selectedAppointment.id).then(() => {
-      mockAppointmentsApi.getAppointments().then(setAppointments);
+      loadAppointments();
     });
 
     // Keep state updated for views
@@ -179,7 +188,7 @@ export const AppointmentsPage: React.FC = () => {
 
   const handleMarkCompleted = (appt: ExtendedAppointment) => {
     mockAppointmentsApi.completeAppointment(appt.id).then(() => {
-      mockAppointmentsApi.getAppointments().then(setAppointments);
+      loadAppointments();
       setIsViewOpen(false);
     });
   };
@@ -211,7 +220,13 @@ export const AppointmentsPage: React.FC = () => {
 
       {/* Appointment Data List Table */}
       <AppointmentsTable
-        appointments={filteredAppointments}
+        appointments={appointments}
+        totalItems={totalElements}
+        totalPages={totalPages}
+        currentPage={currentPage}
+        onPageChange={setCurrentPage}
+        itemsPerPage={itemsPerPage}
+        isLoading={isLoading}
         onView={handleViewAppointment}
       />
 

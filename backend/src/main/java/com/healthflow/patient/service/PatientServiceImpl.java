@@ -7,15 +7,20 @@ import com.healthflow.patient.dto.PatientResponseDto;
 import com.healthflow.patient.entity.Patient;
 import com.healthflow.patient.mapper.PatientMapper;
 import com.healthflow.patient.repository.PatientRepository;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.TypedQuery;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.Random;
+import java.util.stream.Collectors;
 
 @Service
 @Transactional(readOnly = true)
@@ -23,10 +28,12 @@ public class PatientServiceImpl implements PatientService {
 
     private static final Logger log = LoggerFactory.getLogger(PatientServiceImpl.class);
     private final PatientRepository patientRepository;
+    private final EntityManager entityManager;
     private final Random random = new Random();
 
-    public PatientServiceImpl(PatientRepository patientRepository) {
+    public PatientServiceImpl(PatientRepository patientRepository, EntityManager entityManager) {
         this.patientRepository = patientRepository;
+        this.entityManager = entityManager;
     }
 
     @Override
@@ -84,13 +91,72 @@ public class PatientServiceImpl implements PatientService {
     }
 
     @Override
-    public Page<PatientResponseDto> searchPatients(Long clinicId, String searchTerm, Pageable pageable) {
-        log.info("Searching patients in clinic ID: {} with query: {}", clinicId, searchTerm);
-        if (searchTerm == null || searchTerm.trim().isEmpty()) {
-            return getPatients(clinicId, pageable);
+    public Page<PatientResponseDto> getFilteredPatients(
+            Long clinicId,
+            String patientId,
+            String patientMobile,
+            String patientName,
+            String gender,
+            Pageable pageable) {
+        
+        log.info("Querying filtered patients - patientId: {}, patientMobile: {}, patientName: {}, gender: {}",
+                patientId, patientMobile, patientName, gender);
+        
+        StringBuilder jpql = new StringBuilder("SELECT p FROM Patient p WHERE p.clinicId = :clinicId AND p.isDeleted = false ");
+        
+        if (patientId != null && !patientId.trim().isEmpty()) {
+            jpql.append("AND (LOWER(p.patientCode) LIKE :patientIdPattern OR CAST(p.id AS string) = :patientIdQuery) ");
         }
-        Page<Patient> searchResults = patientRepository.searchPatients(clinicId, searchTerm.trim(), pageable);
-        return searchResults.map(PatientMapper::toResponseDto);
+        if (patientMobile != null && !patientMobile.trim().isEmpty()) {
+            jpql.append("AND LOWER(p.mobile) LIKE :mobilePattern ");
+        }
+        if (patientName != null && !patientName.trim().isEmpty()) {
+            jpql.append("AND LOWER(p.fullName) LIKE :namePattern ");
+        }
+        if (gender != null && !gender.trim().isEmpty() && !gender.equalsIgnoreCase("all")) {
+            jpql.append("AND LOWER(p.gender) = LOWER(:gender) ");
+        }
+        
+        // Add sorting
+        if (pageable.getSort().isSorted()) {
+            jpql.append("ORDER BY ");
+            String order = pageable.getSort().stream()
+                    .map(o -> "p." + o.getProperty() + " " + o.getDirection().name())
+                    .collect(Collectors.joining(", "));
+            jpql.append(order);
+        } else {
+            jpql.append("ORDER BY p.id DESC");
+        }
+        
+        TypedQuery<Patient> query = entityManager.createQuery(jpql.toString(), Patient.class);
+        
+        // Bind parameters
+        query.setParameter("clinicId", clinicId);
+        if (patientId != null && !patientId.trim().isEmpty()) {
+            query.setParameter("patientIdPattern", "%" + patientId.trim().toLowerCase() + "%");
+            query.setParameter("patientIdQuery", patientId.trim());
+        }
+        if (patientMobile != null && !patientMobile.trim().isEmpty()) {
+            query.setParameter("mobilePattern", "%" + patientMobile.trim().toLowerCase() + "%");
+        }
+        if (patientName != null && !patientName.trim().isEmpty()) {
+            query.setParameter("namePattern", "%" + patientName.trim().toLowerCase() + "%");
+        }
+        if (gender != null && !gender.trim().isEmpty() && !gender.equalsIgnoreCase("all")) {
+            query.setParameter("gender", gender.trim());
+        }
+        
+        // Get total count
+        List<Patient> allMatching = query.getResultList();
+        int totalRows = allMatching.size();
+        
+        // Apply pagination
+        query.setFirstResult((int) pageable.getOffset());
+        query.setMaxResults(pageable.getPageSize());
+        
+        List<Patient> paginated = query.getResultList();
+        Page<Patient> page = new PageImpl<>(paginated, pageable, totalRows);
+        return page.map(PatientMapper::toResponseDto);
     }
 
     @Override

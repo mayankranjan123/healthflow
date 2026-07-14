@@ -14,7 +14,7 @@ public class Patient extends BaseEntity {
     private Long id;
 
     @Column(name = "clinic_id", nullable = false)
-    private Long clinicId = 1L; // Defaults to main clinic
+    private Long clinicId = 1000000000L; // Defaults to main clinic
 
     @Column(name = "patient_code", nullable = false)
     private String patientCode;

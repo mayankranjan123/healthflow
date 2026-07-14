@@ -45,8 +45,7 @@ export const PrescriptionSettingsTab: React.FC<PrescriptionSettingsTabProps> = (
 
   const layoutStyles = [
     { id: 'CENTERED_PROFESSIONAL' as const, name: 'Centered Professional', desc: 'Symmetrical centered headers for premium prescription pads.' },
-    { id: 'CLASSIC_LEFT' as const, name: 'Classic Left Header', desc: 'Standard traditional alignment with clinical logos on top left.' },
-    { id: 'MODERN_MINIMAL' as const, name: 'Modern Minimal', desc: 'Understated fine lines with compact clinical details.' }
+    { id: 'CLASSIC_LEFT' as const, name: 'Classic Left Header', desc: 'Standard traditional alignment with clinical logos on top left.' }
   ];
 
   return (
@@ -312,7 +311,6 @@ export const PrescriptionSettingsTab: React.FC<PrescriptionSettingsTabProps> = (
                 pb-3.5 border-b border-indigo-100 flex flex-col
                 ${formData.headerLayout === 'CENTERED_PROFESSIONAL' ? 'text-center items-center' : ''}
                 ${formData.headerLayout === 'CLASSIC_LEFT' ? 'text-left items-start' : ''}
-                ${formData.headerLayout === 'MODERN_MINIMAL' ? 'text-left items-start border-b-2 border-slate-900 pb-2' : ''}
               `}>
                 {formData.showClinicLogo && (
                   <div className="w-6 h-6 rounded bg-indigo-50 border border-indigo-100 flex items-center justify-center text-xs text-indigo-600 mb-1.5 font-extrabold">

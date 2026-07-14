@@ -31,16 +31,29 @@ export const BillingPage: React.FC = () => {
     fromDate: '',
     toDate: '',
     status: 'ALL',
-    doctorId: '',
+    doctorName: '',
   });
+
+  // Pagination states
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalElements, setTotalElements] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
+  const [isLoadingInvoices, setIsLoadingInvoices] = useState(false);
+  const itemsPerPage = 5;
+
+  // Deriving unique doctor names dynamically from loaded invoices (no extra API calls needed)
+  const doctorsList = useMemo(() => {
+    return Array.from(new Set(invoices.map((i) => i.doctorName))).filter(Boolean);
+  }, [invoices]);
 
   // Modals state
   const [previewInvoice, setPreviewInvoice] = useState<BillingInvoice | null>(null);
   const [isPreviewModalOpen, setIsPreviewModalOpen] = useState(false);
+  const [autoDownloadPdf, setAutoDownloadPdf] = useState(false);
 
-  // On mount, load data
+  // On mount, load default configurations
   useEffect(() => {
-    loadBillingData();
+    mockBillingApi.getStats().then(setStats);
     mockSettingsApi.getSettings().then((settings) => {
       if (settings && settings.billing) {
         setBillingSettings(settings.billing);
@@ -48,10 +61,43 @@ export const BillingPage: React.FC = () => {
     });
   }, []);
 
+  // Debounce search query
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedSearch(filters.patientOrInvoiceId);
+      setCurrentPage(1);
+    }, 400);
+    return () => clearTimeout(handler);
+  }, [filters.patientOrInvoiceId]);
+
+  // Load paginated & filtered data dynamically
   const loadBillingData = () => {
-    mockBillingApi.getInvoices().then(setInvoices);
-    mockBillingApi.getStats().then(setStats);
+    setIsLoadingInvoices(true);
+    mockBillingApi.getInvoices({
+      pageNo: currentPage - 1,
+      pageSize: itemsPerPage,
+      patientSearch: debouncedSearch,
+      fromDate: filters.fromDate,
+      toDate: filters.toDate,
+      status: filters.status,
+      doctorName: filters.doctorName
+    })
+    .then((res: any) => {
+      setInvoices(res.items || []);
+      setTotalElements(res.totalItems || 0);
+      setTotalPages(res.totalPages || 1);
+      setIsLoadingInvoices(false);
+    })
+    .catch((err) => {
+      console.error(err);
+      setIsLoadingInvoices(false);
+    });
   };
+
+  useEffect(() => {
+    loadBillingData();
+  }, [currentPage, debouncedSearch, filters.fromDate, filters.toDate, filters.status, filters.doctorName]);
 
   // Compute next Invoice Number sequentially (e.g. INV-1005)
   const nextInvoiceNumber = useMemo(() => {
@@ -74,48 +120,10 @@ export const BillingPage: React.FC = () => {
     return `${prefix}-${maxNum + 1}`;
   }, [invoices, billingSettings]);
 
-  // Apply filters to invoices list
-  const filteredInvoices = useMemo(() => {
-    return invoices.filter((inv) => {
-      // 1. Patient or Invoice Search
-      if (filters.patientOrInvoiceId.trim()) {
-        const query = filters.patientOrInvoiceId.toLowerCase();
-        const matchesPatientName = inv.patientName.toLowerCase().includes(query);
-        const matchesPatientId = inv.patientId.toLowerCase().includes(query);
-        const matchesPhone = inv.patientPhone.toLowerCase().includes(query);
-        const matchesInvoiceNo = inv.invoiceNumber.toLowerCase().includes(query);
-        if (!matchesPatientName && !matchesPatientId && !matchesPhone && !matchesInvoiceNo) {
-          return false;
-        }
-      }
-
-      // 2. From Date
-      if (filters.fromDate) {
-        if (inv.date < filters.fromDate) return false;
-      }
-
-      // 3. To Date
-      if (filters.toDate) {
-        if (inv.date > filters.toDate) return false;
-      }
-
-      // 4. Status
-      if (filters.status !== 'ALL') {
-        if (inv.status !== filters.status) return false;
-      }
-
-      // 5. Doctor
-      if (filters.doctorId) {
-        if (inv.doctorId !== filters.doctorId) return false;
-      }
-
-      return true;
-    });
-  }, [invoices, filters]);
-
   // Handlers
   const handleApplyFilters = (newFilters: FiltersType) => {
     setFilters(newFilters);
+    setCurrentPage(1);
   };
 
   const handleResetFilters = () => {
@@ -124,27 +132,33 @@ export const BillingPage: React.FC = () => {
       fromDate: '',
       toDate: '',
       status: 'ALL',
-      doctorId: '',
+      doctorName: '',
     });
+    setCurrentPage(1);
   };
 
   const handleCreateInvoiceSave = (newInvoice: BillingInvoice) => {
     mockBillingApi.addInvoice(newInvoice).then(() => {
       loadBillingData();
+      mockBillingApi.getStats().then(setStats);
     });
     setIsCreating(false);
   };
 
   const handleViewInvoiceDetails = (invoice: BillingInvoice) => {
+    setAutoDownloadPdf(false);
     setPreviewInvoice(invoice);
     setIsPreviewModalOpen(true);
   };
 
   const handleDownloadInvoiceSimulation = (invoice: BillingInvoice) => {
-    alert(`Downloading Invoice ${invoice.invoiceNumber} PDF... Clean billing statement saved to your downloads folder.`);
+    setAutoDownloadPdf(true);
+    setPreviewInvoice(invoice);
+    setIsPreviewModalOpen(true);
   };
 
   const handleCreateInvoicePreview = (invoice: BillingInvoice) => {
+    setAutoDownloadPdf(false);
     setPreviewInvoice(invoice);
     setIsPreviewModalOpen(true);
   };
@@ -176,11 +190,18 @@ export const BillingPage: React.FC = () => {
             initialFilters={filters}
             onApplyFilters={handleApplyFilters}
             onResetFilters={handleResetFilters}
+            doctors={doctorsList}
           />
 
           {/* Invoices List Table */}
           <BillingTable
-            invoices={filteredInvoices}
+            invoices={invoices}
+            totalItems={totalElements}
+            totalPages={totalPages}
+            currentPage={currentPage}
+            onPageChange={setCurrentPage}
+            itemsPerPage={itemsPerPage}
+            isLoading={isLoadingInvoices}
             onViewInvoice={handleViewInvoiceDetails}
             onDownloadInvoice={handleDownloadInvoiceSimulation}
           />
@@ -219,16 +240,15 @@ export const BillingPage: React.FC = () => {
       {/* Invoice Details Preview Modal */}
       <InvoicePreviewModal
         isOpen={isPreviewModalOpen}
-        onClose={() => setIsPreviewModalOpen(false)}
+        onClose={() => {
+          setIsPreviewModalOpen(false);
+          setAutoDownloadPdf(false);
+        }}
         invoice={previewInvoice}
+        autoDownload={autoDownloadPdf}
         onPrint={() => {
           alert('Opening print window...');
           window.print();
-        }}
-        onDownload={() => {
-          if (previewInvoice) {
-            handleDownloadInvoiceSimulation(previewInvoice);
-          }
         }}
       />
     </div>

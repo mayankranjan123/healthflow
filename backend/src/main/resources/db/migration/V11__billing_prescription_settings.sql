@@ -55,5 +55,5 @@ CREATE TABLE IF NOT EXISTS prescription_settings (
 );
 
 -- Seed defaults for clinic ID 1
-INSERT INTO billing_settings (clinic_id) VALUES (1) ON CONFLICT (clinic_id) DO NOTHING;
-INSERT INTO prescription_settings (clinic_id) VALUES (1) ON CONFLICT (clinic_id) DO NOTHING;
+INSERT INTO billing_settings (clinic_id) VALUES (1000000000) ON CONFLICT (clinic_id) DO NOTHING;
+INSERT INTO prescription_settings (clinic_id) VALUES (1000000000) ON CONFLICT (clinic_id) DO NOTHING;

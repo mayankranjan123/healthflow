@@ -10,6 +10,7 @@ interface InvoicePreviewModalProps {
   invoice: BillingInvoice | null;
   onPrint?: () => void;
   onDownload?: () => void;
+  autoDownload?: boolean;
 }
 
 export const InvoicePreviewModal: React.FC<InvoicePreviewModalProps> = ({
@@ -18,6 +19,7 @@ export const InvoicePreviewModal: React.FC<InvoicePreviewModalProps> = ({
   invoice,
   onPrint,
   onDownload,
+  autoDownload = false,
 }) => {
   const [settings, setSettings] = React.useState<any>(null);
 
@@ -26,6 +28,15 @@ export const InvoicePreviewModal: React.FC<InvoicePreviewModalProps> = ({
       mockSettingsApi.getSettings().then(setSettings);
     }
   }, [isOpen]);
+
+  React.useEffect(() => {
+    if (isOpen && autoDownload && invoice) {
+      const timer = setTimeout(() => {
+        handleDownloadAction();
+      }, 600);
+      return () => clearTimeout(timer);
+    }
+  }, [isOpen, autoDownload, invoice]);
 
   if (!invoice) return null;
 
@@ -42,8 +53,8 @@ export const InvoicePreviewModal: React.FC<InvoicePreviewModalProps> = ({
   const footerText = billing?.footerMessage || 'Thank you for visiting HealthFlow. Wish you a speedy recovery!';
 
   const clinicName = clinic?.name || 'HealthFlow';
-  const clinicAddress = clinic?.addressLine 
-    ? `${clinic.addressLine}, ${clinic.city}, ${clinic.state} - ${clinic.pincode}` 
+  const clinicAddress = clinic?.addressLine
+    ? `${clinic.addressLine}, ${clinic.city}, ${clinic.state} - ${clinic.pincode}`
     : '12th Floor, Med Tower, Tech Park, Mumbai, Maharashtra - 400001';
   const clinicPhone = clinic?.phone || '+91 99999 99999';
   const clinicEmail = clinic?.email || 'contact@healthflow.com';
@@ -81,11 +92,132 @@ export const InvoicePreviewModal: React.FC<InvoicePreviewModalProps> = ({
   };
 
   const handleDownloadAction = () => {
-    if (onDownload) {
-      onDownload();
-    } else {
-      alert('Generating PDF document... Saved to device downloads successfully!');
+    if (!invoice) return;
+    const element = document.getElementById('invoice-printable-area');
+    if (!element) return;
+
+    // Create a temporary hidden iframe
+    const iframe = document.createElement('iframe');
+    iframe.style.position = 'absolute';
+    iframe.style.width = '800px';
+    iframe.style.height = '1130px';
+    iframe.style.left = '-10000px';
+    iframe.style.top = '-10000px';
+    document.body.appendChild(iframe);
+
+    const doc = iframe.contentDocument || iframe.contentWindow?.document;
+    if (!doc) {
+      document.body.removeChild(iframe);
+      return;
     }
+
+    const filename = `invoice-${invoice.invoiceNumber || invoice.id}.pdf`;
+
+    // Write content to iframe - loading both scripts inside the iframe context
+    doc.open();
+    doc.write(`
+      <html>
+        <head>
+          <title>Invoice</title>
+          <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+          <script src="https://cdn.tailwindcss.com"></script>
+          <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+          <script>
+            tailwind.config = {
+              theme: {
+                extend: {
+                  colors: {
+                    'brand-primary': '#005ae2',
+                    'brand-secondary': '#0ea5e9',
+                    slate: {
+                      150: '#f1f5f9',
+                      250: '#cbd5e1',
+                      350: '#94a3b8',
+                      450: '#64748b',
+                      505: '#475569',
+                      707: '#1e293b',
+                      750: '#334155'
+                    }
+                  },
+                  fontFamily: {
+                    sans: ["Inter", "ui-sans-serif", "system-ui", "sans-serif"],
+                    display: ["Space Grotesk", "sans-serif"],
+                    mono: ["JetBrains Mono", "ui-monospace", "monospace"]
+                  }
+                }
+              }
+            }
+          </script>
+          <style>
+            body { background: white; margin: 0; padding: 40px; font-family: "Inter", sans-serif; }
+            #invoice-printable-area { border: none !important; box-shadow: none !important; }
+          </style>
+        </head>
+        <body>
+          <div id="invoice-printable-area">${element.innerHTML}</div>
+        </body>
+      </html>
+    `);
+    doc.close();
+
+    const runDownload = () => {
+      const iframeWindow = iframe.contentWindow as any;
+      const iframeElement = doc.getElementById('invoice-printable-area');
+      
+      if (iframeWindow && iframeWindow.html2pdf && iframeElement) {
+        const opt = {
+          margin:       0.4,
+          filename:     filename,
+          image:        { type: 'jpeg', quality: 0.98 },
+          html2canvas:  { scale: 2, useCORS: true, logging: false },
+          jsPDF:        { unit: 'in', format: 'letter', orientation: 'portrait' }
+        };
+
+        // Output as blob to bypass iframe download sandbox security block in modern browsers
+        iframeWindow.html2pdf().from(iframeElement).set(opt).output('blob').then((pdfBlob: Blob) => {
+          const blobUrl = URL.createObjectURL(pdfBlob);
+          const link = document.createElement('a');
+          link.href = blobUrl;
+          link.download = filename;
+          document.body.appendChild(link);
+          link.click();
+          
+          // Cleanup resources
+          document.body.removeChild(link);
+          URL.revokeObjectURL(blobUrl);
+          document.body.removeChild(iframe);
+        }).catch((err: any) => {
+          console.error("PDF generation failed: ", err);
+          document.body.removeChild(iframe);
+        });
+      } else {
+        document.body.removeChild(iframe);
+      }
+    };
+
+    // Check script load completion inside the iframe context
+    const checkAndRun = () => {
+      const iframeWindow = iframe.contentWindow as any;
+      if (iframeWindow && iframeWindow.html2pdf && iframeWindow.tailwind) {
+        runDownload();
+      } else {
+        let elapsed = 0;
+        const interval = setInterval(() => {
+          elapsed += 100;
+          if (iframeWindow && iframeWindow.html2pdf && iframeWindow.tailwind) {
+            clearInterval(interval);
+            runDownload();
+          } else if (elapsed >= 3000) {
+            clearInterval(interval);
+            alert("Failed to render layout styles. Please print the invoice instead.");
+            document.body.removeChild(iframe);
+          }
+        }, 100);
+      }
+    };
+
+    // Give iframe a moment to initialize the scripts
+    setTimeout(checkAndRun, 300);
   };
 
   return (
@@ -102,15 +234,14 @@ export const InvoicePreviewModal: React.FC<InvoicePreviewModalProps> = ({
     >
       <div className="space-y-6 pt-2">
         {/* Printable/Paper Area */}
-        <div className={`bg-white text-slate-707 select-all print:bg-white print:border-none print:p-0 ${
-          templateId === 'MINIMAL_RECEIPT' 
-            ? 'p-6 sm:p-8 space-y-6 text-slate-800' 
-            : templateId === 'MODERN_COMPACT' 
-              ? 'p-4 sm:p-5 border border-indigo-200 bg-indigo-50/5 rounded-xl shadow-sm' 
+        <div id="invoice-printable-area" className={`bg-white text-slate-707 select-all print:bg-white print:border-none print:p-0 ${templateId === 'MINIMAL_RECEIPT'
+            ? 'p-6 sm:p-8 space-y-6 text-slate-800'
+            : templateId === 'MODERN_COMPACT'
+              ? 'p-4 sm:p-5 border border-indigo-200 bg-indigo-50/5 rounded-xl shadow-sm'
               : templateId === 'GST_DETAILED'
                 ? 'p-6 sm:p-8 space-y-6 text-slate-800'
                 : 'p-6 sm:p-8 space-y-8 border border-slate-200 rounded-xl shadow-sm'
-        }`}>
+          }`}>
           {/* Header Row */}
           <div className="flex flex-row justify-between items-start gap-4 pb-4">
             {/* Logo & Clinic Info */}
@@ -188,7 +319,7 @@ export const InvoicePreviewModal: React.FC<InvoicePreviewModalProps> = ({
             <table className="w-full text-left border-collapse">
               <thead>
                 <tr className="border-t border-b border-slate-350 text-[10px] font-bold text-slate-450 uppercase tracking-wider">
-                  <th className="px-1 py-2.5 text-left">Consultation Service</th>
+                  <th className="px-1 py-2.5 text-left">Description</th>
                   <th className="px-1 py-2.5 text-center w-12">Qty</th>
                   <th className="px-1 py-2.5 text-right w-24">Price</th>
                   <th className="px-1 py-2.5 text-right w-20">GST</th>
@@ -268,7 +399,7 @@ export const InvoicePreviewModal: React.FC<InvoicePreviewModalProps> = ({
                 <span>Subtotal:</span>
                 <span className="font-mono text-slate-900">₹{invoice.subtotal.toLocaleString('en-IN')}.00</span>
               </div>
-              
+
               {billing?.enableInvoiceLevelDiscount && (
                 <div className="flex justify-between text-rose-500">
                   <span>Discount (10%):</span>
@@ -301,7 +432,7 @@ export const InvoicePreviewModal: React.FC<InvoicePreviewModalProps> = ({
           {/* Bottom section: Footer + Signature */}
           {(showFooter || showSignature) && (
             <div className="space-y-4 pt-4 border-t border-slate-100 text-slate-400 font-medium">
-              
+
               {/* Footer message if checked */}
               {showFooter && footerText && (
                 <p className="text-[10px] italic font-semibold text-slate-500 text-center leading-normal max-w-md mx-auto">

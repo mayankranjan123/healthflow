@@ -16,9 +16,11 @@ import org.springframework.security.core.Authentication;
 public class UserController {
 
     private final JdbcTemplate jdbcTemplate;
+    private final AuthorizationHelper authHelper;
 
-    public UserController(JdbcTemplate jdbcTemplate) {
+    public UserController(JdbcTemplate jdbcTemplate, AuthorizationHelper authHelper) {
         this.jdbcTemplate = jdbcTemplate;
+        this.authHelper = authHelper;
     }
 
     @GetMapping("/profile")
@@ -136,6 +138,14 @@ public class UserController {
 
     @PostMapping("/permissions")
     public ResponseEntity<ApiResponse<Void>> saveModulePermissions(@RequestBody List<Map<String, Object>> permissions) {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth == null || !(auth.getPrincipal() instanceof UserPrincipal)) {
+            return ResponseEntity.status(401).body(ApiResponse.error("Unauthorized"));
+        }
+        UserPrincipal principal = (UserPrincipal) auth.getPrincipal();
+        if (!authHelper.isAuthorized(principal.getClinicId(), "ADMIN")) {
+            return ResponseEntity.status(403).body(ApiResponse.error("Unauthorized access to clinic"));
+        }
         if (permissions == null) {
             return ResponseEntity.badRequest().body(ApiResponse.error("Permissions list cannot be null"));
         }
@@ -155,14 +165,65 @@ public class UserController {
     }
 
     @GetMapping
-    public ResponseEntity<ApiResponse<List<Map<String, Object>>>> getUsers() {
-        String sql = "SELECT u.id, u.email, u.first_name, u.last_name, u.phone, u.is_active, u.gender, u.date_of_birth, r.name as role_name " +
-                     "FROM users u " +
-                     "LEFT JOIN user_roles ur ON u.id = ur.user_id " +
-                     "LEFT JOIN roles r ON ur.role_id = r.id " +
-                     "WHERE u.clinic_id = 1";
-        
-        List<Map<String, Object>> users = jdbcTemplate.query(sql, (rs, rowNum) -> {
+    public ResponseEntity<ApiResponse<Map<String, Object>>> getUsers(
+            @RequestParam(value = "pageNo", defaultValue = "0") int pageNo,
+            @RequestParam(value = "pageSize", defaultValue = "5") int pageSize,
+            @RequestParam(value = "status", required = false) String status,
+            @RequestParam(value = "user_name", required = false) String userName,
+            @RequestParam(value = "user_email", required = false) String userEmail,
+            @RequestParam(value = "user_role", required = false) String userRole,
+            jakarta.servlet.http.HttpServletResponse response
+    ) {
+        StringBuilder sql = new StringBuilder(
+            "SELECT u.id, u.email, u.first_name, u.last_name, u.phone, u.is_active, u.gender, u.date_of_birth, r.name as role_name " +
+            "FROM users u " +
+            "LEFT JOIN user_roles ur ON u.id = ur.user_id " +
+            "LEFT JOIN roles r ON ur.role_id = r.id " +
+            "WHERE u.clinic_id = ?"
+        );
+
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth == null || !(auth.getPrincipal() instanceof UserPrincipal)) {
+            return ResponseEntity.status(401).body(ApiResponse.error("Unauthorized"));
+        }
+        UserPrincipal principal = (UserPrincipal) auth.getPrincipal();
+        Long loggedInClinicId = principal.getClinicId();
+
+        List<Object> args = new java.util.ArrayList<>();
+        args.add(loggedInClinicId);
+
+        if (status != null && !status.isBlank()) {
+            sql.append(" AND u.is_active = ?");
+            args.add("ACTIVE".equalsIgnoreCase(status));
+        }
+
+        if (userName != null && !userName.isBlank()) {
+            sql.append(" AND (LOWER(u.first_name) LIKE LOWER(?) OR LOWER(u.last_name) LIKE LOWER(?) OR LOWER(u.email) LIKE LOWER(?))");
+            String searchName = "%" + userName.trim() + "%";
+            args.add(searchName);
+            args.add(searchName);
+            args.add(searchName);
+        } else if (userEmail != null && !userEmail.isBlank()) {
+            sql.append(" AND LOWER(u.email) LIKE LOWER(?)");
+            args.add("%" + userEmail.trim() + "%");
+        }
+
+        if (userRole != null && !userRole.isBlank()) {
+            sql.append(" AND r.name = ?");
+            args.add(userRole.trim().toUpperCase());
+        }
+
+        // Calculate count query
+        String countSql = "SELECT COUNT(*) FROM (" + sql.toString() + ") AS temp_count";
+        Integer totalItems = jdbcTemplate.queryForObject(countSql, Integer.class, args.toArray());
+        if (totalItems == null) totalItems = 0;
+
+        // Apply pagination
+        sql.append(" LIMIT ? OFFSET ?");
+        args.add(pageSize);
+        args.add(pageNo * pageSize);
+
+        List<Map<String, Object>> users = jdbcTemplate.query(sql.toString(), (rs, rowNum) -> {
             String role = rs.getString("role_name");
             String prefix = "STF-";
             if ("ADMIN".equals(role)) {
@@ -170,7 +231,7 @@ public class UserController {
             } else if ("DOCTOR".equals(role)) {
                 prefix = "DOC-";
             }
-            
+
             java.util.Map<String, Object> map = new java.util.HashMap<>();
             map.put("id", prefix + rs.getLong("id"));
             map.put("email", rs.getString("email"));
@@ -194,13 +255,45 @@ public class UserController {
             }
 
             return map;
-        });
+        }, args.toArray());
 
-        return ResponseEntity.ok(ApiResponse.success("Users retrieved successfully", users));
+        int totalPages = (int) Math.ceil((double) totalItems / pageSize);
+        if (totalPages == 0) totalPages = 1;
+
+        // Construct paginated response body
+        java.util.Map<String, Object> pageData = new java.util.HashMap<>();
+        pageData.put("content", users);
+        pageData.put("totalPages", totalPages);
+        pageData.put("totalElements", String.valueOf(totalItems));
+        pageData.put("size", pageSize);
+
+        java.util.Map<String, Object> sortMap = new java.util.HashMap<>();
+        sortMap.put("empty", false);
+        sortMap.put("sorted", true);
+        sortMap.put("unsorted", false);
+        pageData.put("sort", sortMap);
+
+        pageData.put("numberOfElements", users.size());
+
+        response.setHeader("pageNo", String.valueOf(pageNo));
+        response.setHeader("pageSize", String.valueOf(pageSize));
+        response.setHeader("totalItems", String.valueOf(totalItems));
+        response.setHeader("totalPages", String.valueOf(totalPages));
+        response.setHeader("Access-Control-Expose-Headers", "pageNo, pageSize, totalItems, totalPages");
+
+        return ResponseEntity.ok(ApiResponse.success("Users retrieved successfully", pageData));
     }
 
     @PostMapping
     public ResponseEntity<ApiResponse<Map<String, Object>>> createUser(@RequestBody Map<String, Object> request) {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth == null || !(auth.getPrincipal() instanceof UserPrincipal)) {
+            return ResponseEntity.status(401).body(ApiResponse.error("Unauthorized"));
+        }
+        UserPrincipal principal = (UserPrincipal) auth.getPrincipal();
+        if (!authHelper.isAuthorized(principal.getClinicId(), "ADMIN")) {
+            return ResponseEntity.status(403).body(ApiResponse.error("Unauthorized access to clinic"));
+        }
         String email = (String) request.get("email");
         String name = (String) request.get("name");
         String mobile = (String) request.get("mobile");
@@ -208,11 +301,13 @@ public class UserController {
         boolean isActive = request.get("isActive") == null || (Boolean) request.get("isActive");
         String gender = (String) request.get("gender");
         String dateOfBirth = (String) request.get("dateOfBirth");
-        String followupFeeStr = (String) request.get("followupFee");
-        String consultationFeeStr = (String) request.get("consultationFee");
-        if (consultationFeeStr == null) {
-            consultationFeeStr = (String) request.get("fee");
+        Object followupFeeObj = request.get("followupFee");
+        String followupFeeStr = followupFeeObj != null ? String.valueOf(followupFeeObj) : null;
+        Object consultationFeeObj = request.get("consultationFee");
+        if (consultationFeeObj == null) {
+            consultationFeeObj = request.get("fee");
         }
+        String consultationFeeStr = consultationFeeObj != null ? String.valueOf(consultationFeeObj) : null;
 
         if (email == null || email.isBlank()) {
             return ResponseEntity.badRequest().body(ApiResponse.error("Email is required"));
@@ -244,8 +339,8 @@ public class UserController {
         // Insert user
         jdbcTemplate.update(
             "INSERT INTO users (clinic_id, email, password, first_name, last_name, phone, is_active, gender, date_of_birth) " +
-            "VALUES (1, ?, '$2a$10$IECeaBY.MVk4eD9tr5Y57OkDL0lbOqPwz4lpxUT0dmzsGYNAo0Yq2', ?, ?, ?, ?, ?, ?)",
-            email.trim(), firstName, lastName, mobile, isActive, gender, dobDate
+            "VALUES (?, ?, '$2a$10$IECeaBY.MVk4eD9tr5Y57OkDL0lbOqPwz4lpxUT0dmzsGYNAo0Yq2', ?, ?, ?, ?, ?, ?)",
+            principal.getClinicId(), email.trim(), firstName, lastName, mobile, isActive, gender, dobDate
         );
 
         Long userId = jdbcTemplate.queryForObject("SELECT id FROM users WHERE LOWER(email) = LOWER(?)", Long.class, email.trim());
@@ -274,7 +369,8 @@ public class UserController {
             String registrationNumber = (String) request.get("registrationNumber");
             jdbcTemplate.update(
                 "INSERT INTO doctors (clinic_id, user_id, first_name, last_name, email, phone, specialization, license_number, followup_fees, consultation_fees, is_active) " +
-                "VALUES (1, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                principal.getClinicId(),
                 userId, firstName, lastName, email, mobile,
                 specialization != null ? specialization : "General Practitioner",
                 registrationNumber != null ? registrationNumber : ("LIC-" + userId),
@@ -326,17 +422,22 @@ public class UserController {
     @PutMapping("/{id}")
     public ResponseEntity<ApiResponse<Map<String, Object>>> updateUser(@PathVariable("id") String rawId, @RequestBody Map<String, Object> request) {
         Long id = Long.parseLong(rawId.replaceAll("[^0-9]", ""));
+        if (!authHelper.isUserClinicAuthorized(id, "ADMIN")) {
+            return ResponseEntity.status(403).body(ApiResponse.error("Unauthorized access to user"));
+        }
         String email = (String) request.get("email");
         String name = (String) request.get("name");
         String mobile = (String) request.get("mobile");
         boolean isActive = request.get("isActive") == null || (Boolean) request.get("isActive");
         String gender = (String) request.get("gender");
         String dateOfBirth = (String) request.get("dateOfBirth");
-        String followupFeeStr = (String) request.get("followupFee");
-        String consultationFeeStr = (String) request.get("consultationFee");
-        if (consultationFeeStr == null) {
-            consultationFeeStr = (String) request.get("fee");
+        Object followupFeeObj = request.get("followupFee");
+        String followupFeeStr = followupFeeObj != null ? String.valueOf(followupFeeObj) : null;
+        Object consultationFeeObj = request.get("consultationFee");
+        if (consultationFeeObj == null) {
+            consultationFeeObj = request.get("fee");
         }
+        String consultationFeeStr = consultationFeeObj != null ? String.valueOf(consultationFeeObj) : null;
 
         String[] parts = name.split(" ", 2);
         String firstName = parts[0];
@@ -385,9 +486,12 @@ public class UserController {
             try {
                 String userRole = jdbcTemplate.queryForObject(checkRoleSql, String.class, id);
                 if ("DOCTOR".equals(userRole)) {
+                    Authentication authUpdate = SecurityContextHolder.getContext().getAuthentication();
+                    UserPrincipal principalUpdate = (UserPrincipal) authUpdate.getPrincipal();
                     jdbcTemplate.update(
                         "INSERT INTO doctors (clinic_id, user_id, first_name, last_name, email, phone, specialization, license_number, followup_fees, consultation_fees, is_active) " +
-                        "VALUES (1, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                        "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                        principalUpdate.getClinicId(),
                         id, firstName, lastName, email, mobile,
                         specialization != null ? specialization : "General Practitioner",
                         registrationNumber != null ? registrationNumber : ("LIC-" + id),

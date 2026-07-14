@@ -48,5 +48,5 @@ export interface BillingFilters {
   fromDate: string;
   toDate: string;
   status: PaymentStatus | 'ALL';
-  doctorId: string;
+  doctorName: string;
 }

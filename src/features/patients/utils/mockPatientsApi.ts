@@ -55,9 +55,33 @@ function mapToBackend(p: Partial<PatientProfileExtended>): PatientRequestDto {
 }
 
 export const mockPatientsApi = {
-  async getPatients(): Promise<PatientProfileExtended[]> {
-    const data = await patientService.getPatients(1, { size: 1000 });
-    return (data.content || []).map(mapToFrontend);
+  async getPatients(params?: {
+    pageNo?: number;
+    pageSize?: number;
+    patientId?: string;
+    patientMobile?: string;
+    patientName?: string;
+    gender?: string;
+  }): Promise<any> {
+    if (!params) {
+      const data = await patientService.getPatients(1000000000, { size: 1000 });
+      return (data.content || []).map(mapToFrontend);
+    }
+    const data = await patientService.getPatients(1000000000, {
+      page: params.pageNo,
+      size: params.pageSize,
+      patientId: params.patientId,
+      patientMobile: params.patientMobile,
+      patientName: params.patientName,
+      gender: params.gender === 'All' ? undefined : params.gender,
+    });
+    return {
+      items: (data.content || []).map(mapToFrontend),
+      totalItems: data.totalElements || 0,
+      totalPages: data.totalPages || 1,
+      pageNo: data.number || 0,
+      pageSize: data.size || 5,
+    };
   },
 
   async getPatientById(id: string): Promise<PatientProfileExtended | undefined> {
@@ -70,11 +94,40 @@ export const mockPatientsApi = {
   },
 
   async addPatient(patient: PatientProfileExtended): Promise<PatientProfileExtended> {
-    const created = await patientService.createPatient(1, mapToBackend(patient));
+    const created = await patientService.createPatient(1000000000, mapToBackend(patient));
     return mapToFrontend(created);
   },
 
   async updatePatient(updated: PatientProfileExtended): Promise<void> {
     await patientService.updatePatient(updated.id, 1, mapToBackend(updated));
+  },
+
+  async getFiles(patientId: string, params?: { fileName?: string; pageNo?: number; pageSize?: number }): Promise<any> {
+    const res = await patientService.getFiles(patientId, {
+      fileName: params?.fileName,
+      page: params?.pageNo,
+      size: params?.pageSize,
+    });
+    return {
+      items: res.content || [],
+      totalItems: res.totalElements || 0,
+      totalPages: res.totalPages || 1,
+      pageNo: res.number || 0,
+      pageSize: res.size || 5,
+    };
+  },
+
+  async uploadFile(patientId: string, file: any): Promise<void> {
+    await patientService.uploadFile(patientId, {
+      fileName: file.fileName,
+      category: file.category,
+      size: file.size,
+      fileType: file.fileType,
+      uploadedDate: file.uploadedDate || new Date().toISOString().split('T')[0]
+    });
+  },
+
+  async deleteFile(patientId: string, fileId: string | number): Promise<void> {
+    await patientService.deleteFile(patientId, fileId);
   }
 };

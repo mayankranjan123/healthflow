@@ -21,6 +21,7 @@ com\healthflow\clinic\controller\ClinicController.class
 com\healthflow\billing\dto\InvoiceItemDto.class
 com\healthflow\report\service\ReportServiceImpl$DateRange.class
 com\healthflow\config\JacksonConfig.class
+com\healthflow\patient\repository\PatientFileRepository.class
 com\healthflow\billing\entity\Invoice.class
 com\healthflow\HealthFlowApplication.class
 com\healthflow\appointment\entity\Appointment.class
@@ -59,12 +60,14 @@ com\healthflow\patient\repository\PatientRepository.class
 com\healthflow\report\dto\MonthlyRevenueItem.class
 com\healthflow\security\UserController.class
 com\healthflow\billing\repository\InvoiceRepository.class
+com\healthflow\patient\entity\PatientFile.class
 com\healthflow\patient\service\PatientServiceImpl.class
 com\healthflow\billing\service\InvoiceService.class
 com\healthflow\prescription\repository\PrescriptionRepository.class
 com\healthflow\prescription\entity\PrescriptionMedicine.class
 com\healthflow\appointment\dto\AppointmentRequestDto.class
 com\healthflow\exception\InvalidWorkflowException.class
+com\healthflow\security\AuthorizationHelper.class
 com\healthflow\report\dto\WeeklyRevenueItemDto.class
 com\healthflow\security\AuthController.class
 com\healthflow\prescription\dto\PrescriptionRequestDto.class

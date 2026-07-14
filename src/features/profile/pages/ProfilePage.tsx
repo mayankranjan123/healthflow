@@ -23,6 +23,8 @@ import { Input } from '../../../components/ui/Input';
 import { mockUsersApi } from '../../users/utils/mockUsersApi';
 import { DoctorUser, AdminUser, StaffUser } from '../../users/types';
 
+let isFetchingProfile = false;
+
 export const ProfilePage: React.FC = () => {
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [profileDetails, setProfileDetails] = useState<any>(null);
@@ -43,8 +45,17 @@ export const ProfilePage: React.FC = () => {
       const user = JSON.parse(cached);
       setCurrentUser(user);
 
+      if (isFetchingProfile) {
+        return;
+      }
+      isFetchingProfile = true;
+      // Reset lock after a short delay so that tab transitions or later page returns fetch updated profile
+      setTimeout(() => {
+        isFetchingProfile = false;
+      }, 1000);
+
       // Load profile with a single optimized API request using the security token
-      fetch('http://localhost:8080/api/v1/users/profile', {
+      fetch('/api/v1/users/profile', {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -96,7 +107,7 @@ export const ProfilePage: React.FC = () => {
 
     setIsChangingPassword(true);
     try {
-      const response = await fetch('http://localhost:8080/api/v1/auth/change-password', {
+      const response = await fetch('/api/v1/auth/change-password', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

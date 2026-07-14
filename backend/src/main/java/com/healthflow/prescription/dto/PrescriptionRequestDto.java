@@ -35,6 +35,8 @@ public class PrescriptionRequestDto {
 
     private String status; // ACTIVE, SAVED, DRAFT, etc.
 
+    private String headerLayout;
+
     @NotEmpty(message = "At least one medicine is required in the prescription")
     @Valid
     private List<PrescriptionMedicineDto> medicines;
@@ -136,6 +138,14 @@ public class PrescriptionRequestDto {
 
     public void setStatus(String status) {
         this.status = status;
+    }
+
+    public String getHeaderLayout() {
+        return headerLayout;
+    }
+
+    public void setHeaderLayout(String headerLayout) {
+        this.headerLayout = headerLayout;
     }
 
     public List<PrescriptionMedicineDto> getMedicines() {

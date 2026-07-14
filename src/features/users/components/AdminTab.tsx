@@ -6,6 +6,14 @@ import { AdminUser } from '../types';
 
 interface AdminTabProps {
   admins: AdminUser[];
+  totalItems: number;
+  totalPages: number;
+  currentPage: number;
+  searchTerm: string;
+  setSearchTerm: (s: string) => void;
+  statusFilter: 'ALL' | 'ACTIVE' | 'INACTIVE';
+  setStatusFilter: (s: 'ALL' | 'ACTIVE' | 'INACTIVE') => void;
+  onPageChange: (p: number) => void;
   onToggleStatus: (id: string) => void;
   onEdit: (admin: AdminUser) => void;
   onAdd: () => void;
@@ -14,38 +22,21 @@ interface AdminTabProps {
 
 export const AdminTab: React.FC<AdminTabProps> = ({
   admins,
+  totalItems,
+  totalPages,
+  currentPage,
+  searchTerm,
+  setSearchTerm,
+  statusFilter,
+  setStatusFilter,
+  onPageChange,
   onToggleStatus,
   onEdit,
   onAdd,
   onView,
 }) => {
-  const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState<'ALL' | 'ACTIVE' | 'INACTIVE'>('ALL');
-  const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 3;
-
-  // Filter admins
-  const filtered = admins.filter((admin) => {
-    const matchesSearch =
-      admin.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      admin.email.toLowerCase().includes(searchTerm.toLowerCase());
-    
-    if (statusFilter === 'ACTIVE') return matchesSearch && admin.isActive;
-    if (statusFilter === 'INACTIVE') return matchesSearch && !admin.isActive;
-    return matchesSearch;
-  });
-
-  // Paginate admins
-  const totalItems = filtered.length;
-  const totalPages = Math.ceil(totalItems / itemsPerPage) || 1;
+  const itemsPerPage = 5;
   const startIndex = (currentPage - 1) * itemsPerPage;
-  const paginatedAdmins = filtered.slice(startIndex, startIndex + itemsPerPage);
-
-  const handlePageChange = (page: number) => {
-    if (page >= 1 && page <= totalPages) {
-      setCurrentPage(page);
-    }
-  };
 
   const handleExport = () => {
     const csvContent = "data:text/csv;charset=utf-8," 
@@ -73,7 +64,7 @@ export const AdminTab: React.FC<AdminTabProps> = ({
               value={searchTerm}
               onChange={(e) => {
                 setSearchTerm(e.target.value);
-                setCurrentPage(1);
+                onPageChange(1);
               }}
               className="w-full pl-10 pr-4 py-2 bg-white border border-slate-200 rounded-lg text-sm outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 transition-all text-slate-700 font-medium"
             />
@@ -84,7 +75,7 @@ export const AdminTab: React.FC<AdminTabProps> = ({
               value={statusFilter}
               onChange={(e) => {
                 setStatusFilter(e.target.value as any);
-                setCurrentPage(1);
+                onPageChange(1);
               }}
               className="bg-white border border-slate-200 rounded-lg text-xs font-semibold px-3 py-2 outline-none text-slate-700 focus:border-blue-600"
             >
@@ -122,14 +113,14 @@ export const AdminTab: React.FC<AdminTabProps> = ({
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {paginatedAdmins.length === 0 ? (
+              {admins.length === 0 ? (
                 <tr>
                   <td colSpan={6} className="px-6 py-10 text-center text-sm text-slate-400 font-medium">
                     No administrator accounts found.
                   </td>
                 </tr>
               ) : (
-                paginatedAdmins.map((admin) => (
+                admins.map((admin) => (
                   <tr key={admin.id} className="hover:bg-slate-50/50 transition-colors">
                     {/* Profile */}
                     <td className="px-6 py-4.5">
@@ -205,7 +196,7 @@ export const AdminTab: React.FC<AdminTabProps> = ({
           {totalPages > 1 && (
             <div className="flex items-center gap-1.5">
               <button
-                onClick={() => handlePageChange(currentPage - 1)}
+                onClick={() => onPageChange(currentPage - 1)}
                 disabled={currentPage === 1}
                 className={`p-1.5 rounded-lg border border-slate-200 bg-white text-slate-500 transition-all ${
                   currentPage === 1 ? 'opacity-40 cursor-not-allowed' : 'hover:bg-slate-50 cursor-pointer'
@@ -216,7 +207,7 @@ export const AdminTab: React.FC<AdminTabProps> = ({
               {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
                 <button
                   key={page}
-                  onClick={() => handlePageChange(page)}
+                  onClick={() => onPageChange(page)}
                   className={`w-8 h-8 rounded-lg text-xs font-bold transition-all ${
                     page === currentPage
                       ? 'bg-blue-600 text-white shadow-sm'
@@ -227,7 +218,7 @@ export const AdminTab: React.FC<AdminTabProps> = ({
                 </button>
               ))}
               <button
-                onClick={() => handlePageChange(currentPage + 1)}
+                onClick={() => onPageChange(currentPage + 1)}
                 disabled={currentPage === totalPages}
                 className={`p-1.5 rounded-lg border border-slate-200 bg-white text-slate-500 transition-all ${
                   currentPage === totalPages ? 'opacity-40 cursor-not-allowed' : 'hover:bg-slate-50 cursor-pointer'

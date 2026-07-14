@@ -30,6 +30,8 @@ public class PrescriptionResponseDto {
     private Instant createdAt;
     private Instant updatedAt;
     
+    private String headerLayout;
+    
     private List<PrescriptionMedicineDto> medicines;
 
     public PrescriptionResponseDto() {}
@@ -221,6 +223,14 @@ public class PrescriptionResponseDto {
 
     public void setUpdatedAt(Instant updatedAt) {
         this.updatedAt = updatedAt;
+    }
+
+    public String getHeaderLayout() {
+        return headerLayout;
+    }
+
+    public void setHeaderLayout(String headerLayout) {
+        this.headerLayout = headerLayout;
     }
 
     public List<PrescriptionMedicineDto> getMedicines() {

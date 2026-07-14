@@ -11,6 +11,8 @@ C:\Users\LENOVO\Downloads\healthflow\backend\src\main\java\com\healthflow\securi
 C:\Users\LENOVO\Downloads\healthflow\backend\src\main\java\com\healthflow\security\CustomUserDetailsService.java
 C:\Users\LENOVO\Downloads\healthflow\backend\src\main\java\com\healthflow\exception\ResourceNotFoundException.java
 C:\Users\LENOVO\Downloads\healthflow\backend\src\main\java\com\healthflow\patient\dto\MobileCheckResultDto.java
+C:\Users\LENOVO\Downloads\healthflow\backend\src\main\java\com\healthflow\patient\entity\PatientFile.java
+C:\Users\LENOVO\Downloads\healthflow\backend\src\main\java\com\healthflow\security\AuthorizationHelper.java
 C:\Users\LENOVO\Downloads\healthflow\backend\src\main\java\com\healthflow\appointment\service\AppointmentServiceImpl.java
 C:\Users\LENOVO\Downloads\healthflow\backend\src\main\java\com\healthflow\doctor\repository\DoctorRepository.java
 C:\Users\LENOVO\Downloads\healthflow\backend\src\main\java\com\healthflow\doctor\entity\Doctor.java
@@ -39,6 +41,7 @@ C:\Users\LENOVO\Downloads\healthflow\backend\src\main\java\com\healthflow\prescr
 C:\Users\LENOVO\Downloads\healthflow\backend\src\main\java\com\healthflow\doctor\controller\DoctorController.java
 C:\Users\LENOVO\Downloads\healthflow\backend\src\main\java\com\healthflow\appointment\entity\Appointment.java
 C:\Users\LENOVO\Downloads\healthflow\backend\src\main\java\com\healthflow\appointment\service\AppointmentService.java
+C:\Users\LENOVO\Downloads\healthflow\backend\src\main\java\com\healthflow\patient\repository\PatientFileRepository.java
 C:\Users\LENOVO\Downloads\healthflow\backend\src\main\java\com\healthflow\report\dto\TimewiseAppointmentDto.java
 C:\Users\LENOVO\Downloads\healthflow\backend\src\main\java\com\healthflow\prescription\entity\Prescription.java
 C:\Users\LENOVO\Downloads\healthflow\backend\src\main\java\com\healthflow\billing\dto\InvoiceStatsDto.java

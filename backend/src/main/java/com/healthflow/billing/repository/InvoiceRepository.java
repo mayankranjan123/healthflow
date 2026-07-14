@@ -21,20 +21,18 @@ public interface InvoiceRepository extends JpaRepository<Invoice, Long> {
            "LEFT JOIN FETCH i.patient pat " +
            "LEFT JOIN FETCH i.doctor doc " +
            "WHERE i.clinicId = :clinicId " +
-           "AND (cast(:patientName as string) IS NULL OR LOWER(pat.fullName) LIKE LOWER(CONCAT('%', cast(:patientName as string), '%'))) " +
-           "AND (cast(:invoiceSearch as string) IS NULL OR LOWER(i.invoiceNumber) LIKE LOWER(CONCAT('%', cast(:invoiceSearch as string), '%')) OR CAST(i.id AS string) = cast(:invoiceSearch as string)) " +
+           "AND (cast(:patientSearch as string) IS NULL OR LOWER(pat.fullName) LIKE LOWER(CONCAT('%', cast(:patientSearch as string), '%')) OR LOWER(pat.patientCode) LIKE LOWER(CONCAT('%', cast(:patientSearch as string), '%')) OR CAST(pat.id AS string) = cast(:patientSearch as string) OR LOWER(i.invoiceNumber) LIKE LOWER(CONCAT('%', cast(:patientSearch as string), '%')) OR CAST(i.id AS string) = cast(:patientSearch as string)) " +
            "AND (cast(:fromDate as date) IS NULL OR i.invoiceDate >= :fromDate) " +
            "AND (cast(:toDate as date) IS NULL OR i.invoiceDate <= :toDate) " +
            "AND (cast(:status as string) IS NULL OR LOWER(i.status) = LOWER(cast(:status as string))) " +
-           "AND (cast(:doctorId as Long) IS NULL OR i.doctorId = :doctorId)")
+           "AND (cast(:doctorName as string) IS NULL OR LOWER(doc.firstName) LIKE LOWER(CONCAT('%', cast(:doctorName as string), '%')) OR LOWER(doc.lastName) LIKE LOWER(CONCAT('%', cast(:doctorName as string), '%')) OR LOWER(CONCAT(doc.firstName, ' ', doc.lastName)) LIKE LOWER(CONCAT('%', cast(:doctorName as string), '%')))")
     Page<Invoice> findFilteredInvoices(
             @Param("clinicId") Long clinicId,
-            @Param("patientName") String patientName,
-            @Param("invoiceSearch") String invoiceSearch,
+            @Param("patientSearch") String patientSearch,
             @Param("fromDate") LocalDate fromDate,
             @Param("toDate") LocalDate toDate,
             @Param("status") String status,
-            @Param("doctorId") Long doctorId,
+            @Param("doctorName") String doctorName,
             Pageable pageable
     );
 

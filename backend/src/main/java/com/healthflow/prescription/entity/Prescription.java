@@ -17,7 +17,7 @@ public class Prescription extends BaseEntity {
     private Long id;
 
     @Column(name = "clinic_id", nullable = false)
-    private Long clinicId = 1L;
+    private Long clinicId = 1000000000L;
 
     @Column(name = "prescription_code", nullable = false, unique = true)
     private String prescriptionCode;
@@ -56,6 +56,9 @@ public class Prescription extends BaseEntity {
 
     @Column(name = "next_visit_date")
     private LocalDate nextVisitDate;
+
+    @Column(name = "header_layout")
+    private String headerLayout;
 
     @Column(name = "status", nullable = false)
     private String status = "ACTIVE"; // ACTIVE, SAVED, DRAFT etc.
@@ -227,6 +230,14 @@ public class Prescription extends BaseEntity {
 
     public void setPdfUrl(String pdfUrl) {
         this.pdfUrl = pdfUrl;
+    }
+
+    public String getHeaderLayout() {
+        return headerLayout;
+    }
+
+    public void setHeaderLayout(String headerLayout) {
+        this.headerLayout = headerLayout;
     }
 
     public List<PrescriptionMedicine> getMedicines() {

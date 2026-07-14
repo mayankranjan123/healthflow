@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   Plus,
   Search,
@@ -39,16 +39,18 @@ import { Drawer } from '../../../components/ui/Drawer';
 import { Badge } from '../../../components/ui/Badge';
 import { Pagination } from '../../../components/ui/Pagination';
 
-import { 
-  PatientProfileExtended, 
-  PatientAttachment, 
-  PatientAppointment, 
-  PatientPrescription, 
-  PatientMedicine 
+import {
+  PatientProfileExtended,
+  PatientAttachment,
+  PatientAppointment,
+  PatientPrescription,
+  PatientMedicine
 } from '../types';
 import { mockPatientsApi } from '../utils/mockPatientsApi';
 import { mockDoctorsApi } from '../../doctors/utils/mockDoctorsApi';
 import { mockSettingsApi } from '../../settings/utils/mockSettingsApi';
+import { mockPrescriptionsApi } from '../utils/mockPrescriptionsApi';
+import { mockAppointmentsApi } from '../../appointments/utils/mockAppointmentsApi';
 
 export const PatientsPage: React.FC = () => {
   // Load data from persistent APIs
@@ -61,7 +63,7 @@ export const PatientsPage: React.FC = () => {
     if (cached) {
       try {
         setCurrentUser(JSON.parse(cached));
-      } catch (e) {}
+      } catch (e) { }
     }
   }, []);
 
@@ -72,9 +74,13 @@ export const PatientsPage: React.FC = () => {
 
   // Search & Filters state for primary directory
   const [searchTerm, setSearchTerm] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
   const [genderFilter, setGenderFilter] = useState('All');
   const [currentPage, setCurrentPage] = useState(1);
   const [rowsPerPage] = useState(5);
+  const [totalItems, setTotalItems] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
+  const [isLoading, setIsLoading] = useState(false);
 
   // Modal open controllers
   const [isAddPatientOpen, setIsAddPatientOpen] = useState(false);
@@ -86,6 +92,19 @@ export const PatientsPage: React.FC = () => {
   // Selected details targets
   const [selectedAppointment, setSelectedAppointment] = useState<PatientAppointment | null>(null);
   const [previewPrescription, setPreviewPrescription] = useState<PatientPrescription | null>(null);
+  const [loadedPrescriptions, setLoadedPrescriptions] = useState<PatientPrescription[]>([]);
+  const [isLoadingPrescriptions, setIsLoadingPrescriptions] = useState(false);
+
+  // Patient Appointments State (backend loaded)
+  const [patientAppointments, setPatientAppointments] = useState<any[]>([]);
+  const [isLoadingAppointments, setIsLoadingAppointments] = useState(false);
+
+  // Patient Files State (backend loaded)
+  const [patientFiles, setPatientFiles] = useState<any[]>([]);
+  const [fileTotalRows, setFileTotalRows] = useState(0);
+  const [fileTotalPages, setFileTotalPages] = useState(1);
+  const [isLoadingFiles, setIsLoadingFiles] = useState(false);
+  const [debouncedFileSearch, setDebouncedFileSearch] = useState('');
 
   // Sub-modules Search and Filtering
   // Prescriptions Filters
@@ -162,10 +181,119 @@ export const PatientsPage: React.FC = () => {
   const [prescriptionSettings, setPrescriptionSettings] = useState<any>(null);
   const [clinicSettings, setClinicSettings] = useState<any>(null);
 
+  // Search debouncing handler
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedSearch(searchTerm);
+      setCurrentPage(1);
+    }, 300);
+    return () => clearTimeout(handler);
+  }, [searchTerm]);
+
+  // Files Search debouncing handler
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedFileSearch(fileSearch);
+      setFileCurrentPage(1);
+    }, 300);
+    return () => clearTimeout(handler);
+  }, [fileSearch]);
+
+  // Load patients list dynamically
+  const loadPatientsList = useCallback(() => {
+    setIsLoading(true);
+    let patientIdParam: string | undefined = undefined;
+    let patientMobileParam: string | undefined = undefined;
+    let patientNameParam: string | undefined = undefined;
+
+    const trimmed = debouncedSearch.trim();
+    if (trimmed) {
+      if (trimmed.toUpperCase().startsWith('PT-') || /^\d+$/.test(trimmed)) {
+        if (/^\d{7,15}$/.test(trimmed)) {
+          patientMobileParam = trimmed;
+        } else {
+          patientIdParam = trimmed;
+        }
+      } else {
+        patientNameParam = trimmed;
+      }
+    }
+
+    mockPatientsApi.getPatients({
+      pageNo: currentPage - 1,
+      pageSize: rowsPerPage,
+      patientId: patientIdParam,
+      patientMobile: patientMobileParam,
+      patientName: patientNameParam,
+      gender: genderFilter,
+    })
+      .then((res: any) => {
+        setPatients(res.items || []);
+        setTotalItems(res.totalItems || 0);
+        setTotalPages(res.totalPages || 1);
+      })
+      .catch((err) => {
+        console.error("Failed to load patients list: ", err);
+      })
+      .finally(() => {
+        setIsLoading(false);
+      });
+  }, [debouncedSearch, genderFilter, currentPage, rowsPerPage]);
+
+  useEffect(() => {
+    loadPatientsList();
+  }, [loadPatientsList]);
+
+  // Load patient files dynamically
+  const loadPatientFiles = useCallback(() => {
+    if (!selectedPatient) return;
+    setIsLoadingFiles(true);
+    mockPatientsApi.getFiles(selectedPatient.id, {
+      fileName: debouncedFileSearch,
+      pageNo: fileCurrentPage - 1,
+      pageSize: fileRowsPerPage,
+    })
+      .then((res: any) => {
+        setPatientFiles(res.items || []);
+        setFileTotalRows(res.totalItems || 0);
+        setFileTotalPages(res.totalPages || 1);
+      })
+      .catch((err) => {
+        console.error("Failed to load patient files: ", err);
+      })
+      .finally(() => {
+        setIsLoadingFiles(false);
+      });
+  }, [selectedPatient?.id, debouncedFileSearch, fileCurrentPage, fileRowsPerPage]);
+
+  useEffect(() => {
+    if (selectedPatient && profileTab === 'files') {
+      loadPatientFiles();
+    }
+  }, [profileTab, selectedPatient?.id, loadPatientFiles]);
+
+  // Load patient appointments dynamically
+  useEffect(() => {
+    if (selectedPatient && profileTab === 'appointments') {
+      setIsLoadingAppointments(true);
+      mockAppointmentsApi.getAppointments({
+        patientId: selectedPatient.id,
+        pageSize: 100, // Load all completed/upcoming appointments for this patient
+      })
+        .then((res: any) => {
+          setPatientAppointments(res.items || []);
+        })
+        .catch((err) => {
+          console.error("Failed to load patient appointments: ", err);
+        })
+        .finally(() => {
+          setIsLoadingAppointments(false);
+        });
+    }
+  }, [profileTab, selectedPatient?.id]);
+
   // Initialize data
   useEffect(() => {
-    mockPatientsApi.getPatients().then(setPatients);
-    mockDoctorsApi.getDoctors().then(setDoctorsList);
     mockSettingsApi.getSettings().then((settings) => {
       if (settings) {
         if (settings.prescription) {
@@ -182,6 +310,13 @@ export const PatientsPage: React.FC = () => {
     });
   }, []);
 
+  // Load doctors list only when in detail view mode (to optimize API calls)
+  useEffect(() => {
+    if (viewMode === 'detail') {
+      mockDoctorsApi.getDoctors().then(setDoctorsList);
+    }
+  }, [viewMode]);
+
   // Update selected patient profile from source to stay in sync
   useEffect(() => {
     if (selectedPatient) {
@@ -192,6 +327,23 @@ export const PatientsPage: React.FC = () => {
       });
     }
   }, [patients]);
+
+  // Load prescriptions from API when tab is prescriptions or patient changes
+  useEffect(() => {
+    if (selectedPatient && profileTab === 'prescriptions') {
+      setIsLoadingPrescriptions(true);
+      mockPrescriptionsApi.getPrescriptions(selectedPatient.id)
+        .then((data) => {
+          setLoadedPrescriptions(data);
+        })
+        .catch((err) => {
+          console.error("Failed to load prescriptions from backend: ", err);
+        })
+        .finally(() => {
+          setIsLoadingPrescriptions(false);
+        });
+    }
+  }, [profileTab, selectedPatient?.id]);
 
   // --- HANDLERS ---
 
@@ -251,10 +403,15 @@ export const PatientsPage: React.FC = () => {
       prescriptions: []
     };
 
-    mockPatientsApi.addPatient(patientToAdd).then(() => {
-      mockPatientsApi.getPatients().then(setPatients);
+    mockPatientsApi.addPatient(patientToAdd).then((createdPatient) => {
+      const uploadPromises = attachmentsMapped.map(att =>
+        mockPatientsApi.uploadFile(createdPatient.id, att)
+      );
+      Promise.all(uploadPromises).then(() => {
+        loadPatientsList();
+      });
     });
-    
+
     // Reset Form
     setNewPatient({
       firstName: '',
@@ -392,12 +549,13 @@ export const PatientsPage: React.FC = () => {
       medicines: medicinesList,
       testsRecommended: newPrescription.testsRecommended || 'None',
       advice: newPrescription.advice || 'None',
-      nextVisitDate: newPrescription.nextVisitDate || 'None'
+      nextVisitDate: newPrescription.nextVisitDate || 'None',
+      headerLayout: prescriptionSettings?.headerLayout || 'CENTERED_PROFESSIONAL'
     };
 
     const updatedPatient: PatientProfileExtended = {
       ...selectedPatient,
-      prescriptions: [newPrsc, ...selectedPatient.prescriptions]
+      prescriptions: [newPrsc, ...(selectedPatient.prescriptions || [])]
     };
 
     // If next visit date is set, also add an upcoming appointment or update fields
@@ -413,14 +571,23 @@ export const PatientsPage: React.FC = () => {
           doctorAvatarUrl: newPrsc.doctorAvatarUrl,
           reason: `Follow-up: ${newPrsc.diagnosis}`
         },
-        ...selectedPatient.appointments
+        ...(selectedPatient.appointments || [])
       ];
     }
 
-    mockPatientsApi.updatePatient(updatedPatient).then(() => {
-      mockPatientsApi.getPatients().then(setPatients);
+    mockPrescriptionsApi.createPrescription(newPrsc).then(() => {
+      // Reload prescriptions from backend
+      mockPrescriptionsApi.getPrescriptions(selectedPatient.id).then(setLoadedPrescriptions);
+
+      // Update general patient profile (like next visit / appointments)
+      mockPatientsApi.updatePatient(updatedPatient).then(() => {
+        mockPatientsApi.getPatients().then(setPatients);
+      });
+    }).catch(err => {
+      console.error("Failed to save prescription: ", err);
+      alert("Failed to save prescription. Please try again.");
     });
-    
+
     // Close & Clean
     setIsCreatePrescriptionOpen(false);
     setMedicinesList([]);
@@ -461,13 +628,8 @@ export const PatientsPage: React.FC = () => {
       fileType: newUploadedFile.fileType
     };
 
-    const updatedPatient: PatientProfileExtended = {
-      ...selectedPatient,
-      attachments: [newFile, ...selectedPatient.attachments]
-    };
-
-    mockPatientsApi.updatePatient(updatedPatient).then(() => {
-      mockPatientsApi.getPatients().then(setPatients);
+    mockPatientsApi.uploadFile(selectedPatient.id, newFile).then(() => {
+      loadPatientFiles();
     });
 
     // Reset Upload State
@@ -493,7 +655,7 @@ export const PatientsPage: React.FC = () => {
 
     const chosenName = list[Math.floor(Math.random() * list.length)];
     // Random file size up to 12MB to test limit validation occasionally
-    const sizeBytes = Math.random() < 0.85 
+    const sizeBytes = Math.random() < 0.85
       ? Math.floor(1000000 + Math.random() * 8000000) // 1MB to 9MB
       : Math.floor(10500000 + Math.random() * 3000000); // 10.5MB to 13.5MB (causes validation failure)
 
@@ -509,17 +671,141 @@ export const PatientsPage: React.FC = () => {
   };
 
   // Delete Attachment
-  const handleDeleteAttachment = (fileId: string) => {
+  const handleDeleteAttachment = (fileId: string | number) => {
     if (!selectedPatient) return;
     if (confirm('Are you sure you want to delete this file permanently?')) {
-      const updatedPatient: PatientProfileExtended = {
-        ...selectedPatient,
-        attachments: selectedPatient.attachments.filter((f) => f.id !== fileId)
-      };
-      mockPatientsApi.updatePatient(updatedPatient).then(() => {
-        mockPatientsApi.getPatients().then(setPatients);
+      mockPatientsApi.deleteFile(selectedPatient.id, fileId).then(() => {
+        loadPatientFiles();
       });
     }
+  };
+
+  // Download Prescription PDF
+  const handleDownloadPrescriptionPdf = () => {
+    if (!previewPrescription || !selectedPatient) return;
+    const element = document.getElementById('printable-area');
+    if (!element) return;
+
+    const iframe = document.createElement('iframe');
+    iframe.style.position = 'absolute';
+    iframe.style.width = '800px';
+    iframe.style.height = '1130px';
+    iframe.style.left = '-10000px';
+    iframe.style.top = '-10000px';
+    document.body.appendChild(iframe);
+
+    const doc = iframe.contentDocument || iframe.contentWindow?.document;
+    if (!doc) {
+      document.body.removeChild(iframe);
+      return;
+    }
+
+    const filename = `prescription-${previewPrescription.id}.pdf`;
+
+    // Write content to iframe - loading both scripts inside the iframe context
+    doc.open();
+    doc.write(`
+      <html>
+        <head>
+          <title>Prescription</title>
+          <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+          <script src="https://cdn.tailwindcss.com"></script>
+          <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+          <script>
+            tailwind.config = {
+              theme: {
+                extend: {
+                  colors: {
+                    'brand-primary': '#005ae2',
+                    'brand-secondary': '#0ea5e9',
+                    'brand-dark': '#0f172a',
+                    'brand-muted': '#64748b',
+                    slate: {
+                      150: '#f1f5f9',
+                      250: '#cbd5e1',
+                      350: '#94a3b8',
+                      450: '#64748b',
+                      505: '#475569',
+                      707: '#1e293b',
+                      750: '#334155'
+                    }
+                  },
+                  fontFamily: {
+                    sans: ["Inter", "ui-sans-serif", "system-ui", "sans-serif"],
+                    display: ["Space Grotesk", "sans-serif"]
+                  }
+                }
+              }
+            }
+          </script>
+          <style>
+            body { background: white; margin: 0; padding: 0; font-family: "Inter", sans-serif; }
+            #printable-area { border: none !important; box-shadow: none !important; border-radius: 0px !important; padding: 0 !important; }
+          </style>
+        </head>
+        <body>
+          <div id="printable-area">${element.innerHTML}</div>
+        </body>
+      </html>
+    `);
+    doc.close();
+
+    const runDownload = () => {
+      const iframeWindow = iframe.contentWindow as any;
+      const iframeElement = doc.getElementById('printable-area');
+
+      if (iframeWindow && iframeWindow.html2pdf && iframeElement) {
+        const opt = {
+          margin: 0.4,
+          filename: filename,
+          image: { type: 'jpeg', quality: 0.98 },
+          html2canvas: { scale: 2, useCORS: true, logging: false },
+          jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' }
+        };
+
+        iframeWindow.html2pdf().from(iframeElement).set(opt).output('blob').then((pdfBlob: Blob) => {
+          const blobUrl = URL.createObjectURL(pdfBlob);
+          const link = document.createElement('a');
+          link.href = blobUrl;
+          link.download = filename;
+          document.body.appendChild(link);
+          link.click();
+
+          // Cleanup resources
+          document.body.removeChild(link);
+          URL.revokeObjectURL(blobUrl);
+          document.body.removeChild(iframe);
+        }).catch((err: any) => {
+          console.error("PDF generation failed: ", err);
+          document.body.removeChild(iframe);
+        });
+      } else {
+        document.body.removeChild(iframe);
+      }
+    };
+
+    // Check script load completion inside the iframe context
+    const checkAndRun = () => {
+      const iframeWindow = iframe.contentWindow as any;
+      if (iframeWindow && iframeWindow.html2pdf && iframeWindow.tailwind) {
+        runDownload();
+      } else {
+        let elapsed = 0;
+        const interval = setInterval(() => {
+          elapsed += 100;
+          if (iframeWindow && iframeWindow.html2pdf && iframeWindow.tailwind) {
+            clearInterval(interval);
+            runDownload();
+          } else if (elapsed >= 3000) {
+            clearInterval(interval);
+            alert("Failed to render layout styles. Please print the prescription instead.");
+            document.body.removeChild(iframe);
+          }
+        }, 100);
+      }
+    };
+
+    checkAndRun();
   };
 
   // View Patient Details
@@ -531,29 +817,15 @@ export const PatientsPage: React.FC = () => {
 
   // --- FILTERS & SEARCH PROCESSORS ---
 
-  // Main Patient Directory search filter
-  const filteredPatients = patients.filter((p) => {
-    const nameMatch = `${p.firstName} ${p.lastName}`.toLowerCase().includes(searchTerm.toLowerCase());
-    const idMatch = p.patientNumber.toLowerCase().includes(searchTerm.toLowerCase());
-    const mobileMatch = p.phone.includes(searchTerm);
-    const searchMatch = nameMatch || idMatch || mobileMatch;
-
-    const genderMatch = genderFilter === 'All' || p.gender === genderFilter;
-
-    return searchMatch && genderMatch;
-  });
-
   // Main Pagination
-  const mainTotalRows = filteredPatients.length;
-  const mainStartIndex = (currentPage - 1) * rowsPerPage;
-  const mainEndIndex = Math.min(mainStartIndex + rowsPerPage, mainTotalRows);
-  const mainPaginatedPatients = filteredPatients.slice(mainStartIndex, mainEndIndex);
-  const mainTotalPages = Math.ceil(mainTotalRows / rowsPerPage) || 1;
+  const mainTotalRows = totalItems;
+  const mainPaginatedPatients = patients;
+  const mainTotalPages = totalPages;
 
   // Selected Patient Prescriptions filters
   const getFilteredPrescriptions = () => {
     if (!selectedPatient) return [];
-    return selectedPatient.prescriptions.filter((prsc) => {
+    return (loadedPrescriptions || []).filter((prsc) => {
       // Date bounds
       if (prescFromDate && new Date(prsc.issueDate) < new Date(prescFromDate)) return false;
       if (prescToDate && new Date(prsc.issueDate) > new Date(prescToDate)) return false;
@@ -563,22 +835,8 @@ export const PatientsPage: React.FC = () => {
     });
   };
 
-  // Selected Patient Files search & pagination filters
-  const getFilteredFiles = () => {
-    if (!selectedPatient) return [];
-    return selectedPatient.attachments.filter((f) => {
-      const matchSearch = f.fileName.toLowerCase().includes(fileSearch.toLowerCase());
-      const matchCat = fileCategoryFilter === 'All' || f.category === fileCategoryFilter;
-      return matchSearch && matchCat;
-    });
-  };
-
-  const currentFiles = getFilteredFiles();
-  const fileTotalRows = currentFiles.length;
-  const fileStartIndex = (fileCurrentPage - 1) * fileRowsPerPage;
-  const fileEndIndex = Math.min(fileStartIndex + fileRowsPerPage, fileTotalRows);
-  const filePaginated = currentFiles.slice(fileStartIndex, fileEndIndex);
-  const fileTotalPages = Math.ceil(fileTotalRows / fileRowsPerPage) || 1;
+  // Selected Patient Files server-side pagination mapping
+  const filePaginated = patientFiles;
 
   // --- RENDERING VIEWS ---
 
@@ -731,8 +989,8 @@ export const PatientsPage: React.FC = () => {
                   }}
                   className="min-w-[150px]"
                 />
-                <Button 
-                  variant="outline" 
+                <Button
+                  variant="outline"
                   onClick={() => {
                     setSearchTerm('');
                     setGenderFilter('All');
@@ -1006,13 +1264,13 @@ export const PatientsPage: React.FC = () => {
                 </div>
               </div>
 
-              {selectedPatient.appointments.length === 0 ? (
+              {patientAppointments.length === 0 ? (
                 <div className="bg-white p-12 text-center rounded-xl border border-slate-200">
                   <p className="text-slate-500 font-medium">No appointments on record for this patient.</p>
                 </div>
               ) : (
                 <div className="relative border-l border-slate-200 ml-4 pl-6 space-y-6">
-                  {selectedPatient.appointments.map((app) => {
+                  {patientAppointments.map((app) => {
                     const isUpcoming = app.status === 'SCHEDULED';
                     return (
                       <div key={app.id} className="relative">
@@ -1035,7 +1293,7 @@ export const PatientsPage: React.FC = () => {
                                 </Badge>
                               </div>
                               <h5 className="font-bold text-slate-800 text-sm">{app.reason}</h5>
-                              
+
                               <div className="flex items-center gap-2">
                                 <img
                                   src={app.doctorAvatarUrl || 'https://images.unsplash.com/photo-1622253692010-333f2da6031d?q=80&w=250&auto=format&fit=crop'}
@@ -1101,7 +1359,7 @@ export const PatientsPage: React.FC = () => {
                     ]}
                   />
                 </div>
-                
+
                 {/* Create Button */}
                 {currentUser?.role !== 'STAFF' && (
                   <div className="flex items-end pt-5 md:pt-0 shrink-0">
@@ -1149,7 +1407,7 @@ export const PatientsPage: React.FC = () => {
                               Issued: {prsc.issueDate}
                             </span>
                           </div>
-                          
+
                           <div className="flex items-center gap-3">
                             <img
                               src={prsc.doctorAvatarUrl || 'https://images.unsplash.com/photo-1622253692010-333f2da6031d?q=80&w=250&auto=format&fit=crop'}
@@ -1273,9 +1531,9 @@ export const PatientsPage: React.FC = () => {
                           <td className="px-6 py-4">
                             <Badge variant={
                               file.category === 'Lab Report' ? 'info' :
-                              file.category === 'X-ray' ? 'danger' :
-                              file.category === 'Scan' ? 'warning' :
-                              file.category === 'Prescription' ? 'success' : 'neutral'
+                                file.category === 'X-ray' ? 'danger' :
+                                  file.category === 'Scan' ? 'warning' :
+                                    file.category === 'Prescription' ? 'success' : 'neutral'
                             }>
                               {file.category}
                             </Badge>
@@ -1461,14 +1719,14 @@ export const PatientsPage: React.FC = () => {
             />
           </div>
 
-          {/* Attachments Section in Add Patient Form */}
+          {/* Attachments Section in Add Patient Form
           <div className="border-t border-slate-100 pt-3 space-y-2">
             <div className="flex justify-between items-center">
               <label className="text-xs font-semibold text-slate-700 uppercase tracking-wider">Add Initial Attachments</label>
               <span className="text-[10px] text-slate-400 font-medium">Max 10MB per file</span>
-            </div>
-            
-            <div className="flex flex-wrap gap-2">
+            </div> */}
+
+          {/* <div className="flex flex-wrap gap-2">
               {(['Lab Report', 'X-ray', 'Scan', 'Prescription', 'Other'] as const).map((cat) => (
                 <button
                   type="button"
@@ -1505,7 +1763,7 @@ export const PatientsPage: React.FC = () => {
                 ))}
               </div>
             )}
-          </div>
+          </div> */}
 
           <div className="flex justify-end gap-3 pt-4 border-t border-slate-100">
             <Button type="button" variant="outline" onClick={() => setIsAddPatientOpen(false)}>
@@ -1796,34 +2054,42 @@ export const PatientsPage: React.FC = () => {
           <div className="space-y-6">
             {/* Print Header Action */}
             <div className="flex justify-between items-center border-b border-slate-100 pb-3">
-              <span className="text-xs text-slate-500 font-medium font-sans">
-                A4 Clinical Layout. Press Print to generate physical copy.
-              </span>
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => {
-                  window.print();
-                }}
-                className="gap-1 px-3"
-              >
-                <Printer className="w-3.5 h-3.5" />
-                <span>Print Document</span>
-              </Button>
+
+              <div className="flex gap-2">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={handleDownloadPrescriptionPdf}
+                  className="gap-1 px-3 border-brand-primary text-brand-primary hover:bg-blue-50"
+                >
+                  <Download className="w-3.5 h-3.5" />
+                  <span>Download PDF</span>
+                </Button>
+                <Button
+                  size="sm"
+                  variant="primary"
+                  onClick={() => {
+                    window.print();
+                  }}
+                  className="gap-1 px-3"
+                >
+                  <Printer className="w-3.5 h-3.5" />
+                  <span>Print Document</span>
+                </Button>
+              </div>
             </div>
 
             {/* A4 sheet simulation */}
             {(() => {
               const pSettings = prescriptionSettings;
               const showLogo = pSettings ? pSettings.showClinicLogo : true;
-              const headerLayout = pSettings?.headerLayout || 'CENTERED_PROFESSIONAL';
-              
+              const headerLayout = previewPrescription.headerLayout || pSettings?.headerLayout || 'CENTERED_PROFESSIONAL';
+
               const clinicName = clinicSettings?.name || 'HealthFlow';
-              const clinicAddress = clinicSettings?.addressLine 
-                ? `${clinicSettings.addressLine}, ${clinicSettings.city}, ${clinicSettings.state} - ${clinicSettings.pincode}` 
-                : 'Sector 17, Main Road, Chandigarh, India';
-              const clinicPhone = clinicSettings?.phone || '+91 172 555 1200';
-              const clinicEmail = clinicSettings?.email || 'support@healthflow.com';
+              const clinicAddress = clinicSettings?.addressLine
+                ? `${clinicSettings.addressLine.split(',')[0]}, ${clinicSettings.city}`
+                : 'Whitefield, Bengaluru';
+              const clinicPhone = clinicSettings?.phone || '+91 991155305';
 
               const showDocQuals = pSettings ? pSettings.showDoctorQualifications : true;
               const showDocDept = pSettings ? pSettings.showDoctorDepartment : true;
@@ -1833,137 +2099,153 @@ export const PatientsPage: React.FC = () => {
               const showDuration = pSettings ? pSettings.showDuration : true;
               const showDosage = pSettings ? pSettings.showDosageInstructions : true;
 
+              // Extract vitals if present in clinicalNotes or symptoms
+              const getVitalVal = (type: string, fallback: string) => {
+                const combined = `${previewPrescription.clinicalNotes || ''} ${previewPrescription.symptoms || ''}`;
+                if (!combined) return fallback;
+                const regexes = {
+                  bp: /(?:bp|blood pressure)[:\s]+([\d./\s]+mmHg|[\d./]+)/i,
+                  pulse: /(?:pulse|hr)[:\s]+([\d\s]+bpm|\d+)/i,
+                  weight: /(?:wt|weight)[:\s]+([\d\s]+kg|\d+)/i,
+                  temp: /(?:temp|temperature)[:\s]+([\d.\s]+°F|[\d.]+)/i
+                };
+                const match = combined.match(regexes[type as 'bp' | 'pulse' | 'weight' | 'temp']);
+                if (match) {
+                  let val = match[1].trim();
+                  if (type === 'bp' && !val.toLowerCase().includes('mm')) val = `${val} mmHg`;
+                  if (type === 'pulse' && !val.toLowerCase().includes('bp')) val = `${val} bpm`;
+                  if (type === 'weight' && !val.toLowerCase().includes('kg')) val = `${val} kg`;
+                  if (type === 'temp' && !val.toLowerCase().includes('°')) val = `${val} °F`;
+                  return val;
+                }
+                return fallback;
+              };
+
+              const bpVal = getVitalVal('bp', '122/80 mmHg');
+              const pulseVal = getVitalVal('pulse', '74 bpm');
+              const weightVal = getVitalVal('weight', '68 kg');
+              const tempVal = getVitalVal('temp', '98.4 °F');
+
+              // Find doctor details
+              const matchedDoc = doctorsList.find(d => d.id === previewPrescription.doctorId || d.name === previewPrescription.doctorName);
+              const doctorQualifications = matchedDoc?.qualification || 'MD, DM (Cardiology)';
+              const doctorSpecialization = matchedDoc?.specialization || previewPrescription.doctorSpecialization;
+
               return (
-                <div id="printable-area" className="bg-white border border-slate-300 p-6 rounded-lg shadow-inner text-slate-800 space-y-6 min-h-[500px]">
-                  {/* Header */}
-                  <div className={`flex ${
-                    headerLayout === 'CENTERED_PROFESSIONAL' 
-                      ? 'flex-col items-center text-center gap-2 border-b-2 border-brand-primary pb-4' 
-                      : headerLayout === 'MODERN_MINIMAL' 
-                        ? 'flex-row justify-between items-center border-b border-slate-200 pb-3' 
-                        : 'flex-row justify-between items-start border-b-2 border-brand-primary pb-4'
-                  }`}>
-                    <div className={`space-y-1 flex flex-col ${headerLayout === 'CENTERED_PROFESSIONAL' ? 'items-center' : 'items-start'}`}>
-                      <div className="flex items-center gap-1.5">
-                        {showLogo && <Activity className="w-6 h-6 text-brand-primary shrink-0" />}
-                        <h1 className="text-xl font-display font-bold text-brand-primary tracking-wider uppercase">{clinicName}</h1>
+                <div id="printable-area" className="bg-white border border-slate-350 p-8 rounded-lg shadow-inner text-slate-800 space-y-5 min-h-[500px] text-[10px] select-none leading-relaxed">
+
+                  {/* Header style */}
+                  <div className={`
+                    pb-4 border-b border-indigo-100 flex flex-col
+                    ${headerLayout === 'CENTERED_PROFESSIONAL' ? 'text-center items-center' : 'text-left items-start'}
+                  `}>
+                    {showLogo && (
+                      <div className="w-8 h-8 rounded bg-blue-50 border border-blue-100 flex items-center justify-center text-sm text-blue-600 mb-2 font-extrabold">
+                        ✚
                       </div>
-                      <p className="text-xs font-bold text-slate-500 leading-normal">
-                        Premier Healthcare and Multi-Specialty Clinic<br />
-                        {clinicAddress}<br />
-                        Phone: {clinicPhone} | {clinicEmail}
-                      </p>
+                    )}
+                    <h5 className="font-extrabold text-slate-900 text-sm tracking-tight">{clinicName}</h5>
+                    <p className="text-[9px] text-slate-400 font-semibold leading-none mt-1">{clinicAddress}</p>
+                    <p className="text-[9px] text-slate-400 font-semibold leading-none mt-1">{clinicPhone}</p>
+                  </div>
+
+                  {/* Patient core info row */}
+                  <div className="grid grid-cols-2 gap-4 border-b border-slate-100 pb-3 text-[9px] font-semibold">
+                    <div className="text-left space-y-0.5">
+                      <span className="text-slate-400 font-bold block text-[7.5px] uppercase tracking-wider">Patient Care Sheet</span>
+                      <span className="font-extrabold text-slate-800 text-sm">
+                        {selectedPatient.firstName} {selectedPatient.lastName} ({new Date().getFullYear() - new Date(selectedPatient.dateOfBirth).getFullYear()} Yrs / {selectedPatient.gender === 'MALE' ? 'M' : selectedPatient.gender === 'FEMALE' ? 'F' : 'O'})
+                      </span>
+                      <span className="block text-slate-400 font-mono text-[8px]">
+                        ID: {selectedPatient.patientNumber} | Rx: {previewPrescription.id}
+                      </span>
                     </div>
-                    <div className={`text-right space-y-1 bg-slate-50 p-2 rounded border border-slate-200 ${
-                      headerLayout === 'CENTERED_PROFESSIONAL' ? 'mt-2 w-full flex justify-between items-center text-left' : ''
-                    }`}>
+                    <div className="text-right space-y-0.5">
+                      <span className="text-slate-400 font-bold block text-[7.5px] uppercase tracking-wider">Prescribing Clinician</span>
+                      <span className="font-extrabold text-slate-800 text-sm">{previewPrescription.doctorName}</span>
+                      {showDocQuals && <span className="block text-slate-400 font-bold text-[8px]">{doctorQualifications}</span>}
+                      {showDocDept && <span className="block text-slate-450 text-[8px] font-semibold mt-0.5">{doctorSpecialization}</span>}
+                    </div>
+                  </div>
+
+                  {/* Vitals row if checked */}
+                  {showVitals && (
+                    <div className="grid grid-cols-4 gap-2 bg-slate-50 border border-slate-100 p-2 rounded text-[9px] text-center font-bold my-2">
                       <div>
-                        <p className="text-xs font-mono font-bold text-slate-400 uppercase">Prescription Sheet</p>
-                        <p className="text-sm font-bold text-slate-800">{previewPrescription.id}</p>
+                        <span className="text-slate-400 block text-[7px] uppercase tracking-wider">BP</span>
+                        <span className="text-slate-700 font-mono">{bpVal}</span>
                       </div>
-                      <p className="text-xs text-slate-500 font-medium">Date: {previewPrescription.issueDate}</p>
+                      <div>
+                        <span className="text-slate-400 block text-[7px] uppercase tracking-wider">PULSE</span>
+                        <span className="text-slate-700 font-mono">{pulseVal}</span>
+                      </div>
+                      <div>
+                        <span className="text-slate-400 block text-[7px] uppercase tracking-wider">WEIGHT</span>
+                        <span className="text-slate-700 font-mono">{weightVal}</span>
+                      </div>
+                      <div>
+                        <span className="text-slate-400 block text-[7px] uppercase tracking-wider">TEMP</span>
+                        <span className="text-slate-700 font-mono">{tempVal}</span>
+                      </div>
                     </div>
-                  </div>
+                  )}
 
-                  {/* Patient & Doctor metadata */}
-                  <div className="grid grid-cols-2 gap-4 text-xs bg-slate-50 p-3.5 rounded-lg border border-slate-100">
-                    <div className="space-y-1 text-left">
-                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Patient Information</p>
-                      <p className="text-sm font-bold text-slate-800">
-                        {selectedPatient.firstName} {selectedPatient.lastName}
-                      </p>
-                      <p className="text-slate-600 font-medium">
-                        ID: {selectedPatient.patientNumber} | Age: {new Date().getFullYear() - new Date(selectedPatient.dateOfBirth).getFullYear()} Yrs | Gender: {selectedPatient.gender}
-                      </p>
-                      <p className="text-slate-500">Phone: {selectedPatient.phone}</p>
-                    </div>
-                    <div className="space-y-1 text-right">
-                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Prescribed By</p>
-                      <p className="text-sm font-bold text-slate-800">{previewPrescription.doctorName}</p>
-                      {showDocQuals && <p className="text-slate-600 font-bold">{previewPrescription.doctorSpecialization}</p>}
-                      {showDocDept && <p className="text-slate-500 font-semibold font-mono">Department: Outpatient Services</p>}
-                      <p className="text-slate-400 font-medium font-mono text-[10px]">Reg No: REG-{previewPrescription.id.split('-')[1] || '87421'}</p>
-                    </div>
-                  </div>
-
-                  {/* Diagnosis / Symptoms */}
-                  {(showDiagnosis || showHistory) && (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs border-b border-slate-100 pb-4 text-left">
-                      {showDiagnosis && (
-                        <div className="space-y-1">
-                          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Diagnosis Findings</p>
-                          <p className="font-bold text-slate-800 text-sm leading-normal">{previewPrescription.diagnosis}</p>
+                  {/* Clinical History & Diagnosis */}
+                  {(showHistory || showDiagnosis) && (
+                    <div className="space-y-1 text-[9px] leading-normal text-left">
+                      {showHistory && (
+                        <div className="font-semibold text-slate-500">
+                          <strong className="text-slate-800 font-bold">Allergies / History:</strong> {selectedPatient.allergies && selectedPatient.allergies !== 'None' ? selectedPatient.allergies : 'None'}, {selectedPatient.existingDiseases && selectedPatient.existingDiseases !== 'None' ? selectedPatient.existingDiseases : 'None'}.
                         </div>
                       )}
-                      {showHistory && previewPrescription.symptoms && (
-                        <div className="space-y-1">
-                          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Symptoms Observed</p>
-                          <p className="text-slate-600 italic leading-relaxed font-semibold">"{previewPrescription.symptoms}"</p>
+                      {showDiagnosis && (
+                        <div className="font-semibold text-slate-500">
+                          <strong className="text-slate-800 font-bold">Primary Diagnosis:</strong> {previewPrescription.diagnosis}.
                         </div>
                       )}
                     </div>
                   )}
 
-                  {/* Rx Medicines List */}
-                  <div className="space-y-3 text-left">
-                    <div className="flex items-center gap-1.5 text-brand-primary">
-                      <span className="font-display font-black text-xl italic leading-none">Rx</span>
-                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest pt-1">Prescribed Medicines</span>
-                    </div>
+                  {/* Large Clinical Rx marker */}
+                  <div className="pt-2 text-left">
+                    <span className="text-2xl font-black text-slate-900 leading-none">℞</span>
 
-                    <div className="border border-slate-200 rounded-lg overflow-hidden">
-                      <table className="w-full text-left border-collapse text-xs">
-                        <thead className="bg-slate-50 border-b border-slate-200">
-                          <tr>
-                            <th className="p-3 font-bold text-slate-600">Medicine & Instructions</th>
-                            {showDosage && <th className="p-3 font-bold text-slate-600">Dosage</th>}
-                            <th className="p-3 font-bold text-slate-600">Frequency</th>
-                            {showDuration && <th className="p-3 font-bold text-slate-600 text-right">Duration</th>}
-                          </tr>
-                        </thead>
-                        <tbody className="divide-y divide-slate-100">
-                          {previewPrescription.medicines.map((med, index) => (
-                            <tr key={med.id || index}>
-                              <td className="p-3">
-                                <p className="font-bold text-slate-800">{med.medicineName}</p>
-                                <p className="text-[10px] text-slate-500 font-medium italic">{med.instructions}</p>
-                              </td>
-                              {showDosage && <td className="p-3 font-semibold text-slate-700">{med.dosage}</td>}
-                              <td className="p-3 text-slate-600 font-semibold">{med.frequency}</td>
-                              {showDuration && <td className="p-3 text-slate-700 font-bold text-right">{med.duration}</td>}
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
+                    {/* Drug lists */}
+                    <div className="space-y-4 pt-2.5 pl-3">
+                      {previewPrescription.medicines.map((med, index) => (
+                        <div key={med.id || index} className="space-y-0.5">
+                          <div className="flex justify-between font-extrabold text-[10px] text-slate-800">
+                            <span>{index + 1}. {med.medicineName}</span>
+                            {showDuration && <span className="text-slate-400 font-mono font-bold text-[8.5px]">{med.duration} Course</span>}
+                          </div>
+                          {showDosage && (
+                            <p className="text-[9px] text-slate-400 font-semibold">
+                              Dosage: {med.dosage} ({med.frequency}) {med.instructions ? `• ${med.instructions}` : ''}
+                            </p>
+                          )}
+                        </div>
+                      ))}
                     </div>
                   </div>
 
-                  {/* Additional parameters */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs pt-2 text-left">
-                    <div className="bg-slate-50 p-3 rounded-lg border border-slate-100 space-y-1">
-                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Recommended Diagnostic Tests</p>
-                      <p className="font-semibold text-slate-700 leading-normal">{previewPrescription.testsRecommended || 'None'}</p>
+                  {/* Default footnote & Signature area */}
+                  <div className="pt-16 flex items-end justify-between text-[8px] text-slate-400 font-semibold border-t border-slate-100 mt-auto">
+                    <div className="max-w-[200px] leading-relaxed text-left space-y-1">
+                      {pSettings?.defaultFooterNote && (
+                        <p className="italic font-bold text-slate-500">
+                          "{previewPrescription.advice && previewPrescription.advice !== 'None' ? previewPrescription.advice : pSettings.defaultFooterNote}"
+                        </p>
+                      )}
+                      <span className="block mt-1 font-mono text-[7px] text-slate-400">Prescription issued electronically by HealthFlow</span>
                     </div>
-                    {showVitals && (
-                      <div className="bg-slate-50 p-3 rounded-lg border border-slate-100 space-y-1">
-                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Clinical Intake Logs / Vitals</p>
-                        <p className="font-semibold text-slate-700 leading-normal">{previewPrescription.clinicalNotes || 'None'}</p>
-                      </div>
-                    )}
+                    <div className="flex flex-col items-center">
+                      <div className="w-24 border-t border-slate-350 mt-4" />
+                      <span className="uppercase font-bold text-[7px] tracking-wider block mt-1.5 text-slate-500">
+                        {previewPrescription.doctorName}
+                      </span>
+                    </div>
                   </div>
 
-                  {/* Footer details */}
-                  <div className="flex justify-between items-end pt-12 border-t border-slate-100 text-xs text-left">
-                    <div>
-                      <p className="font-semibold text-slate-500">
-                        Next Scheduled Consultation Visit: <strong className="text-blue-600 bg-blue-50 px-2 py-0.5 rounded">{previewPrescription.nextVisitDate || 'As Needed'}</strong>
-                      </p>
-                    </div>
-                    <div className="text-right space-y-3 shrink-0">
-                      <div className="w-36 h-px bg-slate-300 mx-auto" />
-                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest text-center">Clinician Signature</p>
-                    </div>
-                  </div>
                 </div>
               );
             })()}
@@ -2000,9 +2282,9 @@ export const PatientsPage: React.FC = () => {
             <label className="text-xs font-semibold text-slate-700 uppercase tracking-wider block">
               File Attachment *
             </label>
-            
+
             {/* Simulation drag and drop area */}
-            <div 
+            <div
               onClick={() => simulateFileChoose(newUploadedFile.category)}
               className="border-2 border-dashed border-slate-200 hover:border-brand-primary bg-slate-50 hover:bg-blue-50/20 rounded-xl p-8 text-center cursor-pointer transition-all duration-150 space-y-2 group"
             >
@@ -2020,9 +2302,8 @@ export const PatientsPage: React.FC = () => {
                 <FileText className="w-4 h-4 text-brand-primary" />
                 <span className="font-bold text-slate-800 truncate">{newUploadedFile.fileName}</span>
               </div>
-              <span className={`font-mono font-bold text-[10px] px-2 py-0.5 rounded ${
-                newUploadedFile.sizeBytes > 10 * 1024 * 1024 ? 'text-rose-700 bg-rose-50' : 'text-slate-600 bg-slate-100'
-              }`}>
+              <span className={`font-mono font-bold text-[10px] px-2 py-0.5 rounded ${newUploadedFile.sizeBytes > 10 * 1024 * 1024 ? 'text-rose-700 bg-rose-50' : 'text-slate-600 bg-slate-100'
+                }`}>
                 {(newUploadedFile.sizeBytes / (1024 * 1024)).toFixed(2)} MB
               </span>
             </div>

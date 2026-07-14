@@ -66,11 +66,11 @@ export const BillingSettingsTab: React.FC<BillingSettingsTabProps> = ({
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-      
+
       {/* Left Column (2/3 width) - Edit Form */}
       <div className="lg:col-span-2 space-y-6">
         <form onSubmit={handleSubmit} className="space-y-6">
-          
+
           {/* Card 1: Invoice Numbering */}
           <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm space-y-5">
             <div className="flex items-center gap-2 pb-3 border-b border-slate-100">
@@ -119,19 +119,17 @@ export const BillingSettingsTab: React.FC<BillingSettingsTabProps> = ({
                     Sequentially increment starting number
                   </span>
                 </div>
-                
+
                 {/* Beautiful custom toggle slider */}
                 <button
                   type="button"
                   onClick={() => handleToggle('autoGenerateInvoiceNumber')}
-                  className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-250 ease-in-out outline-none ${
-                    formData.autoGenerateInvoiceNumber ? 'bg-indigo-600' : 'bg-slate-250'
-                  }`}
+                  className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-250 ease-in-out outline-none ${formData.autoGenerateInvoiceNumber ? 'bg-indigo-600' : 'bg-slate-250'
+                    }`}
                 >
                   <span
-                    className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-md ring-0 transition duration-250 ease-in-out ${
-                      formData.autoGenerateInvoiceNumber ? 'translate-x-5' : 'translate-x-0'
-                    }`}
+                    className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-md ring-0 transition duration-250 ease-in-out ${formData.autoGenerateInvoiceNumber ? 'translate-x-5' : 'translate-x-0'
+                      }`}
                   />
                 </button>
               </div>
@@ -190,14 +188,12 @@ export const BillingSettingsTab: React.FC<BillingSettingsTabProps> = ({
                 <button
                   type="button"
                   onClick={() => handleToggle('enableItemLevelTax')}
-                  className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-250 ease-in-out outline-none ${
-                    formData.enableItemLevelTax ? 'bg-indigo-600' : 'bg-slate-250'
-                  }`}
+                  className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-250 ease-in-out outline-none ${formData.enableItemLevelTax ? 'bg-indigo-600' : 'bg-slate-250'
+                    }`}
                 >
                   <span
-                    className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-md ring-0 transition duration-250 ease-in-out ${
-                      formData.enableItemLevelTax ? 'translate-x-5' : 'translate-x-0'
-                    }`}
+                    className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-md ring-0 transition duration-250 ease-in-out ${formData.enableItemLevelTax ? 'translate-x-5' : 'translate-x-0'
+                      }`}
                   />
                 </button>
               </div>
@@ -215,14 +211,12 @@ export const BillingSettingsTab: React.FC<BillingSettingsTabProps> = ({
                 <button
                   type="button"
                   onClick={() => handleToggle('enableInvoiceLevelDiscount')}
-                  className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-250 ease-in-out outline-none ${
-                    formData.enableInvoiceLevelDiscount ? 'bg-indigo-600' : 'bg-slate-250'
-                  }`}
+                  className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-250 ease-in-out outline-none ${formData.enableInvoiceLevelDiscount ? 'bg-indigo-600' : 'bg-slate-250'
+                    }`}
                 >
                   <span
-                    className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-md ring-0 transition duration-250 ease-in-out ${
-                      formData.enableInvoiceLevelDiscount ? 'translate-x-5' : 'translate-x-0'
-                    }`}
+                    className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-md ring-0 transition duration-250 ease-in-out ${formData.enableInvoiceLevelDiscount ? 'translate-x-5' : 'translate-x-0'
+                      }`}
                   />
                 </button>
               </div>
@@ -239,16 +233,15 @@ export const BillingSettingsTab: React.FC<BillingSettingsTabProps> = ({
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {templates.map((tpl) => {
                 const isSelected = formData.selectedTemplateId === tpl.id;
-                
+
                 return (
-                  <div 
+                  <div
                     key={tpl.id}
                     onClick={() => handleValChange('selectedTemplateId', tpl.id)}
-                    className={`border rounded-xl p-4.5 cursor-pointer transition-all flex flex-col justify-between h-44 relative overflow-hidden group select-none ${
-                      isSelected 
-                        ? 'border-indigo-600 bg-indigo-50/20 ring-1 ring-indigo-600 shadow-sm' 
+                    className={`border rounded-xl p-4.5 cursor-pointer transition-all flex flex-col justify-between h-44 relative overflow-hidden group select-none ${isSelected
+                        ? 'border-indigo-600 bg-indigo-50/20 ring-1 ring-indigo-600 shadow-sm'
                         : 'border-slate-200 hover:border-slate-350 hover:bg-slate-50/50'
-                    }`}
+                      }`}
                   >
                     {/* Visual miniature mockup blueprint lines */}
                     <div className="absolute right-3.5 top-3.5 opacity-25 flex flex-col gap-1 w-12 group-hover:scale-105 transition-transform">
@@ -264,7 +257,7 @@ export const BillingSettingsTab: React.FC<BillingSettingsTabProps> = ({
                           type="radio"
                           name="invoiceTemplate"
                           checked={isSelected}
-                          onChange={() => {}}
+                          onChange={() => { }}
                           className="w-4 h-4 text-indigo-600 focus:ring-indigo-500 border-slate-300 shrink-0"
                         />
                         <span className="font-bold text-slate-800 text-sm leading-none">{tpl.name}</span>
@@ -431,14 +424,14 @@ export const BillingSettingsTab: React.FC<BillingSettingsTabProps> = ({
               Live Layout Preview
             </h4>
             <div className="flex items-center gap-1">
-              <button 
+              <button
                 onClick={() => alert(`Simulating invoice print preview format: ${formData.paperSize} (${formData.printOrientation})`)}
                 title="Print Preview"
                 className="w-8 h-8 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 flex items-center justify-center transition-colors cursor-pointer border border-slate-200"
               >
                 <Printer className="w-3.5 h-3.5" />
               </button>
-              <button 
+              <button
                 onClick={() => setPreviewTemplateId(formData.selectedTemplateId)}
                 title="Zoom Layout"
                 className="w-8 h-8 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 flex items-center justify-center transition-colors cursor-pointer border border-slate-200"
@@ -449,12 +442,11 @@ export const BillingSettingsTab: React.FC<BillingSettingsTabProps> = ({
           </div>
 
           {/* Scaled-down Physical Invoice Container */}
-          <div className={`bg-white border rounded-xl shadow-md p-4 min-h-[460px] flex flex-col justify-between text-[10px] text-slate-600 select-none ${
-            formData.selectedTemplateId === 'CLASSIC_MEDICAL' ? 'border-slate-200' :
-            formData.selectedTemplateId === 'MODERN_COMPACT' ? 'border-indigo-200' :
-            formData.selectedTemplateId === 'GST_DETAILED' ? 'border-emerald-200' : 'border-slate-300'
-          }`}>
-            
+          <div className={`bg-white border rounded-xl shadow-md p-4 min-h-[460px] flex flex-col justify-between text-[10px] text-slate-600 select-none ${formData.selectedTemplateId === 'CLASSIC_MEDICAL' ? 'border-slate-200' :
+              formData.selectedTemplateId === 'MODERN_COMPACT' ? 'border-indigo-200' :
+                formData.selectedTemplateId === 'GST_DETAILED' ? 'border-emerald-200' : 'border-slate-300'
+            }`}>
+
             {/* Template Specific Header Bar */}
             <div className="space-y-3.5">
               {formData.selectedTemplateId === 'MODERN_COMPACT' && (
@@ -529,7 +521,7 @@ export const BillingSettingsTab: React.FC<BillingSettingsTabProps> = ({
                 {/* Items Table Mockup */}
                 <div className="space-y-1 pt-1">
                   <div className="border-b border-slate-150 pb-1 flex items-center font-bold text-slate-400 uppercase tracking-wider text-[7px]">
-                    <span className="flex-1">Consultation Service</span>
+                    <span className="flex-1">Description</span>
                     <span className="w-10 text-center">Qty</span>
                     <span className="w-12 text-right">Price</span>
                     {formData.enableItemLevelTax && (
@@ -600,7 +592,7 @@ export const BillingSettingsTab: React.FC<BillingSettingsTabProps> = ({
 
             {/* Bottom section: Footer + Signature */}
             <div className="space-y-3.5 border-t border-slate-100 pt-2 text-center text-slate-400 font-medium">
-              
+
               {/* Footer message if checked */}
               {formData.showFooterMessage && formData.footerMessage && (
                 <p className="text-[7.5px] italic font-semibold text-slate-500 max-w-[190px] mx-auto leading-normal">
@@ -630,7 +622,7 @@ export const BillingSettingsTab: React.FC<BillingSettingsTabProps> = ({
               <h3 className="font-display font-bold text-slate-900 text-base">
                 Template Preview: {templates.find(t => t.id === previewTemplateId)?.name}
               </h3>
-              <button 
+              <button
                 onClick={() => setPreviewTemplateId(null)}
                 className="w-8 h-8 rounded-full hover:bg-slate-200 text-slate-500 flex items-center justify-center font-bold text-sm cursor-pointer"
               >
@@ -641,7 +633,7 @@ export const BillingSettingsTab: React.FC<BillingSettingsTabProps> = ({
             <div className="p-6 overflow-y-auto max-h-[75vh]">
               {/* Fully stylized actual document structure to impress the user */}
               <div className="border border-slate-300 rounded-xl p-6 space-y-6 text-xs text-slate-700 bg-white shadow-sm font-sans">
-                
+
                 {/* Simulated Header block */}
                 <div className="flex justify-between items-start">
                   <div>

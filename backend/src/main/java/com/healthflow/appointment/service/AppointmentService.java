@@ -16,11 +16,15 @@ public interface AppointmentService {
 
     Page<AppointmentResponseDto> getFilteredAppointments(
             Long clinicId,
-            Long doctorId,
+            String doctorName,
             String status,
             Instant fromDate,
             Instant toDate,
-            String patientQuery,
+            String patientName,
+            String patientMobile,
+            String visitType,
+            Long patientId,
+            Long doctorId,
             Pageable pageable
     );
 

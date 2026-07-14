@@ -31,7 +31,7 @@ export const AdminForm: React.FC<AdminFormProps> = ({ admin, onSave, onCancel })
     } else {
       setName('');
       setEmail('');
-      setMobile('+91 ');
+      setMobile('+91');
       setAvatarUrl('');
       setIsActive(true);
       setGender('');
@@ -52,6 +52,61 @@ export const AdminForm: React.FC<AdminFormProps> = ({ admin, onSave, onCancel })
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    const form = e.currentTarget as HTMLFormElement;
+
+    // Reset Custom Validities
+    const emailInput = form.querySelector('#admin-email') as HTMLInputElement;
+    const mobileInput = form.querySelector('#admin-mobile') as HTMLInputElement;
+    const dobInput = form.querySelector('#admin-dob') as HTMLInputElement;
+
+    if (emailInput) emailInput.setCustomValidity('');
+    if (mobileInput) mobileInput.setCustomValidity('');
+    if (dobInput) dobInput.setCustomValidity('');
+
+    // 1. Email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      if (emailInput) {
+        emailInput.setCustomValidity("Please enter a valid email address.");
+        emailInput.reportValidity();
+      }
+      return;
+    }
+
+    // 2. Indian mobile validation
+    const cleanedMobile = mobile.replace(/[\s\-()]/g, '');
+    const mobileRegex = /^(?:\+?91)?[6789]\d{9}$/;
+    if (!mobileRegex.test(cleanedMobile)) {
+      if (mobileInput) {
+        mobileInput.setCustomValidity("Please enter a valid 10-digit mobile number.");
+        mobileInput.reportValidity();
+      }
+      return;
+    }
+
+    // 3. DOB validation (older than 18, younger than 100)
+    if (!dateOfBirth) {
+      if (dobInput) {
+        dobInput.setCustomValidity("Date of birth is required.");
+        dobInput.reportValidity();
+      }
+      return;
+    }
+    const dobDate = new Date(dateOfBirth);
+    const today = new Date();
+    let age = today.getFullYear() - dobDate.getFullYear();
+    const monthDiff = today.getMonth() - dobDate.getMonth();
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < dobDate.getDate())) {
+      age--;
+    }
+    if (age < 18 || age > 100) {
+      if (dobInput) {
+        dobInput.setCustomValidity("Age must be between 18 and 100 years.");
+        dobInput.reportValidity();
+      }
+      return;
+    }
+
     onSave({
       id: admin?.id,
       name,
@@ -99,16 +154,18 @@ export const AdminForm: React.FC<AdminFormProps> = ({ admin, onSave, onCancel })
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Input
             label="Mobile Number"
+            id="admin-mobile"
             value={mobile}
-            onChange={(e) => setMobile(e.target.value)}
+            onChange={(e) => { setMobile(e.target.value); e.target.setCustomValidity(''); }}
             required
             placeholder="e.g. +91 98765 00001"
           />
           <Input
             label="Email Address"
+            id="admin-email"
             type="email"
             value={email}
-            onChange={(e) => setEmail(e.target.value)}
+            onChange={(e) => { setEmail(e.target.value); e.target.setCustomValidity(''); }}
             required
             placeholder="e.g. admin@healthflow.com"
           />
@@ -130,9 +187,10 @@ export const AdminForm: React.FC<AdminFormProps> = ({ admin, onSave, onCancel })
           </div>
           <Input
             label="Date of Birth"
+            id="admin-dob"
             type="date"
             value={dateOfBirth}
-            onChange={(e) => setDateOfBirth(e.target.value)}
+            onChange={(e) => { setDateOfBirth(e.target.value); e.target.setCustomValidity(''); }}
           />
         </div>
 

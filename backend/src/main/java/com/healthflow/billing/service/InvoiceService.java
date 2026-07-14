@@ -16,12 +16,11 @@ public interface InvoiceService {
 
     Page<InvoiceResponseDto> getFilteredInvoices(
             Long clinicId,
-            String patientName,
-            String invoiceSearch,
+            String patientSearch,
             LocalDate fromDate,
             LocalDate toDate,
             String status,
-            Long doctorId,
+            String doctorName,
             Pageable pageable
     );
 

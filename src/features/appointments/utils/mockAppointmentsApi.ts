@@ -54,9 +54,41 @@ function mapToFrontend(a: any): ExtendedAppointment {
 }
 
 export const mockAppointmentsApi = {
-  async getAppointments(): Promise<ExtendedAppointment[]> {
-    const data = await appointmentService.getAppointments(1, { size: 1000 });
-    return (data.content || []).map(mapToFrontend);
+  async getAppointments(params?: {
+    pageNo?: number;
+    pageSize?: number;
+    doctorName?: string;
+    status?: string;
+    fromDate?: string;
+    toDate?: string;
+    patientName?: string;
+    patientMobile?: string;
+    visitType?: string;
+    patientId?: string;
+  }): Promise<any> {
+    if (!params) {
+      const data = await appointmentService.getAppointments(1000000000, { size: 1000 });
+      return (data.content || []).map(mapToFrontend);
+    }
+    const data = await appointmentService.getAppointments(1000000000, {
+      page: params.pageNo,
+      size: params.pageSize,
+      doctorName: params.doctorName,
+      status: params.status === 'ALL' ? undefined : params.status,
+      fromDate: params.fromDate,
+      toDate: params.toDate,
+      patientName: params.patientName,
+      patientMobile: params.patientMobile,
+      visitType: params.visitType === 'ALL' ? undefined : params.visitType,
+      patientId: params.patientId,
+    });
+    return {
+      items: (data.content || []).map(mapToFrontend),
+      totalItems: data.totalElements || 0,
+      totalPages: data.totalPages || 1,
+      pageNo: data.number || 0,
+      pageSize: data.size || 5,
+    };
   },
 
   async getAppointmentById(id: string): Promise<ExtendedAppointment | undefined> {
@@ -70,7 +102,7 @@ export const mockAppointmentsApi = {
 
   async addAppointment(appt: ExtendedAppointment): Promise<void> {
     const instantStr = parseDateTimeToInstant(appt.appointmentDate, appt.appointmentTime);
-    await appointmentService.createAppointment(1, {
+    await appointmentService.createAppointment(1000000000, {
       patientId: appt.patientId,
       doctorId: appt.doctorId,
       appointmentDateTime: instantStr,
