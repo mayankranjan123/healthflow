@@ -34,7 +34,11 @@ import {
   MoreVertical,
   MessageSquare,
   MapPin,
-  SlidersHorizontal
+  SlidersHorizontal,
+  Pill,
+  Info,
+  FlaskConical,
+  Syringe
 } from 'lucide-react';
 import { Card, CardHeader, CardBody, CardFooter } from '../../../components/ui/Card';
 import { DataTable } from '../../../components/ui/DataTable';
@@ -1027,11 +1031,10 @@ export const PatientsPage: React.FC = () => {
               </div>
               <button
                 onClick={() => setIsMobileFilterOpen(true)}
-                className={`w-11 h-11 rounded-xl border flex items-center justify-center transition-all bg-white shadow-3xs cursor-pointer ${
-                  genderFilter !== 'All'
-                    ? 'border-brand-primary text-brand-primary bg-blue-50/30'
-                    : 'border-slate-200 text-slate-500 hover:text-slate-750'
-                }`}
+                className={`w-11 h-11 rounded-xl border flex items-center justify-center transition-all bg-white shadow-3xs cursor-pointer ${genderFilter !== 'All'
+                  ? 'border-brand-primary text-brand-primary bg-blue-50/30'
+                  : 'border-slate-200 text-slate-500 hover:text-slate-750'
+                  }`}
               >
                 <SlidersHorizontal className="w-4.5 h-4.5" />
               </button>
@@ -1093,11 +1096,10 @@ export const PatientsPage: React.FC = () => {
                             <h4 className="font-bold text-slate-800 text-sm leading-snug truncate max-w-[150px]">
                               {pat.firstName} {pat.lastName}
                             </h4>
-                            <span className={`px-2 py-0.5 text-[9px] font-extrabold rounded-full uppercase tracking-wider ${
-                              pat.gender === 'MALE' ? 'bg-blue-50 text-blue-700' :
+                            <span className={`px-2 py-0.5 text-[9px] font-extrabold rounded-full uppercase tracking-wider ${pat.gender === 'MALE' ? 'bg-blue-50 text-blue-700' :
                               pat.gender === 'FEMALE' ? 'bg-rose-50 text-rose-700' :
-                              'bg-slate-100 text-slate-700'
-                            }`}>
+                                'bg-slate-100 text-slate-700'
+                              }`}>
                               {pat.gender}
                             </span>
                           </div>
@@ -1372,9 +1374,8 @@ export const PatientsPage: React.FC = () => {
                   <button
                     key={tab}
                     onClick={() => setProfileTab(tab)}
-                    className={`pb-3 text-sm font-bold relative capitalize tracking-wide transition-all cursor-pointer whitespace-nowrap ${
-                      isActive ? 'text-brand-primary font-extrabold' : 'text-slate-400 hover:text-slate-700'
-                    }`}
+                    className={`pb-3 text-sm font-bold relative capitalize tracking-wide transition-all cursor-pointer whitespace-nowrap ${isActive ? 'text-brand-primary font-extrabold' : 'text-slate-400 hover:text-slate-700'
+                      }`}
                   >
                     {tab}
                     {isActive && (
@@ -1532,7 +1533,7 @@ export const PatientsPage: React.FC = () => {
                     className="absolute inset-0 w-full h-full object-cover select-none pointer-events-none opacity-85"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-slate-900/90 via-slate-900/40 to-transparent pointer-events-none" />
-                  
+
                   <div className="relative z-10 flex justify-between items-end text-white w-full">
                     <div className="pr-4">
                       <span className="text-[10px] font-bold uppercase tracking-wider text-slate-300 leading-none">Current Address</span>
@@ -1753,128 +1754,273 @@ export const PatientsPage: React.FC = () => {
 
           {/* 3. Prescriptions Tab Content */}
           {profileTab === 'prescriptions' && (
-            <div className="space-y-6">
-              {/* Filter Panel & Actions */}
-              <div className="bg-white p-4 rounded-xl border border-slate-200 flex flex-col md:flex-row gap-4 justify-between items-stretch md:items-center">
-                {/* Inputs Row */}
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 flex-1">
-                  <Input
-                    label="From Date"
-                    type="date"
-                    value={prescFromDate}
-                    onChange={(e) => setPrescFromDate(e.target.value)}
-                  />
-                  <Input
-                    label="To Date"
-                    type="date"
-                    value={prescToDate}
-                    onChange={(e) => setPrescToDate(e.target.value)}
-                  />
-                  <Select
-                    label="Prescribed By"
-                    value={prescDoctorId}
-                    onChange={(e) => setPrescDoctorId(e.target.value)}
-                    options={[
-                      { value: 'All', label: 'All Doctors' },
-                      ...doctorsList.map(doc => ({ value: doc.id, label: doc.name }))
-                    ]}
-                  />
-                </div>
+            isMobile ? (
+              <div className="space-y-4 animate-fade-in-up pb-28 relative">
+                {/* List of Medicines inside all Prescriptions */}
+                {(() => {
+                  const filteredPrescriptions = getFilteredPrescriptions();
+                  const flattenedMedicines = filteredPrescriptions.flatMap((prsc) =>
+                    prsc.medicines.map((med, idx) => ({
+                      ...med,
+                      prescription: prsc,
+                      iconIndex: idx % 3
+                    }))
+                  );
 
-                {/* Create Button */}
-                {currentUser?.role !== 'STAFF' && (
-                  <div className="flex items-end pt-5 md:pt-0 shrink-0">
-                    <Button
-                      id="create-prescription-btn"
-                      onClick={() => {
-                        let defaultDocId = doctorsList[0]?.id || '';
-                        if (currentUser?.role === 'DOCTOR') {
-                          const matchedDoc = doctorsList.find(d => d.email?.toLowerCase() === currentUser.email?.toLowerCase());
-                          if (matchedDoc) {
-                            defaultDocId = matchedDoc.id;
-                          }
+                  if (flattenedMedicines.length === 0) {
+                    return (
+                      <div className="bg-white border border-slate-200 rounded-2xl p-8 text-center shadow-3xs text-slate-400 font-medium text-sm">
+                        No prescribed medicines found.
+                      </div>
+                    );
+                  }
+
+                  // Find latest advice text
+                  const latestAdvicePresc = filteredPrescriptions.find(p => p.advice && p.advice !== 'None');
+                  const adviceText = latestAdvicePresc?.advice || "Please ensure patient avoids alcohol while on Metformin. Next review scheduled for December.";
+
+                  return (
+                    <div className="space-y-4">
+                      {flattenedMedicines.map((med, mIdx) => {
+                        // Dynamic icon selection
+                        let iconEl = <Pill className="w-5 h-5 text-blue-600" />;
+                        let bgClass = "bg-blue-50/80";
+                        if (med.iconIndex === 1) {
+                          iconEl = <FlaskConical className="w-5 h-5 text-teal-600" />;
+                          bgClass = "bg-teal-50/80";
+                        } else if (med.iconIndex === 2) {
+                          iconEl = <Syringe className="w-5 h-5 text-rose-600" />;
+                          bgClass = "bg-rose-50/80";
                         }
-                        setNewPrescription({
-                          ...newPrescription,
-                          doctorId: defaultDocId
-                        });
-                        setIsCreatePrescriptionOpen(true);
-                      }}
-                      className="w-full md:w-auto shadow-sm"
-                    >
-                      <Plus className="w-4 h-4" />
-                      <span>Create Prescription</span>
-                    </Button>
-                  </div>
+
+                        // Determine if course duration has completed (mock logic for demo)
+                        const isCourseCompleted = med.duration && (
+                          med.duration.toLowerCase().includes('day') ||
+                          med.duration.toLowerCase().includes('week')
+                        ) && mIdx % 3 === 2; // determinate mockup match
+
+                        return (
+                          <div
+                            key={`${med.id}-${mIdx}`}
+                            className="bg-white border border-slate-200 rounded-2xl p-4.5 shadow-3xs space-y-4"
+                          >
+                            {/* Top Info Row */}
+                            <div className="flex items-start justify-between gap-3">
+                              <div className="flex items-center gap-3.5 min-w-0 flex-1">
+                                <div className={`w-11 h-11 ${bgClass} rounded-xl flex items-center justify-center shrink-0`}>
+                                  {iconEl}
+                                </div>
+                                <div className="min-w-0 flex-1">
+                                  <h4 className="font-bold text-slate-800 text-sm leading-tight truncate">{med.prescription.id}</h4>
+                                  {/* <p className="text-[11px] text-slate-400 font-bold mt-0.5 leading-none">
+                                    {med.dosage} • {med.frequency} {med.duration ? `(${med.duration})` : ''}
+                                  </p> */}
+                                </div>
+                              </div>
+                              <button
+                                onClick={() => {
+                                  setPreviewPrescription(med.prescription);
+                                  setIsPrescriptionPreviewOpen(true);
+                                }}
+                                className="text-brand-primary text-xs font-bold flex items-center gap-1 shrink-0 hover:text-blue-750 transition-colors cursor-pointer py-1"
+                              >
+                                <Download className="w-3.5 h-3.5" />
+                                <span>Download</span>
+                              </button>
+                            </div>
+
+                            {/* Divider line */}
+                            <div className="border-t border-slate-100/80" />
+
+                            {/* Middle Details Grid */}
+                            <div className="grid grid-cols-2 gap-4 text-left">
+                              <div className="space-y-0.5">
+                                <span className="text-[8px] font-bold text-slate-400 uppercase tracking-widest block leading-none">Issued</span>
+                                <span className="text-[11px] text-slate-600 font-bold font-mono tracking-tight block">
+                                  {med.prescription.issueDate}
+                                </span>
+                              </div>
+                              <div className="space-y-0.5">
+                                <span className="text-[8px] font-bold text-slate-400 uppercase tracking-widest block leading-none">Prescribed By</span>
+                                <span className="text-[11px] text-slate-600 font-bold block truncate">
+                                  {med.prescription.doctorName}
+                                </span>
+                              </div>
+                            </div>
+
+                            {/* Completed Course Badge */}
+                            {isCourseCompleted && (
+                              <div className="pt-1">
+                                <span className="inline-block px-2.5 py-0.5 text-[8px] font-extrabold text-slate-500 bg-slate-100 rounded-full uppercase tracking-wider">
+                                  Course Completed
+                                </span>
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+
+                      {/* Pharmacist Note Card */}
+                      <div className="bg-blue-50/20 border border-blue-100 rounded-2xl p-4 flex gap-3 text-left shadow-3xs mt-2">
+                        <Info className="w-5 h-5 text-blue-600 shrink-0 mt-0.5" />
+                        <div className="space-y-1">
+                          <span className="font-display font-extrabold text-blue-800 text-xs tracking-wide block uppercase">Pharmacist Note</span>
+                          <p className="text-xs text-slate-600 font-semibold leading-relaxed">
+                            "{adviceText}"
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })()}
+
+                {/* FAB (Floating Action Button) for composing prescription */}
+                {currentUser?.role !== 'STAFF' && (
+                  <button
+                    onClick={() => {
+                      let defaultDocId = doctorsList[0]?.id || '';
+                      if (currentUser?.role === 'DOCTOR') {
+                        const matchedDoc = doctorsList.find(d => d.email?.toLowerCase() === currentUser.email?.toLowerCase());
+                        if (matchedDoc) {
+                          defaultDocId = matchedDoc.id;
+                        }
+                      }
+                      setNewPrescription({
+                        ...newPrescription,
+                        doctorId: defaultDocId
+                      });
+                      setIsCreatePrescriptionOpen(true);
+                    }}
+                    className="fixed bottom-22 right-6 w-14 h-14 bg-brand-primary hover:bg-blue-700 text-white rounded-full flex items-center justify-center shadow-lg active:scale-95 transition-transform z-40 cursor-pointer"
+                  >
+                    <Plus className="w-6 h-6" />
+                  </button>
                 )}
               </div>
+            ) : (
+              <div className="space-y-6">
+                {/* Filter Panel & Actions */}
+                <div className="bg-white p-4 rounded-xl border border-slate-200 flex flex-col md:flex-row gap-4 justify-between items-stretch md:items-center">
+                  {/* Inputs Row */}
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 flex-1">
+                    <Input
+                      label="From Date"
+                      type="date"
+                      value={prescFromDate}
+                      onChange={(e) => setPrescFromDate(e.target.value)}
+                    />
+                    <Input
+                      label="To Date"
+                      type="date"
+                      value={prescToDate}
+                      onChange={(e) => setPrescToDate(e.target.value)}
+                    />
+                    <Select
+                      label="Prescribed By"
+                      value={prescDoctorId}
+                      onChange={(e) => setPrescDoctorId(e.target.value)}
+                      options={[
+                        { value: 'All', label: 'All Doctors' },
+                        ...doctorsList.map(doc => ({ value: doc.id, label: doc.name }))
+                      ]}
+                    />
+                  </div>
 
-              {/* List of Prescriptions */}
-              {getFilteredPrescriptions().length === 0 ? (
-                <div className="bg-slate-50/50 rounded-xl p-12 text-center border border-dashed border-slate-200">
-                  <p className="text-slate-500 font-medium">No prescriptions found matching the filters or yet recorded.</p>
+                  {/* Create Button */}
+                  {currentUser?.role !== 'STAFF' && (
+                    <div className="flex items-end pt-5 md:pt-0 shrink-0">
+                      <Button
+                        id="create-prescription-btn"
+                        onClick={() => {
+                          let defaultDocId = doctorsList[0]?.id || '';
+                          if (currentUser?.role === 'DOCTOR') {
+                            const matchedDoc = doctorsList.find(d => d.email?.toLowerCase() === currentUser.email?.toLowerCase());
+                            if (matchedDoc) {
+                              defaultDocId = matchedDoc.id;
+                            }
+                          }
+                          setNewPrescription({
+                            ...newPrescription,
+                            doctorId: defaultDocId
+                          });
+                          setIsCreatePrescriptionOpen(true);
+                        }}
+                        className="w-full md:w-auto shadow-sm"
+                      >
+                        <Plus className="w-4 h-4" />
+                        <span>Create Prescription</span>
+                      </Button>
+                    </div>
+                  )}
                 </div>
-              ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {getFilteredPrescriptions().map((prsc) => (
-                    <Card key={prsc.id} className="hover:border-brand-primary transition-all duration-200">
-                      <CardBody className="p-5 flex flex-col justify-between h-full space-y-4">
-                        <div className="space-y-2">
-                          <div className="flex justify-between items-start">
-                            <span className="font-mono text-[10px] font-bold text-slate-400 bg-slate-100 px-2 py-0.5 rounded">
-                              {prsc.id}
-                            </span>
-                            <span className="text-xs text-slate-400 font-semibold font-mono">
-                              Issued: {prsc.issueDate}
-                            </span>
-                          </div>
 
-                          <div className="flex items-center gap-3">
-                            <img
-                              src={prsc.doctorAvatarUrl || 'https://images.unsplash.com/photo-1622253692010-333f2da6031d?q=80&w=250&auto=format&fit=crop'}
-                              alt={prsc.doctorName}
-                              referrerPolicy="no-referrer"
-                              className="w-10 h-10 rounded-full border border-slate-200 object-cover"
-                              onError={(e) => {
-                                (e.target as HTMLImageElement).src = `https://api.dicebear.com/7.x/initials/svg?seed=${prsc.doctorName}`;
-                              }}
-                            />
-                            <div>
-                              <p className="font-bold text-slate-800 text-sm">{prsc.doctorName}</p>
-                              <p className="text-[11px] text-slate-400 font-medium">{prsc.doctorSpecialization}</p>
+                {/* List of Prescriptions */}
+                {getFilteredPrescriptions().length === 0 ? (
+                  <div className="bg-slate-50/50 rounded-xl p-12 text-center border border-dashed border-slate-200">
+                    <p className="text-slate-500 font-medium">No prescriptions found matching the filters or yet recorded.</p>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {getFilteredPrescriptions().map((prsc) => (
+                      <Card key={prsc.id} className="hover:border-brand-primary transition-all duration-200">
+                        <CardBody className="p-5 flex flex-col justify-between h-full space-y-4">
+                          <div className="space-y-2">
+                            <div className="flex justify-between items-start">
+                              <span className="font-mono text-[10px] font-bold text-slate-400 bg-slate-100 px-2 py-0.5 rounded">
+                                {prsc.id}
+                              </span>
+                              <span className="text-xs text-slate-400 font-semibold font-mono">
+                                Issued: {prsc.issueDate}
+                              </span>
+                            </div>
+
+                            <div className="flex items-center gap-3">
+                              <img
+                                src={prsc.doctorAvatarUrl || 'https://images.unsplash.com/photo-1622253692010-333f2da6031d?q=80&w=250&auto=format&fit=crop'}
+                                alt={prsc.doctorName}
+                                referrerPolicy="no-referrer"
+                                className="w-10 h-10 rounded-full border border-slate-200 object-cover"
+                                onError={(e) => {
+                                  (e.target as HTMLImageElement).src = `https://api.dicebear.com/7.x/initials/svg?seed=${prsc.doctorName}`;
+                                }}
+                              />
+                              <div>
+                                <p className="font-bold text-slate-800 text-sm">{prsc.doctorName}</p>
+                                <p className="text-[11px] text-slate-400 font-medium">{prsc.doctorSpecialization}</p>
+                              </div>
+                            </div>
+
+                            <div className="pt-2 border-t border-slate-50">
+                              <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Diagnosis Summary</span>
+                              <p className="text-xs font-bold text-slate-700 truncate">{prsc.diagnosis}</p>
                             </div>
                           </div>
 
-                          <div className="pt-2 border-t border-slate-50">
-                            <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Diagnosis Summary</span>
-                            <p className="text-xs font-bold text-slate-700 truncate">{prsc.diagnosis}</p>
+                          <div className="flex items-center justify-between pt-2 border-t border-slate-50 gap-4">
+                            <span className="text-xs text-brand-primary font-bold bg-blue-50/50 px-2.5 py-1 rounded">
+                              {prsc.medicines.length} Medicine{prsc.medicines.length === 1 ? '' : 's'} prescribed
+                            </span>
+                            <Button
+                              id={`view-prescription-btn-${prsc.id}`}
+                              size="sm"
+                              variant="primary"
+                              onClick={() => {
+                                setPreviewPrescription(prsc);
+                                setIsPrescriptionPreviewOpen(true);
+                              }}
+                              className="gap-1 px-3"
+                            >
+                              <Printer className="w-3.5 h-3.5" />
+                              <span>View / Print</span>
+                            </Button>
                           </div>
-                        </div>
-
-                        <div className="flex items-center justify-between pt-2 border-t border-slate-50 gap-4">
-                          <span className="text-xs text-brand-primary font-bold bg-blue-50/50 px-2.5 py-1 rounded">
-                            {prsc.medicines.length} Medicine{prsc.medicines.length === 1 ? '' : 's'} prescribed
-                          </span>
-                          <Button
-                            id={`view-prescription-btn-${prsc.id}`}
-                            size="sm"
-                            variant="primary"
-                            onClick={() => {
-                              setPreviewPrescription(prsc);
-                              setIsPrescriptionPreviewOpen(true);
-                            }}
-                            className="gap-1 px-3"
-                          >
-                            <Printer className="w-3.5 h-3.5" />
-                            <span>View / Print</span>
-                          </Button>
-                        </div>
-                      </CardBody>
-                    </Card>
-                  ))}
-                </div>
-              )}
-            </div>
+                        </CardBody>
+                      </Card>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )
           )}
 
           {/* 4. Files Tab Content */}
