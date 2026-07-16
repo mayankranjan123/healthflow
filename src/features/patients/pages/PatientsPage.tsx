@@ -27,7 +27,14 @@ import {
   Award,
   SearchCode,
   FileSpreadsheet,
-  Printer
+  Printer,
+  Check,
+  Briefcase,
+  Bell,
+  MoreVertical,
+  MessageSquare,
+  MapPin,
+  SlidersHorizontal
 } from 'lucide-react';
 import { Card, CardHeader, CardBody, CardFooter } from '../../../components/ui/Card';
 import { DataTable } from '../../../components/ui/DataTable';
@@ -52,6 +59,24 @@ import { mockSettingsApi } from '../../settings/utils/mockSettingsApi';
 import { mockPrescriptionsApi } from '../utils/mockPrescriptionsApi';
 import { mockAppointmentsApi } from '../../appointments/utils/mockAppointmentsApi';
 
+const formatDob = (dateStr: string): string => {
+  if (!dateStr) return 'N/A';
+  try {
+    const months = [
+      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+    ];
+    const d = new Date(dateStr);
+    if (isNaN(d.getTime())) return dateStr;
+    const day = d.getDate();
+    const month = months[d.getMonth()];
+    const year = d.getFullYear();
+    return `${day} ${month} ${year}`;
+  } catch (e) {
+    return dateStr;
+  }
+};
+
 export const PatientsPage: React.FC = () => {
   // Load data from persistent APIs
   const [patients, setPatients] = useState<PatientProfileExtended[]>([]);
@@ -67,6 +92,14 @@ export const PatientsPage: React.FC = () => {
     }
   }, []);
 
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth < 768);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
   // Page View state
   const [viewMode, setViewMode] = useState<'list' | 'detail'>('list');
   const [selectedPatient, setSelectedPatient] = useState<PatientProfileExtended | null>(null);
@@ -77,7 +110,13 @@ export const PatientsPage: React.FC = () => {
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [genderFilter, setGenderFilter] = useState('All');
   const [currentPage, setCurrentPage] = useState(1);
-  const [rowsPerPage] = useState(5);
+  const [rowsPerPage, setRowsPerPage] = useState(5);
+  const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
+  const [tempGenderFilter, setTempGenderFilter] = useState('All');
+
+  useEffect(() => {
+    setTempGenderFilter(genderFilter);
+  }, [genderFilter]);
   const [totalItems, setTotalItems] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
@@ -943,314 +982,696 @@ export const PatientsPage: React.FC = () => {
     <div className="space-y-6">
       {/* 1. DIRECTORY VIEW (LIST MODE) */}
       {viewMode === 'list' && (
-        <div className="space-y-6">
-          {/* Header */}
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <div>
+        isMobile ? (
+          <div className="space-y-4 pb-20 animate-fade-in-up">
+            {/* Mobile Header */}
+            <div className="flex flex-col gap-3">
               <h2 className="text-2xl font-display font-bold text-slate-900 tracking-tight">Patient Directory</h2>
-              <p className="text-sm text-slate-500 font-medium">Manage and review medical histories, prescriptions, and files</p>
+              <Button
+                id="add-patient-btn"
+                onClick={() => setIsAddPatientOpen(true)}
+                className="w-full shadow-sm py-3 bg-brand-primary text-white font-semibold text-sm rounded-xl flex items-center justify-center gap-2 cursor-pointer h-11 animate-fade-in"
+              >
+                <Plus className="w-4.5 h-4.5" />
+                <span>Add Patient</span>
+              </Button>
             </div>
-            <Button id="add-patient-btn" onClick={() => setIsAddPatientOpen(true)} className="shadow-sm">
-              <Plus className="w-4 h-4" />
-              <span>Add Patient</span>
-            </Button>
-          </div>
 
-          {/* Search and Filters */}
-          <Card>
-            <CardBody className="p-4 flex flex-col md:flex-row gap-4 items-center justify-between">
-              <div className="relative flex-1 w-full">
-                <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+            {/* Metrics Cards: Side-by-side 2-column grid */}
+            <div className="grid grid-cols-2 gap-4">
+              <div className="bg-white border border-slate-200/80 rounded-xl p-4 shadow-3xs flex flex-col justify-between">
+                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider leading-none">Total Patients</span>
+                <p className="text-2xl font-extrabold text-brand-primary leading-none mt-2 font-display">{totalItems}</p>
+              </div>
+              <div className="bg-white border border-slate-200/80 rounded-xl p-4 shadow-3xs flex flex-col justify-between">
+                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider leading-none">Active Today</span>
+                <p className="text-2xl font-extrabold text-teal-600 leading-none mt-2 font-display">42</p>
+              </div>
+            </div>
+
+            {/* Search Input and Filter Slider */}
+            <div className="flex gap-2">
+              <div className="relative flex-1">
+                <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4" />
                 <input
                   id="search-patient-input"
                   type="text"
-                  placeholder="Search by name, patient ID, or mobile number..."
+                  placeholder="Search by name, ID, or phone"
                   value={searchTerm}
                   onChange={(e) => {
                     setSearchTerm(e.target.value);
                     setCurrentPage(1);
                   }}
-                  className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm outline-none focus:border-brand-primary focus:bg-white focus:ring-1 focus:ring-brand-primary transition-all text-slate-700 font-medium"
+                  className="w-full pl-10 pr-3 h-11 bg-white border border-slate-200 rounded-xl text-sm outline-none focus:border-brand-primary focus:ring-1 focus:ring-brand-primary transition-all text-slate-700 font-medium shadow-3xs"
                 />
               </div>
-              <div className="flex gap-3 w-full md:w-auto">
-                <Select
-                  id="filter-gender-select"
-                  options={[
-                    { value: 'All', label: 'All Genders' },
-                    { value: 'MALE', label: 'Male' },
-                    { value: 'FEMALE', label: 'Female' },
-                    { value: 'OTHER', label: 'Other' }
-                  ]}
-                  value={genderFilter}
-                  onChange={(e) => {
-                    setGenderFilter(e.target.value);
+              <button
+                onClick={() => setIsMobileFilterOpen(true)}
+                className={`w-11 h-11 rounded-xl border flex items-center justify-center transition-all bg-white shadow-3xs cursor-pointer ${
+                  genderFilter !== 'All'
+                    ? 'border-brand-primary text-brand-primary bg-blue-50/30'
+                    : 'border-slate-200 text-slate-500 hover:text-slate-750'
+                }`}
+              >
+                <SlidersHorizontal className="w-4.5 h-4.5" />
+              </button>
+            </div>
+
+            {/* Active filters badge */}
+            {genderFilter !== 'All' && (
+              <div className="flex items-center gap-1.5 pt-0.5 animate-fade-in">
+                <Badge variant="info" className="flex items-center gap-1">
+                  <span>Gender: {genderFilter === 'MALE' ? 'Male' : genderFilter === 'FEMALE' ? 'Female' : 'Other'}</span>
+                  <button onClick={() => {
+                    setGenderFilter('All');
                     setCurrentPage(1);
-                  }}
-                  className="min-w-[150px]"
-                />
-                <Button
-                  variant="outline"
+                  }} className="hover:text-blue-900 font-bold ml-1 text-xs">×</button>
+                </Badge>
+                <button
                   onClick={() => {
-                    setSearchTerm('');
                     setGenderFilter('All');
                     setCurrentPage(1);
                   }}
-                  className="gap-2 shrink-0 border-slate-200 text-slate-500 hover:text-slate-800"
+                  className="text-xs text-slate-500 hover:text-brand-primary font-bold px-2 py-0.5 rounded-full hover:bg-slate-100 transition-colors cursor-pointer"
                 >
                   Clear Filters
+                </button>
+              </div>
+            )}
+
+            {/* Patient cards list */}
+            <div className="space-y-3.5 pt-1">
+              {isLoading && patients.length === 0 ? (
+                <div className="py-12 bg-white border border-slate-200 rounded-2xl flex flex-col justify-center items-center gap-3 shadow-3xs animate-fade-in">
+                  <div className="w-8 h-8 border-3 border-brand-primary border-t-transparent rounded-full animate-spin" />
+                  <span className="text-sm text-slate-400 font-medium">Loading Patients...</span>
+                </div>
+              ) : patients.length === 0 ? (
+                <div className="py-12 bg-white border border-slate-200 rounded-2xl text-center text-slate-400 font-medium text-sm shadow-3xs animate-fade-in">
+                  No patients found matching your search.
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {patients.map((pat) => (
+                    <div
+                      key={pat.id}
+                      onClick={() => handleViewDetails(pat)}
+                      className="bg-white border border-slate-200 rounded-2xl p-4 flex items-center justify-between shadow-3xs hover:shadow-2xs transition-all active:scale-[0.995] cursor-pointer animate-fade-in-up"
+                    >
+                      <div className="flex items-center gap-3.5 min-w-0 flex-1">
+                        <img
+                          src={pat.avatarUrl}
+                          alt={pat.firstName}
+                          referrerPolicy="no-referrer"
+                          className="w-12 h-12 rounded-full border border-slate-150 object-cover bg-slate-50 shrink-0"
+                          onError={(e) => {
+                            (e.target as HTMLImageElement).src = `https://api.dicebear.com/7.x/initials/svg?seed=${pat.firstName}%20${pat.lastName}`;
+                          }}
+                        />
+                        <div className="min-w-0 flex-1 space-y-1">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <h4 className="font-bold text-slate-800 text-sm leading-snug truncate max-w-[150px]">
+                              {pat.firstName} {pat.lastName}
+                            </h4>
+                            <span className={`px-2 py-0.5 text-[9px] font-extrabold rounded-full uppercase tracking-wider ${
+                              pat.gender === 'MALE' ? 'bg-blue-50 text-blue-700' :
+                              pat.gender === 'FEMALE' ? 'bg-rose-50 text-rose-700' :
+                              'bg-slate-100 text-slate-700'
+                            }`}>
+                              {pat.gender}
+                            </span>
+                          </div>
+                          <p className="text-[10px] text-slate-400 font-bold font-mono tracking-wide leading-none">
+                            {pat.patientNumber} • <span className="font-semibold text-slate-500 font-sans">DOB: {pat.dateOfBirth}</span>
+                          </p>
+                          <div className="flex items-center gap-1 text-[11px] text-slate-500 font-medium pt-0.5">
+                            <Phone className="w-3.2 h-3.2 text-slate-400 shrink-0" />
+                            <span className="font-mono">{pat.phone}</span>
+                          </div>
+                        </div>
+                      </div>
+                      <ChevronRight className="w-5 h-5 text-slate-350 shrink-0 ml-2" />
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Load More Pagination */}
+            {totalItems > patients.length && !isLoading && (
+              <div className="flex flex-col items-center gap-3 pt-4">
+                <span className="text-xs text-slate-500 font-semibold">
+                  Showing {patients.length} of {totalItems} patients
+                </span>
+                <Button
+                  variant="outline"
+                  onClick={() => setRowsPerPage((prev) => prev + 5)}
+                  className="w-fit px-8 py-2.5 border-slate-200 text-slate-600 hover:text-slate-900 rounded-xl shadow-3xs text-xs font-bold font-display"
+                >
+                  Load More
                 </Button>
               </div>
-            </CardBody>
-          </Card>
-
-          {/* Patients List Table */}
-          <div className="bg-white rounded-xl shadow-sm border border-slate-200">
-            <DataTable
-              columns={directoryColumns}
-              data={mainPaginatedPatients}
-              emptyMessage="No patients found matching your search filters. Try another search or register a new patient."
-              onRowClick={(row) => handleViewDetails(row)}
-            />
-            {mainTotalRows > 0 && (
-              <Pagination
-                currentPage={currentPage}
-                totalPages={mainTotalPages}
-                onPageChange={setCurrentPage}
-                totalItems={mainTotalRows}
-                itemsPerPage={rowsPerPage}
-                itemNameSingular="patient"
-                itemNamePlural="patients"
-              />
+            )}
+            {totalItems <= patients.length && totalItems > 0 && (
+              <div className="text-center pt-4">
+                <span className="text-xs text-slate-400 font-semibold animate-fade-in">
+                  Showing all {totalItems} patients
+                </span>
+              </div>
             )}
           </div>
-        </div>
+        ) : (
+          <div className="space-y-6">
+            {/* Header */}
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+              <div>
+                <h2 className="text-2xl font-display font-bold text-slate-900 tracking-tight">Patient Directory</h2>
+                <p className="text-sm text-slate-500 font-medium">Manage and review medical histories, prescriptions, and files</p>
+              </div>
+              <Button id="add-patient-btn" onClick={() => setIsAddPatientOpen(true)} className="shadow-sm">
+                <Plus className="w-4 h-4" />
+                <span>Add Patient</span>
+              </Button>
+            </div>
+
+            {/* Search and Filters */}
+            <Card>
+              <CardBody className="p-4 flex flex-col md:flex-row gap-4 items-center justify-between">
+                <div className="relative flex-1 w-full">
+                  <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                  <input
+                    id="search-patient-input"
+                    type="text"
+                    placeholder="Search by name, patient ID, or mobile number..."
+                    value={searchTerm}
+                    onChange={(e) => {
+                      setSearchTerm(e.target.value);
+                      setCurrentPage(1);
+                    }}
+                    className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm outline-none focus:border-brand-primary focus:bg-white focus:ring-1 focus:ring-brand-primary transition-all text-slate-700 font-medium"
+                  />
+                </div>
+                <div className="flex gap-3 w-full md:w-auto">
+                  <Select
+                    id="filter-gender-select"
+                    options={[
+                      { value: 'All', label: 'All Genders' },
+                      { value: 'MALE', label: 'Male' },
+                      { value: 'FEMALE', label: 'Female' },
+                      { value: 'OTHER', label: 'Other' }
+                    ]}
+                    value={genderFilter}
+                    onChange={(e) => {
+                      setGenderFilter(e.target.value);
+                      setCurrentPage(1);
+                    }}
+                    className="min-w-[150px]"
+                  />
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setSearchTerm('');
+                      setGenderFilter('All');
+                      setCurrentPage(1);
+                    }}
+                    className="gap-2 shrink-0 border-slate-200 text-slate-500 hover:text-slate-800"
+                  >
+                    Clear Filters
+                  </Button>
+                </div>
+              </CardBody>
+            </Card>
+
+            {/* Patients List Table */}
+            <div className="bg-white rounded-xl shadow-sm border border-slate-200">
+              <DataTable
+                columns={directoryColumns}
+                data={mainPaginatedPatients}
+                emptyMessage="No patients found matching your search filters. Try another search or register a new patient."
+                onRowClick={(row) => handleViewDetails(row)}
+              />
+              {mainTotalRows > 0 && (
+                <Pagination
+                  currentPage={currentPage}
+                  totalPages={mainTotalPages}
+                  onPageChange={setCurrentPage}
+                  totalItems={mainTotalRows}
+                  itemsPerPage={rowsPerPage}
+                  itemNameSingular="patient"
+                  itemNamePlural="patients"
+                />
+              )}
+            </div>
+          </div>
+        )
       )}
 
       {/* 2. PATIENT PROFILE VIEW (DETAIL MODE) */}
       {viewMode === 'detail' && selectedPatient && (
         <div className="space-y-6">
-          {/* Breadcrumbs / Back navigation */}
-          <div className="flex items-center gap-3">
-            <Button
-              id="back-to-list-btn"
-              variant="outline"
-              size="sm"
-              onClick={() => {
-                setViewMode('list');
-                setSelectedPatient(null);
-              }}
-              className="gap-1.5 border-slate-200 py-1.5 text-slate-600 hover:text-slate-900"
-            >
-              <ArrowLeft className="w-3.5 h-3.5" />
-              <span>Back to Directory</span>
-            </Button>
-            <div className="h-4 w-px bg-slate-200" />
-            <span className="text-xs text-slate-400 font-bold font-mono bg-slate-100 px-2 py-0.5 rounded">
-              {selectedPatient.patientNumber}
-            </span>
-          </div>
-
-          {/* Quick Stats Header Summary Banner */}
-          <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm flex flex-col lg:flex-row lg:items-center justify-between gap-6">
-            <div className="flex items-start gap-4">
-              <img
-                src={selectedPatient.avatarUrl}
-                alt={selectedPatient.firstName}
-                referrerPolicy="no-referrer"
-                className="w-20 h-20 rounded-full border border-slate-200 object-cover bg-slate-50"
-                onError={(e) => {
-                  (e.target as HTMLImageElement).src = `https://api.dicebear.com/7.x/initials/svg?seed=${selectedPatient.firstName}%20${selectedPatient.lastName}`;
+          {/* Header Split */}
+          {isMobile ? (
+            <div className="flex justify-between items-center bg-white -mx-6 -mt-6 p-4.5 px-6 border-b border-slate-100 sticky top-0 z-30">
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={() => {
+                    setViewMode('list');
+                    setSelectedPatient(null);
+                  }}
+                  className="text-slate-700 hover:bg-slate-100 p-1.5 rounded-full cursor-pointer transition-colors"
+                >
+                  <ArrowLeft className="w-5 h-5" />
+                </button>
+                <h2 className="text-lg font-bold text-slate-800">Patient Profile</h2>
+              </div>
+              <div className="flex items-center gap-2">
+                <button className="relative p-2 text-slate-500 hover:bg-slate-50 rounded-full cursor-pointer">
+                  <Bell className="w-5 h-5" />
+                  <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 bg-rose-500 rounded-full border border-white" />
+                </button>
+                <button className="p-2 text-slate-500 hover:bg-slate-50 rounded-full cursor-pointer">
+                  <MoreVertical className="w-5 h-5" />
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div className="flex items-center gap-3">
+              <Button
+                id="back-to-list-btn"
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  setViewMode('list');
+                  setSelectedPatient(null);
                 }}
-              />
+                className="gap-1.5 border-slate-200 py-1.5 text-slate-600 hover:text-slate-900"
+              >
+                <ArrowLeft className="w-3.5 h-3.5" />
+                <span>Back to Directory</span>
+              </Button>
+              <div className="h-4 w-px bg-slate-200" />
+              <span className="text-xs text-slate-400 font-bold font-mono bg-slate-100 px-2 py-0.5 rounded">
+                {selectedPatient.patientNumber}
+              </span>
+            </div>
+          )}
+
+          {/* Stats Summary / Avatar Banner Split */}
+          {isMobile ? (
+            <div className="bg-white border border-slate-250/60 rounded-2xl p-5 shadow-xs flex items-center gap-4.5 mt-2">
+              <div className="relative shrink-0">
+                <img
+                  src={selectedPatient.avatarUrl}
+                  alt={selectedPatient.firstName}
+                  referrerPolicy="no-referrer"
+                  className="w-16 h-16 rounded-full object-cover border border-slate-100 shadow-sm"
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).src = `https://api.dicebear.com/7.x/initials/svg?seed=${selectedPatient.firstName}%20${selectedPatient.lastName}`;
+                  }}
+                />
+                <div className="absolute -bottom-0.5 -right-0.5 bg-emerald-500 text-white rounded-full p-0.5 border-2 border-white flex items-center justify-center w-5.5 h-5.5 shadow-2xs">
+                  <Check className="w-3 h-3 text-white stroke-[3px]" />
+                </div>
+              </div>
               <div className="space-y-1">
-                <h3 className="text-xl font-display font-bold text-slate-900 tracking-tight">
+                <h3 className="font-extrabold text-slate-800 text-lg leading-snug">
                   {selectedPatient.firstName} {selectedPatient.lastName}
                 </h3>
-                <div className="flex flex-wrap items-center gap-2 text-xs text-slate-500 font-semibold">
-                  <Badge variant={selectedPatient.gender === 'MALE' ? 'info' : selectedPatient.gender === 'FEMALE' ? 'warning' : 'neutral'}>
-                    {selectedPatient.gender}
-                  </Badge>
-                  <span>•</span>
-                  <span>
-                    {new Date().getFullYear() - new Date(selectedPatient.dateOfBirth).getFullYear()} Years Old
+                <div className="flex items-center gap-2 text-xs text-slate-500 font-semibold">
+                  <span className="bg-slate-100 text-slate-650 px-2 py-0.5 rounded-md font-bold">
+                    {new Date().getFullYear() - new Date(selectedPatient.dateOfBirth).getFullYear()} Yrs
                   </span>
                   <span>•</span>
-                  <span>Blood Group: <strong className="text-slate-800">{selectedPatient.bloodGroup}</strong></span>
+                  <span>ID: #{selectedPatient.patientNumber || selectedPatient.id}</span>
                 </div>
-                <div className="flex flex-col sm:flex-row sm:items-center gap-2 pt-1.5 text-xs text-slate-600">
-                  <span className="flex items-center gap-1"><Phone className="w-3.5 h-3.5 text-slate-400" /> {selectedPatient.phone}</span>
-                  <span className="hidden sm:inline text-slate-300">|</span>
-                  <span className="flex items-center gap-1"><Mail className="w-3.5 h-3.5 text-slate-400" /> {selectedPatient.email || 'No email registered'}</span>
+                <div className="flex items-center gap-1.5 bg-blue-50 text-blue-755 border border-blue-100/50 px-2.5 py-0.8 rounded-full text-[10px] font-bold w-fit mt-1">
+                  <Briefcase className="w-3.5 h-3.5 shrink-0" />
+                  <span>OPD Patient</span>
                 </div>
               </div>
             </div>
+          ) : (
+            <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+              <div className="flex items-start gap-4">
+                <img
+                  src={selectedPatient.avatarUrl}
+                  alt={selectedPatient.firstName}
+                  referrerPolicy="no-referrer"
+                  className="w-20 h-20 rounded-full border border-slate-200 object-cover bg-slate-50"
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).src = `https://api.dicebear.com/7.x/initials/svg?seed=${selectedPatient.firstName}%20${selectedPatient.lastName}`;
+                  }}
+                />
+                <div className="space-y-1">
+                  <h3 className="text-xl font-display font-bold text-slate-900 tracking-tight">
+                    {selectedPatient.firstName} {selectedPatient.lastName}
+                  </h3>
+                  <div className="flex flex-wrap items-center gap-2 text-xs text-slate-500 font-semibold">
+                    <Badge variant={selectedPatient.gender === 'MALE' ? 'info' : selectedPatient.gender === 'FEMALE' ? 'warning' : 'neutral'}>
+                      {selectedPatient.gender}
+                    </Badge>
+                    <span>•</span>
+                    <span>
+                      {new Date().getFullYear() - new Date(selectedPatient.dateOfBirth).getFullYear()} Years Old
+                    </span>
+                    <span>•</span>
+                    <span>Blood Group: <strong className="text-slate-800">{selectedPatient.bloodGroup}</strong></span>
+                  </div>
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-2 pt-1.5 text-xs text-slate-600">
+                    <span className="flex items-center gap-1"><Phone className="w-3.5 h-3.5 text-slate-400" /> {selectedPatient.phone}</span>
+                    <span className="hidden sm:inline text-slate-300">|</span>
+                    <span className="flex items-center gap-1"><Mail className="w-3.5 h-3.5 text-slate-400" /> {selectedPatient.email || 'No email registered'}</span>
+                  </div>
+                </div>
+              </div>
 
-            {/* Quick Metrics */}
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 border-t lg:border-t-0 lg:border-l border-slate-100 pt-4 lg:pt-0 lg:pl-6 shrink-0">
-              <div className="p-3 bg-slate-50 rounded-xl space-y-0.5">
-                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Total Consults</span>
-                <p className="text-base font-bold text-slate-800">{selectedPatient.appointments.filter(a => a.status === 'COMPLETED').length}</p>
-              </div>
-              <div className="p-3 bg-blue-50 rounded-xl space-y-0.5">
-                <span className="text-[10px] font-bold text-blue-500 uppercase tracking-wider">Active Files</span>
-                <p className="text-base font-bold text-blue-700">{selectedPatient.attachments.length} Documents</p>
-              </div>
-              <div className="p-3 bg-emerald-50 rounded-xl space-y-0.5 col-span-2 sm:col-span-1">
-                <span className="text-[10px] font-bold text-emerald-600 uppercase tracking-wider">Allergies</span>
-                <p className="text-xs font-bold text-rose-700 truncate max-w-[120px]">{selectedPatient.allergies || 'None'}</p>
+              {/* Quick Metrics */}
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 border-t lg:border-t-0 lg:border-l border-slate-100 pt-4 lg:pt-0 lg:pl-6 shrink-0">
+                <div className="p-3 bg-slate-50 rounded-xl space-y-0.5">
+                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Total Consults</span>
+                  <p className="text-base font-bold text-slate-800">{selectedPatient.appointments.filter(a => a.status === 'COMPLETED').length}</p>
+                </div>
+                <div className="p-3 bg-blue-50 rounded-xl space-y-0.5">
+                  <span className="text-[10px] font-bold text-blue-500 uppercase tracking-wider">Active Files</span>
+                  <p className="text-base font-bold text-blue-700">{selectedPatient.attachments.length} Documents</p>
+                </div>
+                <div className="p-3 bg-emerald-50 rounded-xl space-y-0.5 col-span-2 sm:col-span-1">
+                  <span className="text-[10px] font-bold text-emerald-600 uppercase tracking-wider">Allergies</span>
+                  <p className="text-xs font-bold text-rose-700 truncate max-w-[120px]">{selectedPatient.allergies || 'None'}</p>
+                </div>
               </div>
             </div>
-          </div>
+          )}
 
           {/* Tab Navigation */}
-          <div className="flex border-b border-slate-200 gap-6">
-            {(['profile', 'appointments', 'prescriptions', 'files'] as const).map((tab) => (
-              <button
-                key={tab}
-                id={`tab-${tab}`}
-                onClick={() => setProfileTab(tab)}
-                className={`
-                  pb-3.5 text-sm font-semibold relative capitalize tracking-wide transition-all cursor-pointer
-                  ${profileTab === tab ? 'text-brand-primary' : 'text-slate-400 hover:text-slate-700'}
-                `}
-              >
-                {tab}
-                {profileTab === tab && (
-                  <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-brand-primary rounded-full animate-fade-in" />
-                )}
-              </button>
-            ))}
-          </div>
+          {isMobile ? (
+            <div className="flex border-b border-slate-200 gap-6 overflow-x-auto no-scrollbar -mx-6 px-6 pb-0.5">
+              {(['profile', 'appointments', 'prescriptions', 'files'] as const).map((tab) => {
+                const isActive = profileTab === tab;
+                return (
+                  <button
+                    key={tab}
+                    onClick={() => setProfileTab(tab)}
+                    className={`pb-3 text-sm font-bold relative capitalize tracking-wide transition-all cursor-pointer whitespace-nowrap ${
+                      isActive ? 'text-brand-primary font-extrabold' : 'text-slate-400 hover:text-slate-700'
+                    }`}
+                  >
+                    {tab}
+                    {isActive && (
+                      <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-brand-primary rounded-full animate-fade-in" />
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="flex border-b border-slate-200 gap-6">
+              {(['profile', 'appointments', 'prescriptions', 'files'] as const).map((tab) => (
+                <button
+                  key={tab}
+                  id={`tab-${tab}`}
+                  onClick={() => setProfileTab(tab)}
+                  className={`
+                    pb-3.5 text-sm font-semibold relative capitalize tracking-wide transition-all cursor-pointer
+                    ${profileTab === tab ? 'text-brand-primary' : 'text-slate-400 hover:text-slate-700'}
+                  `}
+                >
+                  {tab}
+                  {profileTab === tab && (
+                    <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-brand-primary rounded-full animate-fade-in" />
+                  )}
+                </button>
+              ))}
+            </div>
+          )}
 
           {/* TAB CONTENTS */}
 
           {/* 1. Profile Tab Content */}
           {profileTab === 'profile' && (
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              {/* Left Column: Personal Metadata */}
-              <div className="lg:col-span-2 space-y-6">
-                <Card>
-                  <CardHeader>
-                    <h4 className="font-display font-bold text-slate-800 text-sm flex items-center gap-2">
-                      <User className="w-4 h-4 text-slate-400" />
+            isMobile ? (
+              <div className="space-y-4.5 animate-fade-in-up">
+                {/* Registration Details */}
+                <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-2xs">
+                  <div className="flex justify-between items-center bg-slate-50/50 px-5 py-4 border-b border-slate-100">
+                    <h4 className="font-bold text-slate-750 text-xs uppercase tracking-wider flex items-center gap-2">
+                      <FileText className="w-4 h-4 text-slate-400" />
                       <span>Registration Details</span>
                     </h4>
-                  </CardHeader>
-                  <CardBody className="p-5 grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4">
-                    <div className="space-y-0.5">
-                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">First Name</span>
-                      <p className="text-sm font-semibold text-slate-800">{selectedPatient.firstName}</p>
-                    </div>
-                    <div className="space-y-0.5">
-                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Last Name</span>
-                      <p className="text-sm font-semibold text-slate-800">{selectedPatient.lastName}</p>
-                    </div>
-                    <div className="space-y-0.5">
-                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Date Of Birth</span>
-                      <p className="text-sm font-semibold text-slate-800">{selectedPatient.dateOfBirth}</p>
-                    </div>
-                    <div className="space-y-0.5">
-                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Gender</span>
-                      <p className="text-sm font-semibold text-slate-800">{selectedPatient.gender}</p>
-                    </div>
-                    <div className="space-y-0.5">
-                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Mobile Number</span>
-                      <p className="text-sm font-semibold text-slate-800">{selectedPatient.phone}</p>
+                    <span className="text-xs font-bold text-brand-primary cursor-pointer select-none">Edit</span>
+                  </div>
+                  <div className="p-5 space-y-4">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-0.5">
+                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Date of Birth</span>
+                        <p className="text-sm font-semibold text-slate-800">{formatDob(selectedPatient.dateOfBirth)}</p>
+                      </div>
+                      <div className="space-y-0.5">
+                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Gender</span>
+                        <p className="text-sm font-semibold text-slate-800 capitalize">{selectedPatient.gender.toLowerCase()}</p>
+                      </div>
                     </div>
                     <div className="space-y-0.5">
                       <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Email Address</span>
-                      <p className="text-sm font-semibold text-slate-800">{selectedPatient.email || 'N/A'}</p>
+                      <p className="text-sm font-semibold text-slate-855 select-all break-all">{selectedPatient.email || 'N/A'}</p>
                     </div>
-                    <div className="space-y-0.5 sm:col-span-2 pt-2 border-t border-slate-50">
-                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Home Residential Address</span>
-                      <p className="text-xs font-semibold text-slate-700 leading-normal">{selectedPatient.address}</p>
+                    <div className="flex items-center justify-between pt-1 border-t border-slate-50/80">
+                      <div className="space-y-0.5">
+                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Phone Number</span>
+                        <p className="text-sm font-bold text-slate-800 font-mono">{selectedPatient.phone}</p>
+                      </div>
+                      <div className="flex gap-2.5">
+                        <a
+                          href={`tel:${selectedPatient.phone}`}
+                          className="w-9 h-9 rounded-full bg-teal-50 border border-teal-100/80 flex items-center justify-center text-teal-650 hover:bg-teal-100 transition-colors shadow-3xs"
+                        >
+                          <Phone className="w-4.5 h-4.5" />
+                        </a>
+                        <a
+                          href={`sms:${selectedPatient.phone}`}
+                          className="w-9 h-9 rounded-full bg-blue-50 border border-blue-100/85 flex items-center justify-center text-brand-primary hover:bg-blue-100 transition-colors shadow-3xs"
+                        >
+                          <MessageSquare className="w-4.5 h-4.5" />
+                        </a>
+                      </div>
                     </div>
-                  </CardBody>
-                </Card>
+                  </div>
+                </div>
+
+                {/* Clinical Overview */}
+                <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-2xs">
+                  <div className="bg-slate-50/50 px-5 py-4 border-b border-slate-100">
+                    <h4 className="font-bold text-slate-750 text-xs uppercase tracking-wider flex items-center gap-2">
+                      <Activity className="w-4 h-4 text-slate-400" />
+                      <span>Clinical Overview</span>
+                    </h4>
+                  </div>
+                  <div className="p-5 space-y-4">
+                    {/* Blood Group */}
+                    <div className="bg-white border border-rose-100/60 rounded-xl p-3.5 flex items-center justify-between shadow-3xs">
+                      <div className="flex items-center gap-2.5">
+                        <div className="w-9 h-9 rounded-full bg-rose-50 flex items-center justify-center text-rose-500">
+                          <Heart className="w-5 h-5 shrink-0 fill-rose-50/50 text-rose-500" />
+                        </div>
+                        <span className="text-sm font-semibold text-slate-700">Blood Group</span>
+                      </div>
+                      <span className="text-lg font-black text-rose-605 leading-none mr-1">{selectedPatient.bloodGroup || 'B+'}</span>
+                    </div>
+
+                    {/* Known Allergies */}
+                    <div className="space-y-2">
+                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wide block">Known Allergies</span>
+                      <div className="flex flex-wrap gap-2">
+                        {selectedPatient.allergies && selectedPatient.allergies.toLowerCase() !== 'none' ? (
+                          selectedPatient.allergies.split(',').map((allergy, i) => (
+                            <span
+                              key={i}
+                              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-bold text-rose-700 bg-rose-50 border border-rose-150 shadow-3xs animate-scale-in"
+                            >
+                              <AlertCircle className="w-3.5 h-3.5 text-rose-500 shrink-0" />
+                              <span>{allergy.trim()}</span>
+                            </span>
+                          ))
+                        ) : (
+                          <span className="text-xs text-slate-500 font-semibold bg-slate-50 border border-slate-150 px-3 py-1.5 rounded-lg">
+                            No allergies logged
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
 
                 {/* Emergency Contact */}
-                <Card className="border-rose-100">
-                  <CardHeader className="bg-rose-50/20 border-rose-50">
-                    <h4 className="font-display font-bold text-slate-800 text-sm flex items-center gap-2">
-                      <Heart className="w-4 h-4 text-rose-500" />
-                      <span>Emergency Contact Details</span>
+                <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-2xs">
+                  <div className="flex justify-between items-center bg-slate-50/50 px-5 py-4 border-b border-slate-100">
+                    <h4 className="font-bold text-slate-750 text-xs uppercase tracking-wider flex items-center gap-2">
+                      <User className="w-4 h-4 text-slate-400" />
+                      <span>Emergency Contact</span>
                     </h4>
-                  </CardHeader>
-                  <CardBody className="p-5 grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div className="space-y-0.5">
-                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Contact Person Name</span>
-                      <p className="text-sm font-bold text-slate-800">{selectedPatient.emergencyContactName}</p>
+                    <button className="text-slate-400 hover:text-slate-650 cursor-pointer p-0.5">
+                      <MoreVertical className="w-4 h-4" />
+                    </button>
+                  </div>
+                  <div className="p-5 flex items-center gap-3.5">
+                    <div className="w-10 h-10 rounded-full bg-slate-100 border border-slate-200/80 flex items-center justify-center text-slate-500 font-bold shrink-0">
+                      <User className="w-5 h-5 text-slate-400" />
                     </div>
-                    <div className="space-y-0.5">
-                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Emergency Contact Phone</span>
-                      <p className="text-sm font-mono font-semibold text-rose-700 bg-rose-50/50 px-2 py-0.5 rounded w-fit">{selectedPatient.emergencyContactPhone}</p>
+                    <div>
+                      <h4 className="font-bold text-slate-800 text-sm">{selectedPatient.emergencyContactName}</h4>
+                      <p className="text-xs text-slate-500 font-medium mt-0.5">Spouse • <span className="font-semibold text-slate-700 font-mono">{selectedPatient.emergencyContactPhone}</span></p>
                     </div>
-                  </CardBody>
-                </Card>
+                  </div>
+                </div>
+
+                {/* Address Card */}
+                <div className="relative rounded-2xl overflow-hidden border border-slate-200/80 shadow-xs h-[180px] bg-slate-100 flex flex-col justify-end p-4.5">
+                  <img
+                    src="https://images.unsplash.com/photo-1524661135-423995f22d0b?q=80&w=400&auto=format&fit=crop"
+                    alt="Map background"
+                    className="absolute inset-0 w-full h-full object-cover select-none pointer-events-none opacity-85"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-slate-900/90 via-slate-900/40 to-transparent pointer-events-none" />
+                  
+                  <div className="relative z-10 flex justify-between items-end text-white w-full">
+                    <div className="pr-4">
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-slate-300 leading-none">Current Address</span>
+                      <p className="text-sm font-bold text-white mt-1 select-all line-clamp-2 leading-snug">{selectedPatient.address}</p>
+                    </div>
+                    <a
+                      href={`https://maps.google.com/?q=${encodeURIComponent(selectedPatient.address)}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="w-9 h-9 rounded-full bg-white flex items-center justify-center text-brand-primary shadow-md hover:bg-slate-50 transition-all cursor-pointer shrink-0"
+                    >
+                      <MapPin className="w-4.5 h-4.5 text-brand-primary" />
+                    </a>
+                  </div>
+                </div>
               </div>
+            ) : (
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                {/* Left Column: Personal Metadata */}
+                <div className="lg:col-span-2 space-y-6">
+                  <Card>
+                    <CardHeader>
+                      <h4 className="font-display font-bold text-slate-800 text-sm flex items-center gap-2">
+                        <User className="w-4 h-4 text-slate-400" />
+                        <span>Registration Details</span>
+                      </h4>
+                    </CardHeader>
+                    <CardBody className="p-5 grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4">
+                      <div className="space-y-0.5">
+                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">First Name</span>
+                        <p className="text-sm font-semibold text-slate-800">{selectedPatient.firstName}</p>
+                      </div>
+                      <div className="space-y-0.5">
+                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Last Name</span>
+                        <p className="text-sm font-semibold text-slate-800">{selectedPatient.lastName}</p>
+                      </div>
+                      <div className="space-y-0.5">
+                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Date Of Birth</span>
+                        <p className="text-sm font-semibold text-slate-800">{selectedPatient.dateOfBirth}</p>
+                      </div>
+                      <div className="space-y-0.5">
+                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Gender</span>
+                        <p className="text-sm font-semibold text-slate-800">{selectedPatient.gender}</p>
+                      </div>
+                      <div className="space-y-0.5">
+                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Mobile Number</span>
+                        <p className="text-sm font-semibold text-slate-800">{selectedPatient.phone}</p>
+                      </div>
+                      <div className="space-y-0.5">
+                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Email Address</span>
+                        <p className="text-sm font-semibold text-slate-800">{selectedPatient.email || 'N/A'}</p>
+                      </div>
+                      <div className="space-y-0.5 sm:col-span-2 pt-2 border-t border-slate-50">
+                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Home Residential Address</span>
+                        <p className="text-xs font-semibold text-slate-700 leading-normal">{selectedPatient.address}</p>
+                      </div>
+                    </CardBody>
+                  </Card>
 
-              {/* Right Column: Medical Vulnerabilities & Clinical Logs */}
-              <div className="space-y-6">
-                {/* Clinical Notes Card */}
-                <Card>
-                  <CardHeader>
-                    <h4 className="font-display font-bold text-slate-800 text-sm flex items-center gap-2">
-                      <Activity className="w-4 h-4 text-brand-primary" />
-                      <span>Initial Visit Purpose & Notes</span>
-                    </h4>
-                  </CardHeader>
-                  <CardBody className="p-5 space-y-4">
-                    <div className="bg-slate-50 p-3 rounded-lg border border-slate-100 space-y-1">
-                      <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Purpose</span>
-                      <p className="text-xs font-bold text-slate-700 leading-normal">{selectedPatient.purpose}</p>
-                    </div>
+                  {/* Emergency Contact */}
+                  <Card className="border-rose-100">
+                    <CardHeader className="bg-rose-50/20 border-rose-50">
+                      <h4 className="font-display font-bold text-slate-800 text-sm flex items-center gap-2">
+                        <Heart className="w-4 h-4 text-rose-500" />
+                        <span>Emergency Contact Details</span>
+                      </h4>
+                    </CardHeader>
+                    <CardBody className="p-5 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div className="space-y-0.5">
+                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Contact Person Name</span>
+                        <p className="text-sm font-bold text-slate-800">{selectedPatient.emergencyContactName}</p>
+                      </div>
+                      <div className="space-y-0.5">
+                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Emergency Contact Phone</span>
+                        <p className="text-sm font-mono font-semibold text-rose-700 bg-rose-50/50 px-2 py-0.5 rounded w-fit">{selectedPatient.emergencyContactPhone}</p>
+                      </div>
+                    </CardBody>
+                  </Card>
+                </div>
 
-                    <div className="space-y-1">
-                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Primary Clinical Log</span>
-                      <p className="text-xs text-slate-600 leading-relaxed font-semibold italic border-l-2 border-brand-primary pl-3 bg-blue-50/20 py-2.5 rounded-r">
-                        "{selectedPatient.clinicalNotes || 'No notes compiled for this patient yet.'}"
-                      </p>
-                    </div>
-                  </CardBody>
-                </Card>
+                {/* Right Column: Medical Summary & Notes */}
+                <div className="space-y-6">
+                  {/* Notes Card */}
+                  <Card>
+                    <CardHeader>
+                      <h4 className="font-display font-bold text-slate-800 text-sm flex items-center gap-2">
+                        <Activity className="w-4 h-4 text-brand-primary" />
+                        <span>Initial Visit Purpose & Notes</span>
+                      </h4>
+                    </CardHeader>
+                    <CardBody className="p-5 space-y-4">
+                      <div className="space-y-0.5">
+                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Purpose of Registration</span>
+                        <p className="text-sm font-semibold text-slate-800">{selectedPatient.purpose || 'General Checkup'}</p>
+                      </div>
+                      <div className="space-y-0.5 pt-2 border-t border-slate-50">
+                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Clinical Notes</span>
+                        <p className="text-xs text-slate-600 leading-relaxed bg-slate-50/50 p-3 rounded-lg border border-slate-100">{selectedPatient.clinicalNotes || 'No notes logged.'}</p>
+                      </div>
+                    </CardBody>
+                  </Card>
 
-                {/* Medical Risks Summary */}
-                <Card className="border-amber-100">
-                  <CardHeader className="bg-amber-50/20 border-amber-50">
-                    <h4 className="font-display font-bold text-slate-800 text-sm flex items-center gap-2">
-                      <AlertTriangle className="w-4 h-4 text-amber-500" />
-                      <span>Allergies & Diseases</span>
-                    </h4>
-                  </CardHeader>
-                  <CardBody className="p-5 space-y-4">
-                    <div className="space-y-1">
-                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Drug / Food Allergies</span>
-                      {selectedPatient.allergies && selectedPatient.allergies.toLowerCase() !== 'none' ? (
-                        <div className="bg-rose-50 border border-rose-100 text-rose-700 px-3 py-2 rounded-lg text-xs font-bold flex items-center gap-1.5">
-                          <AlertCircle className="w-3.5 h-3.5 text-rose-500" />
-                          <span>{selectedPatient.allergies}</span>
-                        </div>
-                      ) : (
-                        <p className="text-xs text-slate-500 font-medium">No allergies logged.</p>
-                      )}
-                    </div>
+                  {/* Medical Summary */}
+                  <Card>
+                    <CardHeader>
+                      <h4 className="font-display font-bold text-slate-800 text-sm flex items-center gap-2">
+                        <Heart className="w-4 h-4 text-rose-500" />
+                        <span>Medical Summary</span>
+                      </h4>
+                    </CardHeader>
+                    <CardBody className="p-5 space-y-4">
+                      <div className="space-y-1">
+                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Known Allergies</span>
+                        {selectedPatient.allergies && selectedPatient.allergies.toLowerCase() !== 'none' ? (
+                          <div className="bg-rose-50 border border-rose-100 text-rose-700 px-3 py-2 rounded-lg text-xs font-bold flex items-center gap-1.5">
+                            <AlertCircle className="w-3.5 h-3.5 text-rose-500" />
+                            <span>{selectedPatient.allergies}</span>
+                          </div>
+                        ) : (
+                          <p className="text-xs text-slate-500 font-medium">No allergies logged.</p>
+                        )}
+                      </div>
 
-                    <div className="space-y-1">
-                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Chronic Diseases</span>
-                      {selectedPatient.existingDiseases && selectedPatient.existingDiseases.toLowerCase() !== 'none' ? (
-                        <div className="bg-amber-50 border border-amber-100 text-amber-700 px-3 py-2 rounded-lg text-xs font-bold flex items-center gap-1.5">
-                          <AlertTriangle className="w-3.5 h-3.5 text-amber-500" />
-                          <span>{selectedPatient.existingDiseases}</span>
-                        </div>
-                      ) : (
-                        <p className="text-xs text-slate-500 font-medium">No chronic medical conditions logged.</p>
-                      )}
-                    </div>
-                  </CardBody>
-                </Card>
+                      <div className="space-y-1">
+                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Chronic Diseases</span>
+                        {selectedPatient.existingDiseases && selectedPatient.existingDiseases.toLowerCase() !== 'none' ? (
+                          <div className="bg-amber-50 border border-amber-100 text-amber-700 px-3 py-2 rounded-lg text-xs font-bold flex items-center gap-1.5">
+                            <AlertTriangle className="w-3.5 h-3.5 text-amber-500" />
+                            <span>{selectedPatient.existingDiseases}</span>
+                          </div>
+                        ) : (
+                          <p className="text-xs text-slate-500 font-medium">No chronic medical conditions logged.</p>
+                        )}
+                      </div>
+                    </CardBody>
+                  </Card>
+                </div>
               </div>
-            </div>
+            )
           )}
 
           {/* 2. Appointments Tab Content */}
@@ -1593,189 +2014,307 @@ export const PatientsPage: React.FC = () => {
 
       {/* --- MODAL DIALOGS --- */}
 
-      {/* A. REGISTER NEW PATIENT MODAL */}
-      <Modal isOpen={isAddPatientOpen} onClose={() => setIsAddPatientOpen(false)} title="Register New Patient">
-        <form onSubmit={handleRegisterPatientSubmit} className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
-            <Input
-              label="First Name"
-              value={newPatient.firstName}
-              onChange={(e) => setNewPatient({ ...newPatient, firstName: e.target.value })}
-              required
-            />
-            <Input
-              label="Last Name"
-              value={newPatient.lastName}
-              onChange={(e) => setNewPatient({ ...newPatient, lastName: e.target.value })}
-              required
-            />
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <Input
-              label="Date Of Birth"
-              type="date"
-              value={newPatient.dateOfBirth}
-              onChange={(e) => setNewPatient({ ...newPatient, dateOfBirth: e.target.value })}
-              required
-            />
-            <Select
-              label="Gender"
-              value={newPatient.gender}
-              onChange={(e) => setNewPatient({ ...newPatient, gender: e.target.value as any })}
-              options={[
-                { value: 'MALE', label: 'Male' },
-                { value: 'FEMALE', label: 'Female' },
-                { value: 'OTHER', label: 'Other' }
-              ]}
-            />
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <Input
-              label="Mobile Phone"
-              value={newPatient.phone}
-              onChange={(e) => setNewPatient({ ...newPatient, phone: e.target.value })}
-              required
-              placeholder="+91 XXXXX XXXXX"
-            />
-            <Input
-              label="Email Address"
-              type="email"
-              value={newPatient.email}
-              onChange={(e) => setNewPatient({ ...newPatient, email: e.target.value })}
-              placeholder="patient@example.com"
-            />
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <Select
-              label="Blood Group"
-              value={newPatient.bloodGroup}
-              onChange={(e) => setNewPatient({ ...newPatient, bloodGroup: e.target.value })}
-              options={[
-                { value: 'A+', label: 'A+' },
-                { value: 'A-', label: 'A-' },
-                { value: 'B+', label: 'B+' },
-                { value: 'B-', label: 'B-' },
-                { value: 'AB+', label: 'AB+' },
-                { value: 'AB-', label: 'AB-' },
-                { value: 'O+', label: 'O+' },
-                { value: 'O-', label: 'O-' }
-              ]}
-            />
-            <Input
-              label="Initial Visit Purpose"
-              value={newPatient.purpose}
-              onChange={(e) => setNewPatient({ ...newPatient, purpose: e.target.value })}
-              placeholder="e.g. Back pain evaluation"
-            />
-          </div>
-
-          <Input
-            label="Full Residential Address"
-            value={newPatient.address}
-            onChange={(e) => setNewPatient({ ...newPatient, address: e.target.value })}
-            placeholder="House/Plot no, Sector, City, Country"
-          />
-
-          <div className="grid grid-cols-2 gap-4">
-            <Input
-              label="Emergency Contact Name"
-              value={newPatient.emergencyContactName}
-              onChange={(e) => setNewPatient({ ...newPatient, emergencyContactName: e.target.value })}
-              placeholder="Spouse / Parent Name"
-            />
-            <Input
-              label="Emergency Contact Phone"
-              value={newPatient.emergencyContactPhone}
-              onChange={(e) => setNewPatient({ ...newPatient, emergencyContactPhone: e.target.value })}
-              placeholder="+91 XXXXX XXXXX"
-            />
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <Input
-              label="Known Allergies"
-              value={newPatient.allergies}
-              onChange={(e) => setNewPatient({ ...newPatient, allergies: e.target.value })}
-              placeholder="e.g. Peanuts, Sulfa"
-            />
-            <Input
-              label="Existing Diseases"
-              value={newPatient.existingDiseases}
-              onChange={(e) => setNewPatient({ ...newPatient, existingDiseases: e.target.value })}
-              placeholder="e.g. Asthma, Thyroid"
-            />
-          </div>
-
-          <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-semibold text-slate-700 uppercase tracking-wider">Clinical Intake Logs</label>
-            <textarea
-              value={newPatient.clinicalNotes}
-              onChange={(e) => setNewPatient({ ...newPatient, clinicalNotes: e.target.value })}
-              className="w-full min-h-[70px] p-3 text-sm rounded-lg border border-slate-200 outline-none focus:border-brand-primary"
-              placeholder="General clinical observations, initial diagnostics..."
-            />
-          </div>
-
-          {/* Attachments Section in Add Patient Form
-          <div className="border-t border-slate-100 pt-3 space-y-2">
-            <div className="flex justify-between items-center">
-              <label className="text-xs font-semibold text-slate-700 uppercase tracking-wider">Add Initial Attachments</label>
-              <span className="text-[10px] text-slate-400 font-medium">Max 10MB per file</span>
-            </div> */}
-
-          {/* <div className="flex flex-wrap gap-2">
-              {(['Lab Report', 'X-ray', 'Scan', 'Prescription', 'Other'] as const).map((cat) => (
-                <button
-                  type="button"
-                  key={cat}
-                  onClick={() => handleAddTempAttachment(cat)}
-                  className="px-2.5 py-1 rounded bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold text-xs flex items-center gap-1 transition-colors border border-slate-200/50"
-                >
-                  <Plus className="w-3 h-3" />
-                  <span>{cat}</span>
-                </button>
-              ))}
+      {/* A. REGISTER NEW PATIENT MODAL / DRAWER */}
+      {isMobile ? (
+        <Drawer
+          isOpen={isAddPatientOpen}
+          onClose={() => setIsAddPatientOpen(false)}
+          title="Add New Patient"
+          hideHeader={true}
+        >
+          <div className="flex flex-col h-full -m-6 bg-slate-50/50">
+            {/* Header */}
+            <div className="flex items-center justify-between px-6 py-4.5 bg-white border-b border-slate-100 shrink-0 relative">
+              <button
+                type="button"
+                onClick={() => setIsAddPatientOpen(false)}
+                className="text-slate-700 hover:bg-slate-100 p-1.5 rounded-full cursor-pointer transition-colors"
+              >
+                <ArrowLeft className="w-5 h-5" />
+              </button>
+              <h3 className="font-display font-extrabold text-slate-800 text-base absolute left-1/2 -translate-x-1/2">
+                Add New Patient
+              </h3>
+              <div className="w-8 h-8" />
             </div>
 
-            {tempAttachments.length > 0 && (
-              <div className="bg-slate-50 rounded-lg p-2 max-h-[120px] overflow-y-auto space-y-1.5 border border-slate-100">
-                {tempAttachments.map((file, i) => (
-                  <div key={i} className="flex justify-between items-center text-xs bg-white px-2 py-1.5 rounded border border-slate-200/60">
-                    <div className="flex items-center gap-1.5 truncate">
-                      <FileText className="w-3.5 h-3.5 text-slate-400" />
-                      <span className="font-semibold text-slate-700 truncate">{file.fileName}</span>
-                      <span className="text-[10px] text-slate-400">({file.category})</span>
-                    </div>
-                    <div className="flex items-center gap-2 shrink-0">
-                      <span className="font-mono text-[10px] text-slate-500 bg-slate-100 px-1 rounded">{file.size}</span>
-                      <button
-                        type="button"
-                        onClick={() => handleRemoveTempAttachment(i)}
-                        className="text-rose-500 hover:text-rose-700 font-bold cursor-pointer"
-                      >
-                        <X className="w-3 h-3" />
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div> */}
+            {/* Scrollable form body */}
+            <form onSubmit={handleRegisterPatientSubmit} className="flex-1 flex flex-col justify-between overflow-hidden">
+              <div className="flex-1 p-6 overflow-y-auto space-y-5">
+                <div className="grid grid-cols-1 gap-4">
+                  <Input
+                    label="First Name"
+                    value={newPatient.firstName}
+                    onChange={(e) => setNewPatient({ ...newPatient, firstName: e.target.value })}
+                    required
+                  />
+                  <Input
+                    label="Last Name"
+                    value={newPatient.lastName}
+                    onChange={(e) => setNewPatient({ ...newPatient, lastName: e.target.value })}
+                    required
+                  />
+                </div>
 
-          <div className="flex justify-end gap-3 pt-4 border-t border-slate-100">
-            <Button type="button" variant="outline" onClick={() => setIsAddPatientOpen(false)}>
-              Cancel
-            </Button>
-            <Button type="submit">
-              <UserPlus className="w-4 h-4" />
-              <span>Register Patient</span>
-            </Button>
+                <div className="grid grid-cols-1 gap-4">
+                  <Input
+                    label="Date Of Birth"
+                    type="date"
+                    value={newPatient.dateOfBirth}
+                    onChange={(e) => setNewPatient({ ...newPatient, dateOfBirth: e.target.value })}
+                    required
+                  />
+                  <Select
+                    label="Gender"
+                    value={newPatient.gender}
+                    onChange={(e) => setNewPatient({ ...newPatient, gender: e.target.value as any })}
+                    options={[
+                      { value: 'MALE', label: 'Male' },
+                      { value: 'FEMALE', label: 'Female' },
+                      { value: 'OTHER', label: 'Other' }
+                    ]}
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 gap-4">
+                  <Input
+                    label="Mobile Phone"
+                    value={newPatient.phone}
+                    onChange={(e) => setNewPatient({ ...newPatient, phone: e.target.value })}
+                    required
+                    placeholder="+91 XXXXX XXXXX"
+                  />
+                  <Input
+                    label="Email Address"
+                    type="email"
+                    value={newPatient.email}
+                    onChange={(e) => setNewPatient({ ...newPatient, email: e.target.value })}
+                    placeholder="patient@example.com"
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 gap-4">
+                  <Select
+                    label="Blood Group"
+                    value={newPatient.bloodGroup}
+                    onChange={(e) => setNewPatient({ ...newPatient, bloodGroup: e.target.value })}
+                    options={[
+                      { value: 'A+', label: 'A+' },
+                      { value: 'A-', label: 'A-' },
+                      { value: 'B+', label: 'B+' },
+                      { value: 'B-', label: 'B-' },
+                      { value: 'AB+', label: 'AB+' },
+                      { value: 'AB-', label: 'AB-' },
+                      { value: 'O+', label: 'O+' },
+                      { value: 'O-', label: 'O-' }
+                    ]}
+                  />
+                  <Input
+                    label="Initial Visit Purpose"
+                    value={newPatient.purpose}
+                    onChange={(e) => setNewPatient({ ...newPatient, purpose: e.target.value })}
+                    placeholder="e.g. Back pain eval"
+                  />
+                </div>
+
+                <Input
+                  label="Full Residential Address"
+                  value={newPatient.address}
+                  onChange={(e) => setNewPatient({ ...newPatient, address: e.target.value })}
+                  placeholder="House/Plot no, Sector, City, Country"
+                />
+
+                <div className="grid grid-cols-1 gap-4">
+                  <Input
+                    label="Emergency Contact Name"
+                    value={newPatient.emergencyContactName}
+                    onChange={(e) => setNewPatient({ ...newPatient, emergencyContactName: e.target.value })}
+                    placeholder="Spouse / Parent Name"
+                  />
+                  <Input
+                    label="Emergency Phone"
+                    value={newPatient.emergencyContactPhone}
+                    onChange={(e) => setNewPatient({ ...newPatient, emergencyContactPhone: e.target.value })}
+                    placeholder="+91 XXXXX XXXXX"
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 gap-4">
+                  <Input
+                    label="Known Allergies"
+                    value={newPatient.allergies}
+                    onChange={(e) => setNewPatient({ ...newPatient, allergies: e.target.value })}
+                    placeholder="e.g. Peanuts, Sulfas"
+                  />
+                  <Input
+                    label="Existing Diseases"
+                    value={newPatient.existingDiseases}
+                    onChange={(e) => setNewPatient({ ...newPatient, existingDiseases: e.target.value })}
+                    placeholder="e.g. Asthma, Thyroid"
+                  />
+                </div>
+
+                <div className="flex flex-col gap-1.5 pb-6">
+                  <label className="text-xs font-semibold text-slate-700 uppercase tracking-wider">Clinical Intake Logs</label>
+                  <textarea
+                    value={newPatient.clinicalNotes}
+                    onChange={(e) => setNewPatient({ ...newPatient, clinicalNotes: e.target.value })}
+                    className="w-full min-h-[90px] p-3 text-sm rounded-lg border border-slate-200 outline-none focus:border-brand-primary"
+                    placeholder="General clinical observations, initial diagnostics..."
+                  />
+                </div>
+              </div>
+
+              {/* Pinned bottom action button */}
+              <div className="p-5 bg-white border-t border-slate-100 shrink-0">
+                <button
+                  type="submit"
+                  className="w-full bg-[#0a305e] hover:bg-[#08274d] text-white font-semibold py-3.5 rounded-xl text-center cursor-pointer shadow-sm text-sm active:scale-[0.99] transition-all"
+                >
+                  Register Patient
+                </button>
+              </div>
+            </form>
           </div>
-        </form>
-      </Modal>
+        </Drawer>
+      ) : (
+        <Modal isOpen={isAddPatientOpen} onClose={() => setIsAddPatientOpen(false)} title="Register New Patient">
+          <form onSubmit={handleRegisterPatientSubmit} className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <Input
+                label="First Name"
+                value={newPatient.firstName}
+                onChange={(e) => setNewPatient({ ...newPatient, firstName: e.target.value })}
+                required
+              />
+              <Input
+                label="Last Name"
+                value={newPatient.lastName}
+                onChange={(e) => setNewPatient({ ...newPatient, lastName: e.target.value })}
+                required
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <Input
+                label="Date Of Birth"
+                type="date"
+                value={newPatient.dateOfBirth}
+                onChange={(e) => setNewPatient({ ...newPatient, dateOfBirth: e.target.value })}
+                required
+              />
+              <Select
+                label="Gender"
+                value={newPatient.gender}
+                onChange={(e) => setNewPatient({ ...newPatient, gender: e.target.value as any })}
+                options={[
+                  { value: 'MALE', label: 'Male' },
+                  { value: 'FEMALE', label: 'Female' },
+                  { value: 'OTHER', label: 'Other' }
+                ]}
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <Input
+                label="Mobile Phone"
+                value={newPatient.phone}
+                onChange={(e) => setNewPatient({ ...newPatient, phone: e.target.value })}
+                required
+                placeholder="+91 XXXXX XXXXX"
+              />
+              <Input
+                label="Email Address"
+                type="email"
+                value={newPatient.email}
+                onChange={(e) => setNewPatient({ ...newPatient, email: e.target.value })}
+                placeholder="patient@example.com"
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <Select
+                label="Blood Group"
+                value={newPatient.bloodGroup}
+                onChange={(e) => setNewPatient({ ...newPatient, bloodGroup: e.target.value })}
+                options={[
+                  { value: 'A+', label: 'A+' },
+                  { value: 'A-', label: 'A-' },
+                  { value: 'B+', label: 'B+' },
+                  { value: 'B-', label: 'B-' },
+                  { value: 'AB+', label: 'AB+' },
+                  { value: 'AB-', label: 'AB-' },
+                  { value: 'O+', label: 'O+' },
+                  { value: 'O-', label: 'O-' }
+                ]}
+              />
+              <Input
+                label="Initial Visit Purpose"
+                value={newPatient.purpose}
+                onChange={(e) => setNewPatient({ ...newPatient, purpose: e.target.value })}
+                placeholder="e.g. Back pain evaluation"
+              />
+            </div>
+
+            <Input
+              label="Full Residential Address"
+              value={newPatient.address}
+              onChange={(e) => setNewPatient({ ...newPatient, address: e.target.value })}
+              placeholder="House/Plot no, Sector, City, Country"
+            />
+
+            <div className="grid grid-cols-2 gap-4">
+              <Input
+                label="Emergency Contact Name"
+                value={newPatient.emergencyContactName}
+                onChange={(e) => setNewPatient({ ...newPatient, emergencyContactName: e.target.value })}
+                placeholder="Spouse / Parent Name"
+              />
+              <Input
+                label="Emergency Contact Phone"
+                value={newPatient.emergencyContactPhone}
+                onChange={(e) => setNewPatient({ ...newPatient, emergencyContactPhone: e.target.value })}
+                placeholder="+91 XXXXX XXXXX"
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <Input
+                label="Known Allergies"
+                value={newPatient.allergies}
+                onChange={(e) => setNewPatient({ ...newPatient, allergies: e.target.value })}
+                placeholder="e.g. Peanuts, Sulfa"
+              />
+              <Input
+                label="Existing Diseases"
+                value={newPatient.existingDiseases}
+                onChange={(e) => setNewPatient({ ...newPatient, existingDiseases: e.target.value })}
+                placeholder="e.g. Asthma, Thyroid"
+              />
+            </div>
+
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs font-semibold text-slate-700 uppercase tracking-wider">Clinical Intake Logs</label>
+              <textarea
+                value={newPatient.clinicalNotes}
+                onChange={(e) => setNewPatient({ ...newPatient, clinicalNotes: e.target.value })}
+                className="w-full min-h-[70px] p-3 text-sm rounded-lg border border-slate-200 outline-none focus:border-brand-primary"
+                placeholder="General clinical observations, initial diagnostics..."
+              />
+            </div>
+
+            <div className="flex justify-end gap-3 pt-4 border-t border-slate-100">
+              <Button type="button" variant="outline" onClick={() => setIsAddPatientOpen(false)}>
+                Cancel
+              </Button>
+              <Button type="submit">
+                <UserPlus className="w-4 h-4" />
+                <span>Register Patient</span>
+              </Button>
+            </div>
+          </form>
+        </Modal>
+      )}
 
       {/* B. VIEW APPOINTMENT DETAILS POPUP */}
       <Modal
@@ -2326,6 +2865,59 @@ export const PatientsPage: React.FC = () => {
           </div>
         </form>
       </Modal>
+
+      {/* Mobile Advanced Filters Drawer */}
+      {isMobile && (
+        <Drawer
+          isOpen={isMobileFilterOpen}
+          onClose={() => setIsMobileFilterOpen(false)}
+          title="Filter Patients"
+        >
+          <div className="flex flex-col h-full justify-between pb-8">
+            <div className="space-y-6">
+              {/* Gender Filter */}
+              <div className="space-y-3">
+                <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider">Gender</label>
+                <select
+                  value={tempGenderFilter}
+                  onChange={(e) => setTempGenderFilter(e.target.value)}
+                  className="w-full px-3.5 h-11 bg-white border border-slate-200 rounded-xl text-sm outline-none focus:border-brand-primary focus:ring-1 focus:ring-brand-primary text-slate-700 font-medium cursor-pointer"
+                >
+                  <option value="All">All Genders</option>
+                  <option value="MALE">Male</option>
+                  <option value="FEMALE">Female</option>
+                  <option value="OTHER">Other</option>
+                </select>
+              </div>
+            </div>
+
+            {/* Drawer actions */}
+            <div className="flex gap-3.5 pt-6 border-t border-slate-200/60 mt-10">
+              <button
+                onClick={() => {
+                  setTempGenderFilter('All');
+                  setGenderFilter('All');
+                  setCurrentPage(1);
+                  setIsMobileFilterOpen(false);
+                }}
+                className="flex-1 py-3 border border-slate-200 rounded-xl font-bold text-slate-600 bg-white hover:bg-slate-50 active:scale-[0.99] transition-all cursor-pointer text-center text-sm"
+              >
+                Reset
+              </button>
+              <button
+                onClick={() => {
+                  setGenderFilter(tempGenderFilter);
+                  setCurrentPage(1);
+                  setIsMobileFilterOpen(false);
+                }}
+                className="flex-1 py-3 bg-brand-primary text-white rounded-xl font-bold hover:bg-blue-700 active:scale-[0.99] transition-all cursor-pointer text-center text-sm"
+              >
+                Apply Filters
+              </button>
+            </div>
+          </div>
+        </Drawer>
+      )}
     </div>
   );
 };

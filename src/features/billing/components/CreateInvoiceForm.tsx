@@ -31,6 +31,16 @@ export const CreateInvoiceForm: React.FC<CreateInvoiceFormProps> = ({
   onCancel,
   onPreview,
 }) => {
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
   // Master lists
   const [patients, setPatients] = useState<PatientProfileExtended[]>([]);
   const [doctors, setDoctors] = useState<DoctorProfileExtended[]>([]);
@@ -521,60 +531,170 @@ export const CreateInvoiceForm: React.FC<CreateInvoiceFormProps> = ({
           {/* Invoice Items Section */}
           <div className="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
             <div className="px-5 py-4.5 border-b border-slate-150 flex items-center justify-between">
-              <h3 className="font-display font-bold text-slate-900 text-base">Invoice Items</h3>
+              <h3 className="font-display font-bold text-slate-900 text-base uppercase tracking-wider text-xs">Invoice Items</h3>
               <button
                 type="button"
                 onClick={handleAddItem}
-                className="flex items-center gap-1 text-xs font-bold text-brand-primary uppercase tracking-wider hover:text-indigo-700 transition-colors cursor-pointer"
+                className="flex items-center gap-1 bg-[#005ae2] hover:bg-blue-700 text-white rounded-lg px-3.5 py-2 text-xs font-bold transition-all cursor-pointer border-none shadow-sm"
               >
                 <Plus className="w-4 h-4" />
                 <span>Add Item</span>
               </button>
             </div>
 
-            <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse">
-                <thead>
-                  <tr className="bg-slate-50/75 border-b border-slate-200">
-                    <th className="px-4 py-3.5 text-[11px] font-bold text-slate-400 uppercase tracking-wider">
-                      Item Name
-                    </th>
-                    <th className="px-4 py-3.5 text-[11px] font-bold text-slate-400 uppercase tracking-wider w-16 text-center">
-                      Qty
-                    </th>
-                    <th className="px-4 py-3.5 text-[11px] font-bold text-slate-400 uppercase tracking-wider w-28">
-                      Rate (₹)
-                    </th>
-                    {billingSettings?.selectedTemplateId === 'GST_DETAILED' ? (
-                      <>
-                        <th className="px-4 py-3.5 text-[11px] font-bold text-slate-400 uppercase tracking-wider w-20 text-center">
-                          CGST %
-                        </th>
-                        <th className="px-4 py-3.5 text-[11px] font-bold text-slate-400 uppercase tracking-wider w-20 text-center">
-                          SGST %
-                        </th>
-                      </>
-                    ) : (
-                      <th className="px-4 py-3.5 text-[11px] font-bold text-slate-400 uppercase tracking-wider w-20">
-                        {billingSettings?.taxLabel || 'Tax'} %
+            {!isMobile ? (
+              <div className="overflow-x-auto">
+                <table className="w-full text-left border-collapse">
+                  <thead>
+                    <tr className="bg-slate-50/75 border-b border-slate-200">
+                      <th className="px-4 py-3.5 text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+                        Item Name
                       </th>
-                    )}
-                    <th className="px-4 py-3.5 text-[11px] font-bold text-slate-400 uppercase tracking-wider text-right w-28">
-                      Total
-                    </th>
-                    <th className="px-4 py-3.5 text-[11px] font-bold text-slate-400 tracking-wider text-center w-12">
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-150">
-                  {items.map((row) => (
-                    <tr key={row.id} className="hover:bg-slate-50/30">
-                      {/* Name */}
-                      <td className="p-3">
+                      <th className="px-4 py-3.5 text-[11px] font-bold text-slate-400 uppercase tracking-wider w-16 text-center">
+                        Qty
+                      </th>
+                      <th className="px-4 py-3.5 text-[11px] font-bold text-slate-400 uppercase tracking-wider w-28">
+                        Rate (₹)
+                      </th>
+                      {billingSettings?.selectedTemplateId === 'GST_DETAILED' ? (
+                        <>
+                          <th className="px-4 py-3.5 text-[11px] font-bold text-slate-400 uppercase tracking-wider w-20 text-center">
+                            CGST %
+                          </th>
+                          <th className="px-4 py-3.5 text-[11px] font-bold text-slate-400 uppercase tracking-wider w-20 text-center">
+                            SGST %
+                          </th>
+                        </>
+                      ) : (
+                        <th className="px-4 py-3.5 text-[11px] font-bold text-slate-400 uppercase tracking-wider w-20">
+                          {billingSettings?.taxLabel || 'Tax'} %
+                        </th>
+                      )}
+                      <th className="px-4 py-3.5 text-[11px] font-bold text-slate-400 uppercase tracking-wider text-right w-28">
+                        Total
+                      </th>
+                      <th className="px-4 py-3.5 text-[11px] font-bold text-slate-400 tracking-wider text-center w-12">
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-150">
+                    {items.map((row) => (
+                      <tr key={row.id} className="hover:bg-slate-50/30">
+                        {/* Name */}
+                        <td className="p-3">
+                          <select
+                            value={row.name}
+                            onChange={(e) => handleItemChange(row.id, 'name', e.target.value)}
+                            className="w-full px-2 py-1.5 bg-slate-50 border border-slate-200 rounded-md text-sm outline-none focus:border-brand-primary focus:bg-white text-slate-700 font-medium cursor-pointer"
+                          >
+                            <option value="Consultation Fee">Consultation Fee</option>
+                            <option value="Follow-up Charges">Follow-up Charges</option>
+                            <option value="Lab Charges - CBC">Lab Charges - CBC</option>
+                            <option value="X-Ray Chest">X-Ray Chest</option>
+                            <option value="Clinical Treatment">Clinical Treatment</option>
+                            <option value="Pharmacy Medicines">Pharmacy Medicines</option>
+                            <option value="Other Medical Service">Other Medical Service</option>
+                          </select>
+                        </td>
+
+                        {/* Qty */}
+                        <td className="p-3">
+                          <input
+                            type="number"
+                            min="1"
+                            value={row.quantity}
+                            onChange={(e) => handleItemChange(row.id, 'quantity', Math.max(1, Number(e.target.value)))}
+                            className="w-full px-2 py-1.5 bg-slate-50 border border-slate-200 rounded-md text-sm outline-none focus:border-brand-primary focus:bg-white text-slate-700 text-center font-semibold font-mono"
+                          />
+                        </td>
+
+                        {/* Rate */}
+                        <td className="p-3">
+                          <input
+                            type="number"
+                            min="0"
+                            value={row.rate}
+                            onChange={(e) => handleItemChange(row.id, 'rate', Math.max(0, Number(e.target.value)))}
+                            className="w-full px-2 py-1.5 bg-slate-50 border border-slate-200 rounded-md text-sm outline-none focus:border-brand-primary focus:bg-white text-slate-700 font-semibold font-mono"
+                          />
+                        </td>
+
+                        {/* Tax % / CGST & SGST */}
+                        {billingSettings?.selectedTemplateId === 'GST_DETAILED' ? (
+                          <>
+                            <td className="p-3">
+                              <input
+                                type="number"
+                                min="0"
+                                max="50"
+                                step="0.1"
+                                value={(row.taxPercent / 2).toFixed(1)}
+                                onChange={(e) => handleItemChange(row.id, 'taxPercent', Number(e.target.value) * 2)}
+                                className="w-full px-2 py-1.5 bg-slate-50 border border-slate-200 rounded-md text-sm outline-none focus:border-brand-primary focus:bg-white text-slate-700 text-center font-medium font-mono"
+                              />
+                            </td>
+                            <td className="p-3">
+                              <input
+                                type="number"
+                                min="0"
+                                max="50"
+                                step="0.1"
+                                value={(row.taxPercent / 2).toFixed(1)}
+                                onChange={(e) => handleItemChange(row.id, 'taxPercent', Number(e.target.value) * 2)}
+                                className="w-full px-2 py-1.5 bg-slate-50 border border-slate-200 rounded-md text-sm outline-none focus:border-brand-primary focus:bg-white text-slate-700 text-center font-medium font-mono"
+                              />
+                            </td>
+                          </>
+                        ) : (
+                          <td className="p-3">
+                            <input
+                              type="number"
+                              min="0"
+                              max="100"
+                              value={row.taxPercent}
+                              onChange={(e) => handleItemChange(row.id, 'taxPercent', Math.min(100, Math.max(0, Number(e.target.value))))}
+                              className="w-full px-2 py-1.5 bg-slate-50 border border-slate-200 rounded-md text-sm outline-none focus:border-brand-primary focus:bg-white text-slate-700 text-center font-medium font-mono"
+                            />
+                          </td>
+                        )}
+
+                        {/* Total */}
+                        <td className="p-3 text-right font-bold text-slate-800 font-mono text-sm">
+                          ₹{row.total.toFixed(2)}
+                        </td>
+
+                        {/* Delete */}
+                        <td className="p-3 text-center">
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteItem(row.id)}
+                            disabled={items.length <= 1}
+                            className={`p-1.5 rounded transition-colors ${
+                              items.length <= 1
+                                ? 'text-slate-300 cursor-not-allowed'
+                                : 'text-rose-400 hover:text-rose-600 hover:bg-rose-50 cursor-pointer'
+                            }`}
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <div className="p-4 space-y-4 bg-slate-50/50">
+                {items.map((row) => (
+                  <div key={row.id} className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm space-y-4 animate-scale-in">
+                    {/* Item Description & Delete Header */}
+                    <div className="flex items-center gap-3">
+                      <div className="space-y-1 flex-1">
+                        <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Item Description</label>
                         <select
                           value={row.name}
                           onChange={(e) => handleItemChange(row.id, 'name', e.target.value)}
-                          className="w-full px-2 py-1.5 bg-slate-50 border border-slate-200 rounded-md text-sm outline-none focus:border-brand-primary focus:bg-white text-slate-700 font-medium cursor-pointer"
+                          className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none text-slate-800 font-bold appearance-none pr-8 bg-[url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20width%3D%2220%22%20height%3D%2220%22%20viewBox%3D%220%200%2020%2020%22%20fill%3D%22none%22%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%3E%3Cpath%20d%3D%22M5%207.5L10%2012.5L15%207.5%22%20stroke%3D%22%234A5568%22%20stroke-width%3D%221.5%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22/%3E%3C/svg%3E')] bg-[length:20px] bg-[right_12px_center] bg-no-repeat cursor-pointer focus:bg-white"
                         >
                           <option value="Consultation Fee">Consultation Fee</option>
                           <option value="Follow-up Charges">Follow-up Charges</option>
@@ -584,94 +704,72 @@ export const CreateInvoiceForm: React.FC<CreateInvoiceFormProps> = ({
                           <option value="Pharmacy Medicines">Pharmacy Medicines</option>
                           <option value="Other Medical Service">Other Medical Service</option>
                         </select>
-                      </td>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => handleDeleteItem(row.id)}
+                        disabled={items.length <= 1}
+                        className={`p-2.5 rounded-xl border flex items-center justify-center transition-colors mt-5 shrink-0 cursor-pointer ${
+                          items.length <= 1
+                            ? 'text-slate-300 border-slate-100 cursor-not-allowed bg-transparent'
+                            : 'text-slate-400 border-slate-200 hover:text-rose-600 hover:bg-rose-50 hover:border-rose-100 bg-white'
+                        }`}
+                      >
+                        <Trash2 className="w-5 h-5" />
+                      </button>
+                    </div>
 
+                    {/* Inputs Row: QTY, RATE, GST */}
+                    <div className="grid grid-cols-3 gap-3">
                       {/* Qty */}
-                      <td className="p-3">
+                      <div className="space-y-1">
+                        <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Qty</label>
                         <input
                           type="number"
                           min="1"
                           value={row.quantity}
                           onChange={(e) => handleItemChange(row.id, 'quantity', Math.max(1, Number(e.target.value)))}
-                          className="w-full px-2 py-1.5 bg-slate-50 border border-slate-200 rounded-md text-sm outline-none focus:border-brand-primary focus:bg-white text-slate-700 text-center font-semibold font-mono"
+                          className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none text-center font-bold text-slate-800 focus:bg-white"
                         />
-                      </td>
+                      </div>
 
                       {/* Rate */}
-                      <td className="p-3">
+                      <div className="space-y-1">
+                        <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Rate (₹)</label>
                         <input
                           type="number"
                           min="0"
                           value={row.rate}
                           onChange={(e) => handleItemChange(row.id, 'rate', Math.max(0, Number(e.target.value)))}
-                          className="w-full px-2 py-1.5 bg-slate-50 border border-slate-200 rounded-md text-sm outline-none focus:border-brand-primary focus:bg-white text-slate-700 font-semibold font-mono"
+                          className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none font-bold text-slate-800 focus:bg-white"
                         />
-                      </td>
+                      </div>
 
-                      {/* Tax % / CGST & SGST */}
-                      {billingSettings?.selectedTemplateId === 'GST_DETAILED' ? (
-                        <>
-                          <td className="p-3">
-                            <input
-                              type="number"
-                              min="0"
-                              max="50"
-                              step="0.1"
-                              value={(row.taxPercent / 2).toFixed(1)}
-                              onChange={(e) => handleItemChange(row.id, 'taxPercent', Number(e.target.value) * 2)}
-                              className="w-full px-2 py-1.5 bg-slate-50 border border-slate-200 rounded-md text-sm outline-none focus:border-brand-primary focus:bg-white text-slate-700 text-center font-medium font-mono"
-                            />
-                          </td>
-                          <td className="p-3">
-                            <input
-                              type="number"
-                              min="0"
-                              max="50"
-                              step="0.1"
-                              value={(row.taxPercent / 2).toFixed(1)}
-                              onChange={(e) => handleItemChange(row.id, 'taxPercent', Number(e.target.value) * 2)}
-                              className="w-full px-2 py-1.5 bg-slate-50 border border-slate-200 rounded-md text-sm outline-none focus:border-brand-primary focus:bg-white text-slate-700 text-center font-medium font-mono"
-                            />
-                          </td>
-                        </>
-                      ) : (
-                        <td className="p-3">
-                          <input
-                            type="number"
-                            min="0"
-                            max="100"
-                            value={row.taxPercent}
-                            onChange={(e) => handleItemChange(row.id, 'taxPercent', Math.min(100, Math.max(0, Number(e.target.value))))}
-                            className="w-full px-2 py-1.5 bg-slate-50 border border-slate-200 rounded-md text-sm outline-none focus:border-brand-primary focus:bg-white text-slate-700 text-center font-medium font-mono"
-                          />
-                        </td>
-                      )}
+                      {/* Tax % */}
+                      <div className="space-y-1">
+                        <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
+                          {billingSettings?.selectedTemplateId === 'GST_DETAILED' ? 'GST %' : (billingSettings?.taxLabel || 'GST') + ' %'}
+                        </label>
+                        <input
+                          type="number"
+                          min="0"
+                          max="100"
+                          value={row.taxPercent}
+                          onChange={(e) => handleItemChange(row.id, 'taxPercent', Math.min(100, Math.max(0, Number(e.target.value))))}
+                          className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none text-center font-bold text-slate-800 focus:bg-white"
+                        />
+                      </div>
+                    </div>
 
-                      {/* Total */}
-                      <td className="p-3 text-right font-bold text-slate-800 font-mono text-sm">
-                        ₹{row.total.toFixed(2)}
-                      </td>
-
-                      {/* Delete */}
-                      <td className="p-3 text-center">
-                        <button
-                          type="button"
-                          onClick={() => handleDeleteItem(row.id)}
-                          disabled={items.length <= 1}
-                          className={`p-1.5 rounded transition-colors ${
-                            items.length <= 1
-                              ? 'text-slate-300 cursor-not-allowed'
-                              : 'text-rose-400 hover:text-rose-600 hover:bg-rose-50 cursor-pointer'
-                          }`}
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                    {/* Block Total Display */}
+                    <div className="flex justify-between items-center pt-2 border-t border-slate-100 text-xs">
+                      <span className="font-semibold text-slate-400 uppercase tracking-wide text-[9px]">Row Total</span>
+                      <span className="font-bold text-slate-800 font-mono">₹{row.total.toFixed(2)}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Payment Details Section */}

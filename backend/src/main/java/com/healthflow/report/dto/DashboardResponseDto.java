@@ -13,6 +13,13 @@ public class DashboardResponseDto {
     private List<WeeklyRevenueItemDto> weeklyRevenue;
     private List<TimewiseAppointmentDto> timewiseAppointments;
 
+    private BigDecimal todayRevenue;
+    private long todayOpenInvoicesCount;
+    private BigDecimal monthlyRevenue;
+    private long appointmentsRemainingCount;
+    private String totalPatientsChangeText;
+    private String monthlyRevenueChangeText;
+
     public DashboardResponseDto() {}
 
     public DashboardResponseDto(long totalPatients, long appointmentsTodayCount, BigDecimal pendingBilling, 
@@ -91,5 +98,53 @@ public class DashboardResponseDto {
 
     public void setTimewiseAppointments(List<TimewiseAppointmentDto> timewiseAppointments) {
         this.timewiseAppointments = timewiseAppointments;
+    }
+
+    public BigDecimal getTodayRevenue() {
+        return todayRevenue;
+    }
+
+    public void setTodayRevenue(BigDecimal todayRevenue) {
+        this.todayRevenue = todayRevenue;
+    }
+
+    public long getTodayOpenInvoicesCount() {
+        return todayOpenInvoicesCount;
+    }
+
+    public void setTodayOpenInvoicesCount(long todayOpenInvoicesCount) {
+        this.todayOpenInvoicesCount = todayOpenInvoicesCount;
+    }
+
+    public BigDecimal getMonthlyRevenue() {
+        return monthlyRevenue;
+    }
+
+    public void setMonthlyRevenue(BigDecimal monthlyRevenue) {
+        this.monthlyRevenue = monthlyRevenue;
+    }
+
+    public long getAppointmentsRemainingCount() {
+        return appointmentsRemainingCount;
+    }
+
+    public void setAppointmentsRemainingCount(long appointmentsRemainingCount) {
+        this.appointmentsRemainingCount = appointmentsRemainingCount;
+    }
+
+    public String getTotalPatientsChangeText() {
+        return totalPatientsChangeText;
+    }
+
+    public void setTotalPatientsChangeText(String totalPatientsChangeText) {
+        this.totalPatientsChangeText = totalPatientsChangeText;
+    }
+
+    public String getMonthlyRevenueChangeText() {
+        return monthlyRevenueChangeText;
+    }
+
+    public void setMonthlyRevenueChangeText(String monthlyRevenueChangeText) {
+        this.monthlyRevenueChangeText = monthlyRevenueChangeText;
     }
 }

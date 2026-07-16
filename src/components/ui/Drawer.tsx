@@ -7,9 +7,10 @@ interface DrawerProps {
   onClose: () => void;
   title: string;
   children: React.ReactNode;
+  hideHeader?: boolean;
 }
 
-export const Drawer: React.FC<DrawerProps> = ({ isOpen, onClose, title, children }) => {
+export const Drawer: React.FC<DrawerProps> = ({ isOpen, onClose, title, children, hideHeader = false }) => {
   useEffect(() => {
     if (isOpen) {
       document.body.style.overflow = 'hidden';
@@ -43,15 +44,17 @@ export const Drawer: React.FC<DrawerProps> = ({ isOpen, onClose, title, children
             className="relative w-full max-w-md bg-white h-full shadow-2xl border-l border-slate-200 z-10 flex flex-col overflow-hidden"
           >
             {/* Header */}
-            <div className="p-5 border-b border-slate-100 flex items-center justify-between">
-              <h3 className="font-display font-semibold text-lg text-slate-900">{title}</h3>
-              <button
-                onClick={onClose}
-                className="text-slate-400 hover:text-slate-600 transition-colors cursor-pointer p-1 rounded-full hover:bg-slate-100"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
+            {!hideHeader && (
+              <div className="p-5 border-b border-slate-100 flex items-center justify-between">
+                <h3 className="font-display font-semibold text-lg text-slate-900">{title}</h3>
+                <button
+                  onClick={onClose}
+                  className="text-slate-400 hover:text-slate-600 transition-colors cursor-pointer p-1 rounded-full hover:bg-slate-100"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+            )}
 
             {/* Body */}
             <div className="flex-1 p-6 overflow-y-auto bg-slate-50">

@@ -53,6 +53,7 @@ const getStartOfWeekString = () => {
 };
 
 export const DashboardPage: React.FC = () => {
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
   const [userName, setUserName] = useState('User');
   const [fromDate, setFromDate] = useState(getStartOfWeekString());
   const [toDate, setToDate] = useState(getTodayDateString());
@@ -61,6 +62,13 @@ export const DashboardPage: React.FC = () => {
   const [appointmentsCount, setAppointmentsCount] = useState<number | string>('...');
   const [pendingBilling, setPendingBilling] = useState<number>(0);
   const [newReportsCount, setNewReportsCount] = useState<number | string>('...');
+
+  const [todayRevenue, setTodayRevenue] = useState<number | string>('...');
+  const [todayOpenInvoicesCount, setTodayOpenInvoicesCount] = useState<number | string>('...');
+  const [monthlyRevenue, setMonthlyRevenue] = useState<number | string>('...');
+  const [appointmentsRemainingCount, setAppointmentsRemainingCount] = useState<number | string>('...');
+  const [totalPatientsChangeText, setTotalPatientsChangeText] = useState<string>('');
+  const [monthlyRevenueChangeText, setMonthlyRevenueChangeText] = useState<string>('');
   
   const [appointments, setAppointments] = useState<any[]>([]);
   const [patientFlow, setPatientFlow] = useState<any[]>([]);
@@ -69,6 +77,14 @@ export const DashboardPage: React.FC = () => {
   
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [showExportSuccess, setShowExportSuccess] = useState(false);
+
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   useEffect(() => {
     let active = true;
@@ -90,6 +106,13 @@ export const DashboardPage: React.FC = () => {
         setPendingBilling(dashboardData.pendingBilling);
         setAppointmentsCount(dashboardData.appointmentsTodayCount);
         setNewReportsCount(dashboardData.newReportsCount);
+
+        setTodayRevenue(dashboardData.todayRevenue ?? 0);
+        setTodayOpenInvoicesCount(dashboardData.todayOpenInvoicesCount ?? 0);
+        setMonthlyRevenue(dashboardData.monthlyRevenue ?? 0);
+        setAppointmentsRemainingCount(dashboardData.appointmentsRemainingCount ?? 0);
+        setTotalPatientsChangeText(dashboardData.totalPatientsChangeText ?? '+12% vs last month');
+        setMonthlyRevenueChangeText(dashboardData.monthlyRevenueChangeText ?? '+15% vs last month');
 
         const mappedRecent = dashboardData.recentAppointments.map(appt => ({
           id: appt.id,
@@ -180,6 +203,157 @@ export const DashboardPage: React.FC = () => {
       setToDate(value);
     }
   };
+
+  // Helper to format currency values to k format (e.g. 4.2k)
+  const formatKCurrency = (value: number | string) => {
+    const num = Number(value);
+    if (isNaN(num)) return '$0';
+    if (num >= 1000) {
+      return `$${(num / 1000).toFixed(1)}k`;
+    }
+    return `$${num}`;
+  };
+
+  if (isMobile) {
+    return (
+      <div className="space-y-6 pb-20 animate-fade-in-up">
+        {/* Top welcome banner */}
+        <div className="bg-white p-5 rounded-2xl border border-slate-200/60 shadow-sm">
+          <h1 className="text-xl font-display font-bold text-slate-900 tracking-tight">
+            Good Morning, {userName.includes("Dr.") ? userName : `Dr. ${userName}`}
+          </h1>
+          <p className="text-xs text-slate-500 font-medium mt-1">
+            You have {appointmentsRemainingCount} appointments scheduled for today.
+          </p>
+        </div>
+
+        {/* Recent Appointments */}
+        <Card>
+          <CardHeader className="flex items-center justify-between py-4 px-5">
+            <div>
+              <h3 className="font-display font-bold text-slate-900">Recent Appointments</h3>
+            </div>
+            <a href="/appointments" className="text-xs font-bold text-brand-primary flex items-center gap-0.5 hover:text-blue-700 transition-colors">
+              <span>View All</span>
+              <ChevronRight className="w-3.5 h-3.5" />
+            </a>
+          </CardHeader>
+          <CardBody className="p-0 divide-y divide-slate-100">
+            {appointments.length === 0 ? (
+              <div className="p-6 text-center text-slate-400 font-medium text-xs">
+                No appointments found for today.
+              </div>
+            ) : (
+              appointments.slice(0, 3).map((appt) => {
+                let displayStatus = "WAITING";
+                let statusClass = "bg-blue-50 text-blue-600";
+                
+                if (appt.status === "COMPLETED") {
+                  displayStatus = "IN PROGRESS";
+                  statusClass = "bg-[#6ffce6]/50 text-teal-900 font-extrabold";
+                } else if (appt.status === "SCHEDULED") {
+                  displayStatus = "UPCOMING";
+                  statusClass = "bg-slate-100 text-slate-500";
+                }
+
+                return (
+                  <div key={appt.id} className="p-4 px-5 flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-full bg-slate-200 flex items-center justify-center font-bold text-slate-400 text-xs shrink-0 select-none">
+                        img
+                      </div>
+                      <div>
+                        <h4 className="font-bold text-slate-800 text-sm leading-snug">{appt.patientName}</h4>
+                        <p className="text-xs text-slate-400 font-medium mt-0.5">General Checkup</p>
+                      </div>
+                    </div>
+                    <div className="text-right flex flex-col items-end gap-1 shrink-0">
+                      <span className="text-xs font-bold text-slate-700">{appt.time}</span>
+                      <span className={`text-[9px] px-2.5 py-0.5 rounded-full font-bold tracking-wider ${statusClass}`}>
+                        {displayStatus}
+                      </span>
+                    </div>
+                  </div>
+                );
+              })
+            )}
+          </CardBody>
+        </Card>
+
+        {/* Quick Insights grid */}
+        <div className="space-y-3">
+          <h3 className="font-display font-bold text-xs uppercase tracking-wider text-slate-400 px-1">Quick Insights</h3>
+          <div className="grid grid-cols-2 gap-4">
+            
+            {/* Total Patients */}
+            <div className="bg-white p-4 rounded-xl border border-slate-200/60 shadow-sm flex flex-col justify-between min-h-[105px]">
+              <div>
+                <div className="flex items-center gap-1.5 text-slate-500">
+                  <Users className="w-4 h-4 text-blue-500" />
+                  <span className="text-[10px] font-extrabold tracking-tight uppercase text-slate-400">Total Patients</span>
+                </div>
+                <p className="text-xl font-display font-bold text-slate-800 mt-2">
+                  {totalPatients.toLocaleString()}
+                </p>
+              </div>
+              <p className="text-[9px] font-bold text-emerald-600">
+                {totalPatientsChangeText}
+              </p>
+            </div>
+
+            {/* Today's Revenue */}
+            <div className="bg-white p-4 rounded-xl border border-slate-200/60 shadow-sm flex flex-col justify-between min-h-[105px]">
+              <div>
+                <div className="flex items-center gap-1.5 text-slate-500">
+                  <CreditCard className="w-4 h-4 text-emerald-500" />
+                  <span className="text-[10px] font-extrabold tracking-tight uppercase text-slate-400">Today's Revenue</span>
+                </div>
+                <p className="text-xl font-display font-bold text-slate-800 mt-2">
+                  {formatKCurrency(todayRevenue)}
+                </p>
+              </div>
+              <p className="text-[9px] font-bold text-slate-500">
+                {todayOpenInvoicesCount} invoices open
+              </p>
+            </div>
+
+            {/* Monthly Revenue */}
+            <div className="bg-white p-4 rounded-xl border border-slate-200/60 shadow-sm flex flex-col justify-between min-h-[105px]">
+              <div>
+                <div className="flex items-center gap-1.5 text-slate-500">
+                  <CreditCard className="w-4 h-4 text-indigo-500" />
+                  <span className="text-[10px] font-extrabold tracking-tight uppercase text-slate-400">Monthly Revenue</span>
+                </div>
+                <p className="text-xl font-display font-bold text-slate-800 mt-2">
+                  {formatKCurrency(monthlyRevenue)}
+                </p>
+              </div>
+              <p className="text-[9px] font-bold text-emerald-600">
+                {monthlyRevenueChangeText}
+              </p>
+            </div>
+
+            {/* Today's Appointment */}
+            <div className="bg-white p-4 rounded-xl border border-slate-200/60 shadow-sm flex flex-col justify-between min-h-[105px]">
+              <div>
+                <div className="flex items-center gap-1.5 text-slate-500">
+                  <CalendarDays className="w-4 h-4 text-orange-500" />
+                  <span className="text-[10px] font-extrabold tracking-tight uppercase text-slate-400">Today's Appointment</span>
+                </div>
+                <p className="text-xl font-display font-bold text-slate-800 mt-2">
+                  {appointmentsCount}
+                </p>
+              </div>
+              <p className="text-[9px] font-bold text-slate-500">
+                {appointmentsRemainingCount} remaining
+              </p>
+            </div>
+
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-8 pb-12 animate-fade-in-up">

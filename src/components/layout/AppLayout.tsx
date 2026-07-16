@@ -2,7 +2,8 @@ import React, { useState } from 'react';
 import { Sidebar } from './Sidebar';
 import { Header } from './Header';
 import { AnimatePresence, motion } from 'motion/react';
-import { X } from 'lucide-react';
+import { X, LayoutDashboard, Users, CalendarDays, CreditCard, Menu } from 'lucide-react';
+import { NavLink, useLocation } from 'react-router-dom';
 
 interface AppLayoutProps {
   children: React.ReactNode;
@@ -12,6 +13,14 @@ interface AppLayoutProps {
 
 export const AppLayout: React.FC<AppLayoutProps> = ({ children, onLogout, currentUser }) => {
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
+  const location = useLocation();
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+
+  React.useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth < 768);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   const toggleMobileSidebar = () => {
     setIsMobileSidebarOpen((prev) => !prev);
@@ -63,12 +72,14 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children, onLogout, curren
       </AnimatePresence>
 
       {/* Main Container Area */}
-      <div className="flex-1 flex flex-col overflow-hidden h-full">
+      <div className="flex-1 flex flex-col overflow-hidden h-full relative">
         {/* Header */}
-        <Header onMenuToggle={toggleMobileSidebar} currentUser={currentUser} />
+        {(!isMobile || location.pathname !== '/more') && (
+          <Header onMenuToggle={toggleMobileSidebar} currentUser={currentUser} />
+        )}
 
         {/* Content Body */}
-        <main className="flex-1 overflow-y-auto p-6 md:p-8 bg-slate-50">
+        <main className="flex-1 overflow-y-auto p-6 md:p-8 bg-slate-50 pb-20 md:pb-8">
           <motion.div
             initial={{ opacity: 0, y: 15 }}
             animate={{ opacity: 1, y: 0 }}
@@ -78,6 +89,89 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children, onLogout, curren
             {children}
           </motion.div>
         </main>
+
+        {/* Mobile Bottom Navigation Bar */}
+        <div className="md:hidden fixed bottom-0 left-0 right-0 h-16 bg-white border-t border-slate-200/80 flex items-center justify-around z-40 px-2 shadow-[0_-4px_12px_rgba(0,0,0,0.03)]">
+          <NavLink
+            to="/dashboard"
+            className={({ isActive }) => `flex flex-col items-center justify-center flex-1 py-1 text-[10px] font-bold ${
+              isActive ? 'text-slate-900' : 'text-slate-500'
+            }`}
+          >
+            {({ isActive }) => (
+              <>
+                <div className={`p-2 px-4 rounded-full transition-all ${isActive ? 'bg-[#5eead4] text-slate-950 scale-105 shadow-sm' : ''}`}>
+                  <LayoutDashboard className="w-5 h-5" />
+                </div>
+                <span className="mt-0.5">Dashboard</span>
+              </>
+            )}
+          </NavLink>
+
+          <NavLink
+            to="/patients"
+            className={({ isActive }) => `flex flex-col items-center justify-center flex-1 py-1 text-[10px] font-bold ${
+              isActive ? 'text-slate-900' : 'text-slate-500'
+            }`}
+          >
+            {({ isActive }) => (
+              <>
+                <div className={`p-2 px-4 rounded-full transition-all ${isActive ? 'bg-[#5eead4] text-slate-950 scale-105 shadow-sm' : ''}`}>
+                  <Users className="w-5 h-5" />
+                </div>
+                <span className="mt-0.5">Patients</span>
+              </>
+            )}
+          </NavLink>
+
+          <NavLink
+            to="/appointments"
+            className={({ isActive }) => `flex flex-col items-center justify-center flex-1 py-1 text-[10px] font-bold ${
+              isActive ? 'text-slate-900' : 'text-slate-500'
+            }`}
+          >
+            {({ isActive }) => (
+              <>
+                <div className={`p-2 px-4 rounded-full transition-all ${isActive ? 'bg-[#5eead4] text-slate-950 scale-105 shadow-sm' : ''}`}>
+                  <CalendarDays className="w-5 h-5" />
+                </div>
+                <span className="mt-0.5">Calendar</span>
+              </>
+            )}
+          </NavLink>
+
+          <NavLink
+            to="/billing"
+            className={({ isActive }) => `flex flex-col items-center justify-center flex-1 py-1 text-[10px] font-bold ${
+              isActive ? 'text-slate-900' : 'text-slate-500'
+            }`}
+          >
+            {({ isActive }) => (
+              <>
+                <div className={`p-2 px-4 rounded-full transition-all ${isActive ? 'bg-[#5eead4] text-slate-950 scale-105 shadow-sm' : ''}`}>
+                  <CreditCard className="w-5 h-5" />
+                </div>
+                <span className="mt-0.5">Billing</span>
+              </>
+            )}
+          </NavLink>
+
+          <NavLink
+            to="/more"
+            className={({ isActive }) => `flex flex-col items-center justify-center flex-1 py-1 text-[10px] font-bold ${
+              isActive ? 'text-slate-900' : 'text-slate-500'
+            }`}
+          >
+            {({ isActive }) => (
+              <>
+                <div className={`p-2 px-4 rounded-full transition-all ${isActive ? 'bg-[#5eead4] text-slate-950 scale-105 shadow-sm' : ''}`}>
+                  <Menu className="w-5 h-5" />
+                </div>
+                <span className="mt-0.5">More</span>
+              </>
+            )}
+          </NavLink>
+        </div>
       </div>
     </div>
   );

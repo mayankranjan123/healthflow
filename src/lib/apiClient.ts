@@ -925,6 +925,12 @@ export interface DashboardDataDto {
   patientFlow: PatientFlowItemDto[];
   weeklyRevenue: WeeklyRevenueItemDto[];
   timewiseAppointments: TimewiseAppointmentDto[];
+  todayRevenue?: number;
+  todayOpenInvoicesCount?: number;
+  monthlyRevenue?: number;
+  appointmentsRemainingCount?: number;
+  totalPatientsChangeText?: string;
+  monthlyRevenueChangeText?: string;
 }
 
 export const reportService = {

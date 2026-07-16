@@ -221,7 +221,7 @@ export const AddAppointmentForm: React.FC<AddAppointmentFormProps> = ({
 
         {isNewPatient ? (
           <div className="space-y-3 pt-1">
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <Input
                 label="First Name"
                 placeholder="Enter first name"
@@ -240,7 +240,7 @@ export const AddAppointmentForm: React.FC<AddAppointmentFormProps> = ({
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <Input
                 label="Mobile Phone"
                 placeholder="+91 99999-99999"
@@ -297,7 +297,7 @@ export const AddAppointmentForm: React.FC<AddAppointmentFormProps> = ({
         />
 
         {/* Date & Time */}
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <DatePicker
             label="Appointment Date"
             value={appointmentDate}
@@ -315,7 +315,7 @@ export const AddAppointmentForm: React.FC<AddAppointmentFormProps> = ({
         </div>
 
         {/* Visit Type & Status */}
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <Select
             label="Visit Type"
             value={visitType}

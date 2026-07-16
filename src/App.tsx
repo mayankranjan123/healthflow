@@ -13,6 +13,7 @@ import { UsersPage } from './features/users/pages/UsersPage';
 import { SettingsPage } from './features/settings/pages/SettingsPage';
 import { SetPasswordPage } from './features/auth/pages/SetPasswordPage';
 import { ProfilePage } from './features/profile/pages/ProfilePage';
+import { MorePage } from './features/more/pages/MorePage';
 import { mockUsersApi } from './features/users/utils/mockUsersApi';
 
 interface CurrentUser {
@@ -162,6 +163,7 @@ export default function App() {
                     element={hasModulePermission('settings', currentUser.role) ? <SettingsPage /> : <Navigate to="/dashboard" replace />} 
                   />
                   <Route path="/profile" element={<ProfilePage />} />
+                  <Route path="/more" element={<MorePage currentUser={currentUser} onLogout={handleLogout} />} />
                   
                   {/* Default Sub-Route Redirect */}
                   <Route path="*" element={<Navigate to="/dashboard" replace />} />

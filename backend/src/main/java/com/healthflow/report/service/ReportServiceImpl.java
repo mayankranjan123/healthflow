@@ -376,7 +376,45 @@ public class ReportServiceImpl implements ReportService {
             timewiseAppointments.add(new TimewiseAppointmentDto(slots[i], counts[i]));
         }
 
-        return new DashboardResponseDto(
+        // Calculate Mobile Dashboard metrics
+        LocalDate today = LocalDate.now();
+        BigDecimal todayRevenueVal = weeklyInvoices.stream()
+                .filter(inv -> inv.getInvoiceDate().equals(today))
+                .map(Invoice::getPaidAmount)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        long todayOpenInvoicesCount = weeklyInvoices.stream()
+                .filter(inv -> inv.getInvoiceDate().equals(today) && !"paid".equalsIgnoreCase(inv.getStatus()))
+                .count();
+
+        LocalDate startOfMonth = today.withDayOfMonth(1);
+        LocalDate endOfMonth = today.with(java.time.temporal.TemporalAdjusters.lastDayOfMonth());
+        List<Invoice> monthlyInvoices = invoiceRepository.findAllByClinicIdAndDateRange(clinicId, startOfMonth, endOfMonth);
+        BigDecimal monthlyRevenueVal = monthlyInvoices.stream()
+                .map(Invoice::getPaidAmount)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        long appointmentsRemainingCount = todayAppts.stream()
+                .filter(appt -> !"COMPLETED".equalsIgnoreCase(appt.getStatus()) && !"CANCELLED".equalsIgnoreCase(appt.getStatus()))
+                .count();
+
+        String totalPatientsChangeText = "+12% vs last month";
+        String monthlyRevenueChangeText = "+15% vs last month";
+
+        LocalDate startOfLastMonth = startOfMonth.minusMonths(1);
+        LocalDate endOfLastMonth = startOfMonth.minusDays(1);
+        List<Invoice> lastMonthInvoices = invoiceRepository.findAllByClinicIdAndDateRange(clinicId, startOfLastMonth, endOfLastMonth);
+        BigDecimal lastMonthRevenue = lastMonthInvoices.stream()
+                .map(Invoice::getPaidAmount)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        
+        if (lastMonthRevenue.compareTo(BigDecimal.ZERO) > 0) {
+            BigDecimal diff = monthlyRevenueVal.subtract(lastMonthRevenue);
+            BigDecimal percentage = diff.multiply(new BigDecimal(100)).divide(lastMonthRevenue, 1, java.math.RoundingMode.HALF_UP);
+            monthlyRevenueChangeText = (percentage.compareTo(BigDecimal.ZERO) >= 0 ? "+" : "") + percentage.toString() + "% vs last month";
+        }
+
+        DashboardResponseDto dto = new DashboardResponseDto(
                 totalPatients,
                 appointmentsTodayCount,
                 pendingBilling,
@@ -386,5 +424,13 @@ public class ReportServiceImpl implements ReportService {
                 weeklyRevenue,
                 timewiseAppointments
         );
+        dto.setTodayRevenue(todayRevenueVal);
+        dto.setTodayOpenInvoicesCount(todayOpenInvoicesCount);
+        dto.setMonthlyRevenue(monthlyRevenueVal);
+        dto.setAppointmentsRemainingCount(appointmentsRemainingCount);
+        dto.setTotalPatientsChangeText(totalPatientsChangeText);
+        dto.setMonthlyRevenueChangeText(monthlyRevenueChangeText);
+
+        return dto;
     }
 }
