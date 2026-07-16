@@ -160,6 +160,8 @@ export const PatientsPage: React.FC = () => {
   const [fileCategoryFilter, setFileCategoryFilter] = useState('All');
   const [fileCurrentPage, setFileCurrentPage] = useState(1);
   const [fileRowsPerPage] = useState(5);
+  const [showUploadBanner, setShowUploadBanner] = useState(true);
+  const [mobileFileCategory, setMobileFileCategory] = useState('All');
 
   // --- FORM STATES ---
   // Register New Patient Form
@@ -2025,135 +2027,301 @@ export const PatientsPage: React.FC = () => {
 
           {/* 4. Files Tab Content */}
           {profileTab === 'files' && (
-            <div className="space-y-6">
-              {/* File Search and Category select */}
-              <div className="bg-white p-4 rounded-xl border border-slate-200 flex flex-col md:flex-row gap-4 items-center justify-between">
-                <div className="relative flex-1 w-full">
-                  <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                  <input
-                    id="search-file-input"
-                    type="text"
-                    placeholder="Search documents by name..."
-                    value={fileSearch}
-                    onChange={(e) => {
-                      setFileSearch(e.target.value);
-                      setFileCurrentPage(1);
-                    }}
-                    className="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm outline-none focus:border-brand-primary focus:bg-white focus:ring-1 focus:ring-brand-primary transition-all text-slate-700 font-medium"
-                  />
-                </div>
-                <div className="flex gap-3 w-full md:w-auto">
-                  <Select
-                    id="filter-file-category"
-                    options={[
-                      { value: 'All', label: 'All Categories' },
-                      { value: 'Lab Report', label: 'Lab Report' },
-                      { value: 'X-ray', label: 'X-ray' },
-                      { value: 'Scan', label: 'Scan' },
-                      { value: 'Prescription', label: 'Prescription' },
-                      { value: 'Other', label: 'Other' }
-                    ]}
-                    value={fileCategoryFilter}
-                    onChange={(e) => {
-                      setFileCategoryFilter(e.target.value);
-                      setFileCurrentPage(1);
-                    }}
-                    className="min-w-[160px]"
-                  />
-                  <Button id="upload-file-btn" onClick={() => setIsFileUploadOpen(true)} className="gap-2 shrink-0">
+            isMobile ? (
+              <div className="space-y-4 animate-fade-in-up pb-10">
+                {/* Upload Banner */}
+                {showUploadBanner && (
+                  <div className="bg-white border border-slate-200 rounded-2xl p-4 flex items-center justify-between shadow-3xs relative overflow-hidden">
+                    <div className="flex items-center gap-2.5">
+                      <Info className="w-5 h-5 text-blue-600 shrink-0" />
+                      <span className="text-xs font-semibold text-slate-700">Preparing secure upload...</span>
+                    </div>
+                    <button 
+                      onClick={() => setShowUploadBanner(false)}
+                      className="text-slate-400 hover:text-slate-650 cursor-pointer active:scale-90 transition-transform"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                    {/* Secure Line indicator at the very top */}
+                    <div className="absolute top-0 left-0 right-0 h-0.5 bg-blue-600" />
+                  </div>
+                )}
+
+                {/* Inline Search and Upload button */}
+                <div className="flex gap-2">
+                  <div className="relative flex-1">
+                    <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4" />
+                    <input
+                      id="search-file-input"
+                      type="text"
+                      placeholder="Search..."
+                      value={fileSearch}
+                      onChange={(e) => {
+                        setFileSearch(e.target.value);
+                        setFileCurrentPage(1);
+                      }}
+                      className="w-full pl-10 pr-3 h-11 bg-white border border-slate-200 rounded-xl text-sm outline-none focus:border-brand-primary focus:ring-1 focus:ring-brand-primary transition-all text-slate-700 font-medium shadow-3xs"
+                    />
+                  </div>
+                  <Button 
+                    id="upload-file-btn" 
+                    onClick={() => setIsFileUploadOpen(true)} 
+                    className="h-11 px-5 bg-brand-primary text-white rounded-xl font-semibold flex items-center gap-2 cursor-pointer shadow-3xs text-xs"
+                  >
                     <UploadCloud className="w-4 h-4" />
-                    <span>Upload File</span>
+                    <span>Upload</span>
                   </Button>
                 </div>
-              </div>
 
-              {/* Files Table list */}
-              <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-                <table className="w-full text-left border-collapse">
-                  <thead className="bg-slate-50 border-b border-slate-100">
-                    <tr>
-                      <th className="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-slate-400">File Name</th>
-                      <th className="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-slate-400">Category</th>
-                      <th className="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-slate-400 font-mono">Date Uploaded</th>
-                      <th className="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-slate-400">Size & Type</th>
-                      <th className="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-slate-400 text-right">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-50 text-sm">
-                    {filePaginated.length === 0 ? (
+                {/* Horizontally Scrollable Tabs */}
+                {(() => {
+                  const allFilesCount = fileTotalRows || patientFiles.length;
+                  return (
+                    <div className="flex gap-2 overflow-x-auto no-scrollbar py-1">
+                      {[
+                        { key: 'All', label: `All Files (${allFilesCount})` },
+                        { key: 'Reports', label: 'Reports' },
+                        { key: 'Imaging', label: 'Imaging' },
+                        { key: 'Labs', label: 'Labs' }
+                      ].map((tab) => {
+                        const isActive = mobileFileCategory === tab.key;
+                        return (
+                          <button
+                            key={tab.key}
+                            onClick={() => {
+                              setMobileFileCategory(tab.key);
+                              setFileCurrentPage(1);
+                            }}
+                            className={`px-4.5 py-2 rounded-full font-bold text-xs whitespace-nowrap transition-all shadow-3xs cursor-pointer ${
+                              isActive
+                                ? 'bg-[#0b6466] text-white'
+                                : 'bg-slate-100 text-slate-500 hover:bg-slate-200'
+                            }`}
+                          >
+                            {tab.label}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  );
+                })()}
+
+                {/* List of Files */}
+                {(() => {
+                  const matchedFiles = patientFiles.filter((file) => {
+                    if (mobileFileCategory === 'Reports') {
+                      return file.category === 'Prescription' || file.category === 'Other';
+                    }
+                    if (mobileFileCategory === 'Imaging') {
+                      return file.category === 'X-ray' || file.category === 'Scan';
+                    }
+                    if (mobileFileCategory === 'Labs') {
+                      return file.category === 'Lab Report';
+                    }
+                    return true; // 'All'
+                  });
+
+                  if (matchedFiles.length === 0) {
+                    return (
+                      <div className="bg-white border border-slate-200 rounded-2xl p-8 text-center shadow-3xs text-slate-400 font-medium text-sm">
+                        No files found matching the category.
+                      </div>
+                    );
+                  }
+
+                  return (
+                    <div className="space-y-3">
+                      {matchedFiles.map((file) => {
+                        // Dynamic icon selection
+                        let iconEl = <FileText className="w-5 h-5 text-blue-600" />;
+                        let bgClass = "bg-blue-50/80";
+
+                        if (file.category === 'X-ray') {
+                          iconEl = <Eye className="w-5 h-5 text-emerald-600" />;
+                          bgClass = "bg-emerald-50/80";
+                        } else if (file.category === 'Scan') {
+                          iconEl = <FlaskConical className="w-5 h-5 text-slate-650" />;
+                          bgClass = "bg-slate-100/80";
+                        } else if (file.category === 'Lab Report') {
+                          iconEl = <FileText className="w-5 h-5 text-rose-600" />;
+                          bgClass = "bg-rose-50/80";
+                        }
+
+                        return (
+                          <div
+                            key={file.id}
+                            className="bg-white border border-slate-200 rounded-2xl p-4 flex items-center justify-between shadow-3xs gap-3"
+                          >
+                            <div className="flex items-center gap-3.5 min-w-0 flex-1">
+                              <div className={`w-11 h-11 ${bgClass} rounded-xl flex items-center justify-center shrink-0`}>
+                                {iconEl}
+                              </div>
+                              <div className="min-w-0 flex-1">
+                                <h4 className="font-bold text-slate-800 text-sm leading-tight truncate">
+                                  {file.fileName}
+                                </h4>
+                                <p className="text-[11px] text-slate-450 font-bold mt-1">
+                                  {file.uploadedDate} • {file.size}
+                                </p>
+                              </div>
+                            </div>
+                            <button
+                              onClick={() => {
+                                alert(`Mock download for file ${file.fileName} initiated successfully.`);
+                              }}
+                              className="w-10 h-10 border border-slate-200 rounded-full flex items-center justify-center text-slate-500 hover:text-slate-800 active:scale-95 transition-all shadow-3xs cursor-pointer shrink-0"
+                            >
+                              <Download className="w-4 h-4 text-blue-600" />
+                            </button>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  );
+                })()}
+
+                {/* HIPAA box */}
+                <div className="bg-slate-100 border border-slate-200/80 rounded-2xl p-4.5 flex gap-3 text-left shadow-3xs">
+                  <CheckCircle className="w-5 h-5 text-emerald-600 shrink-0 mt-0.5" />
+                  <div className="space-y-1">
+                    <span className="font-display font-extrabold text-slate-800 text-xs tracking-wide block uppercase">Secure & HIPAA Compliant</span>
+                    <p className="text-[11px] text-slate-500 font-semibold leading-relaxed">
+                      All medical documents are encrypted with AES-256 standards. Access is restricted to authorized clinical staff only.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-6">
+                {/* File Search and Category select */}
+                <div className="bg-white p-4 rounded-xl border border-slate-200 flex flex-col md:flex-row gap-4 items-center justify-between">
+                  <div className="relative flex-1 w-full">
+                    <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                    <input
+                      id="search-file-input"
+                      type="text"
+                      placeholder="Search documents by name..."
+                      value={fileSearch}
+                      onChange={(e) => {
+                        setFileSearch(e.target.value);
+                        setFileCurrentPage(1);
+                      }}
+                      className="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm outline-none focus:border-brand-primary focus:bg-white focus:ring-1 focus:ring-brand-primary transition-all text-slate-700 font-medium"
+                    />
+                  </div>
+                  <div className="flex gap-3 w-full md:w-auto">
+                    <Select
+                      id="filter-file-category"
+                      options={[
+                        { value: 'All', label: 'All Categories' },
+                        { value: 'Lab Report', label: 'Lab Report' },
+                        { value: 'X-ray', label: 'X-ray' },
+                        { value: 'Scan', label: 'Scan' },
+                        { value: 'Prescription', label: 'Prescription' },
+                        { value: 'Other', label: 'Other' }
+                      ]}
+                      value={fileCategoryFilter}
+                      onChange={(e) => {
+                        setFileCategoryFilter(e.target.value);
+                        setFileCurrentPage(1);
+                      }}
+                      className="min-w-[160px]"
+                    />
+                    <Button id="upload-file-btn" onClick={() => setIsFileUploadOpen(true)} className="gap-2 shrink-0">
+                      <UploadCloud className="w-4 h-4" />
+                      <span>Upload File</span>
+                    </Button>
+                  </div>
+                </div>
+
+                {/* Files Table list */}
+                <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                  <table className="w-full text-left border-collapse">
+                    <thead className="bg-slate-50 border-b border-slate-100">
                       <tr>
-                        <td colSpan={5} className="px-6 py-12 text-center text-slate-500 font-medium">
-                          No files found matching the search filters. Try uploading a new attachment.
-                        </td>
+                        <th className="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-slate-400">File Name</th>
+                        <th className="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-slate-400">Category</th>
+                        <th className="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-slate-400 font-mono">Date Uploaded</th>
+                        <th className="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-slate-400">Size & Type</th>
+                        <th className="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-slate-400 text-right">Actions</th>
                       </tr>
-                    ) : (
-                      filePaginated.map((file) => (
-                        <tr key={file.id} className="hover:bg-slate-50/50 transition-colors">
-                          <td className="px-6 py-4">
-                            <div className="flex items-center gap-2">
-                              <FileText className="w-4 h-4 text-slate-400 shrink-0" />
-                              <span className="font-semibold text-slate-800">{file.fileName}</span>
-                            </div>
-                          </td>
-                          <td className="px-6 py-4">
-                            <Badge variant={
-                              file.category === 'Lab Report' ? 'info' :
-                                file.category === 'X-ray' ? 'danger' :
-                                  file.category === 'Scan' ? 'warning' :
-                                    file.category === 'Prescription' ? 'success' : 'neutral'
-                            }>
-                              {file.category}
-                            </Badge>
-                          </td>
-                          <td className="px-6 py-4 text-xs text-slate-500 font-medium font-mono">{file.uploadedDate}</td>
-                          <td className="px-6 py-4">
-                            <span className="text-xs text-slate-600 bg-slate-100 px-2 py-0.5 rounded font-mono">
-                              {file.size} ({file.fileType})
-                            </span>
-                          </td>
-                          <td className="px-6 py-4 text-right">
-                            <div className="flex justify-end gap-1.5">
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => {
-                                  alert(`Mock download for file ${file.fileName} initiated successfully.`);
-                                }}
-                                className="p-1.5 border-slate-200 text-slate-500 hover:text-slate-800"
-                                title="Download"
-                              >
-                                <Download className="w-3.5 h-3.5" />
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => handleDeleteAttachment(file.id)}
-                                className="p-1.5 border-slate-200 text-rose-500 hover:bg-rose-50 hover:border-rose-200"
-                                title="Delete"
-                              >
-                                <Trash2 className="w-3.5 h-3.5" />
-                              </Button>
-                            </div>
+                    </thead>
+                    <tbody className="divide-y divide-slate-50 text-sm">
+                      {filePaginated.length === 0 ? (
+                        <tr>
+                          <td colSpan={5} className="px-6 py-12 text-center text-slate-500 font-medium">
+                            No files found matching the search filters. Try uploading a new attachment.
                           </td>
                         </tr>
-                      ))
-                    )}
-                  </tbody>
-                </table>
+                      ) : (
+                        filePaginated.map((file) => (
+                          <tr key={file.id} className="hover:bg-slate-50/50 transition-colors">
+                            <td className="px-6 py-4">
+                              <div className="flex items-center gap-2">
+                                <FileText className="w-4 h-4 text-slate-400 shrink-0" />
+                                <span className="font-semibold text-slate-800">{file.fileName}</span>
+                              </div>
+                            </td>
+                            <td className="px-6 py-4">
+                              <Badge variant={
+                                file.category === 'Lab Report' ? 'info' :
+                                  file.category === 'X-ray' ? 'danger' :
+                                    file.category === 'Scan' ? 'warning' :
+                                      file.category === 'Prescription' ? 'success' : 'neutral'
+                              }>
+                                {file.category}
+                              </Badge>
+                            </td>
+                            <td className="px-6 py-4 text-xs text-slate-500 font-medium font-mono">{file.uploadedDate}</td>
+                            <td className="px-6 py-4">
+                              <span className="text-xs text-slate-600 bg-slate-100 px-2 py-0.5 rounded font-mono">
+                                {file.size} ({file.fileType})
+                              </span>
+                            </td>
+                            <td className="px-6 py-4 text-right">
+                              <div className="flex justify-end gap-1.5">
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => {
+                                    alert(`Mock download for file ${file.fileName} initiated successfully.`);
+                                  }}
+                                  className="p-1.5 border-slate-200 text-slate-500 hover:text-slate-800"
+                                  title="Download"
+                                >
+                                  <Download className="w-3.5 h-3.5" />
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => handleDeleteAttachment(file.id)}
+                                  className="p-1.5 border-slate-200 text-rose-500 hover:bg-rose-50 hover:border-rose-200"
+                                  title="Delete"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </Button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))
+                      )}
+                    </tbody>
+                  </table>
 
-                {fileTotalRows > 0 && (
-                  <Pagination
-                    currentPage={fileCurrentPage}
-                    totalPages={fileTotalPages}
-                    onPageChange={setFileCurrentPage}
-                    totalItems={fileTotalRows}
-                    itemsPerPage={fileRowsPerPage}
-                    itemNameSingular="document"
-                    itemNamePlural="documents"
-                  />
-                )}
+                  {fileTotalRows > 0 && (
+                    <Pagination
+                      currentPage={fileCurrentPage}
+                      totalPages={fileTotalPages}
+                      onPageChange={setFileCurrentPage}
+                      totalItems={fileTotalRows}
+                      itemsPerPage={fileRowsPerPage}
+                      itemNameSingular="document"
+                      itemNamePlural="documents"
+                    />
+                  )}
+                </div>
               </div>
-            </div>
+            )
           )}
         </div>
       )}
