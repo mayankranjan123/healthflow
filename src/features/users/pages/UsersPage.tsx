@@ -705,20 +705,26 @@ export const UsersPage: React.FC<UsersPageProps> = ({ hideHeader = false }) => {
             </div>
           ) : (
             <div className="space-y-6">
-              <div className="flex items-center gap-4 pb-4 border-b border-slate-100">
-                <div className="w-16 h-16 rounded-full overflow-hidden bg-slate-100 border border-slate-200">
+              {/* Header profile section - Centered */}
+              <div className="flex flex-col items-center pb-4 border-b border-slate-100">
+                <div className="w-28 h-28 rounded-full overflow-hidden bg-slate-50 border-4 border-slate-100 shadow-sm relative">
                   {viewingRecord.avatarUrl ? (
                     <img src={viewingRecord.avatarUrl} alt="" className="w-full h-full object-cover" />
                   ) : (
-                    <div className="w-full h-full flex items-center justify-center font-bold text-slate-500 uppercase text-lg">
+                    <div className="w-full h-full flex items-center justify-center font-extrabold text-slate-400 uppercase text-2xl font-display">
                       {viewingRecord.name ? viewingRecord.name.replace('Dr. ', '').split(' ').map((n: any) => n[0]).join('') : 'U'}
                     </div>
                   )}
+                  <span className={`absolute bottom-1 right-1 w-4.5 h-4.5 rounded-full border-2 border-white ${viewingRecord.isActive ? 'bg-emerald-500' : 'bg-slate-400'}`} />
                 </div>
-                <div>
-                  <h4 className="font-bold text-slate-800 text-lg">{viewingRecord.name}</h4>
-                  <p className="text-xs text-slate-400 font-bold font-mono">{viewingRecord.id}</p>
-                  <span className={`inline-flex items-center gap-1.5 mt-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${viewingRecord.isActive ? 'bg-emerald-50 text-emerald-700 border border-emerald-100' : 'bg-slate-100 text-slate-500 border border-slate-200'
+                <h4 className="font-display font-extrabold text-slate-800 text-xl tracking-tight text-center mt-4">
+                  {viewingRecord.name}
+                </h4>
+                <p className="text-xs text-slate-455 font-bold font-mono tracking-wider text-center mt-1.5 uppercase bg-slate-50 border border-slate-100 px-2 py-0.5 rounded">
+                  {viewingRecord.id}
+                </p>
+                <div className="flex justify-center mt-3">
+                  <span className={`inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full text-[10px] font-extrabold uppercase tracking-wider ${viewingRecord.isActive ? 'bg-teal-50 text-teal-700 border border-teal-150' : 'bg-slate-155 text-slate-500 border border-slate-200'
                     }`}>
                     <span className={`w-1.5 h-1.5 rounded-full ${viewingRecord.isActive ? 'bg-emerald-500 animate-pulse' : 'bg-slate-400'}`} />
                     {viewingRecord.isActive ? 'Active Authorization' : 'Inactive'}
@@ -726,122 +732,149 @@ export const UsersPage: React.FC<UsersPageProps> = ({ hideHeader = false }) => {
                 </div>
               </div>
 
-              {/* Doctor Extended Fields */}
+              {/* Contact coordinates list - styled row blocks */}
+              <div className="space-y-3">
+                <div className="flex items-center justify-between border-b border-slate-150 pb-1.5">
+                  <span className="text-[10px] font-bold text-blue-600 uppercase tracking-widest">Contact Information</span>
+                </div>
+                <div className="space-y-3">
+                  <div className="flex items-center gap-3.5 bg-slate-50/50 p-3 rounded-2xl border border-slate-100">
+                    <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center text-blue-600 shrink-0 border border-blue-100">
+                      <Mail className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <span className="text-[10px] font-bold text-slate-450 uppercase tracking-wider block">Email Address</span>
+                      <span className="text-sm font-semibold text-slate-750">{viewingRecord.email}</span>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-3.5 bg-slate-50/50 p-3 rounded-2xl border border-slate-100">
+                    <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center text-blue-600 shrink-0 border border-blue-100">
+                      <Phone className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <span className="text-[10px] font-bold text-slate-455 uppercase tracking-wider block">Mobile Contact</span>
+                      <span className="text-sm font-semibold text-slate-755">{viewingRecord.mobile}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Tab/Details Layout based on role */}
               {viewingRecordType === 'doctor' ? (
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-4 gap-x-6 text-sm">
-                  <div className="space-y-1">
-                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block">Specialization</span>
-                    <div className="font-semibold text-slate-700 flex items-center gap-2">
-                      <Activity className="w-4 h-4 text-blue-600" />
-                      <span>{viewingRecord.specialization}</span>
+                <div className="space-y-6">
+                  {/* Section 1: Clinical Profile */}
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between border-b border-slate-150 pb-1.5">
+                      <span className="text-[10px] font-bold text-blue-600 uppercase tracking-widest">Clinical Profile</span>
                     </div>
-                  </div>
-
-                  <div className="space-y-1">
-                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block">Qualification</span>
-                    <div className="font-semibold text-slate-700 flex items-center gap-2">
-                      <Briefcase className="w-4 h-4 text-blue-600" />
-                      <span>{viewingRecord.qualification}</span>
-                    </div>
-                  </div>
-
-                  <div className="space-y-1">
-                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block">Experience</span>
-                    <div className="font-semibold text-slate-700">{viewingRecord.experience} in medicine</div>
-                  </div>
-
-                  <div className="space-y-1">
-                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block">Consultation Fee</span>
-                    <div className="font-bold text-blue-600 flex items-center gap-1">
-                      <DollarSign className="w-4 h-4 text-blue-600" />
-                      <span>${typeof viewingRecord.fee === 'number' ? viewingRecord.fee.toFixed(2) : '0.00'}</span>
-                    </div>
-                  </div>
-
-                  <div className="space-y-1">
-                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block">Follow-up Fee</span>
-                    <div className="font-bold text-blue-600 flex items-center gap-1">
-                      <DollarSign className="w-4 h-4 text-blue-600" />
-                      <span>${typeof viewingRecord.followupFee === 'number' ? viewingRecord.followupFee.toFixed(2) : (Number(viewingRecord.followupFee || 60).toFixed(2))}</span>
-                    </div>
-                  </div>
-
-                  <div className="space-y-1">
-                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block">Total Completed Consultations</span>
-                    <div className="font-semibold text-slate-700 flex items-center gap-2">
-                      <Activity className="w-4 h-4 text-blue-600" />
-                      <span>{viewingRecord.totalConsultations?.toLocaleString() ?? 0}</span>
-                    </div>
-                  </div>
-
-                  <div className="space-y-1">
-                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block">Working Hours</span>
-                    <div className="font-semibold text-slate-700 flex items-center gap-2">
-                      <Clock className="w-4 h-4 text-blue-600" />
-                      <span>{viewingRecord.workingHours}</span>
-                    </div>
-                  </div>
-
-                  <div className="space-y-1">
-                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block">Registration Number</span>
-                    <div className="font-semibold text-slate-700 flex items-center gap-2">
-                      <FileText className="w-4 h-4 text-blue-600" />
-                      <span className="font-mono">{viewingRecord.registrationNumber}</span>
-                    </div>
-                  </div>
-
-                  <div className="space-y-1">
-                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block">Joining Date</span>
-                    <div className="font-semibold text-slate-700">{viewingRecord.joiningDate}</div>
-                  </div>
-
-                  <div className="space-y-1 sm:col-span-2">
-                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block">Contact Coordinates</span>
-                    <div className="space-y-1.5 mt-1 font-medium text-slate-600">
-                      <div className="flex items-center gap-2">
-                        <Mail className="w-4 h-4 text-slate-400" />
-                        <span>{viewingRecord.email}</span>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="bg-slate-50/50 p-3 rounded-2xl border border-slate-100">
+                        <span className="text-[10px] font-bold text-slate-450 uppercase tracking-wider block">Specialization</span>
+                        <span className="text-sm font-semibold text-slate-755 mt-1 block flex items-center gap-1.5 truncate">
+                          <Activity className="w-3.5 h-3.5 text-blue-500 shrink-0" />
+                          {viewingRecord.specialization}
+                        </span>
                       </div>
-                      <div className="flex items-center gap-2">
-                        <Phone className="w-4 h-4 text-slate-400" />
-                        <span>{viewingRecord.mobile}</span>
+                      <div className="bg-slate-50/50 p-3 rounded-2xl border border-slate-100">
+                        <span className="text-[10px] font-bold text-slate-450 uppercase tracking-wider block">Qualification</span>
+                        <span className="text-sm font-semibold text-slate-755 mt-1 block flex items-center gap-1.5 truncate">
+                          <Briefcase className="w-3.5 h-3.5 text-blue-500 shrink-0" />
+                          {viewingRecord.qualification}
+                        </span>
+                      </div>
+                      <div className="bg-slate-50/50 p-3 rounded-2xl border border-slate-100 col-span-2">
+                        <span className="text-[10px] font-bold text-slate-450 uppercase tracking-wider block">Medical Registration No</span>
+                        <span className="text-sm font-semibold text-slate-755 mt-1 block font-mono">
+                          {viewingRecord.registrationNumber}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Section 2: Clinical Metrics & Fees */}
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between border-b border-slate-150 pb-1.5">
+                      <span className="text-[10px] font-bold text-blue-600 uppercase tracking-widest">Financials & Consultations</span>
+                    </div>
+                    <div className="grid grid-cols-3 gap-2.5">
+                      <div className="bg-slate-50/50 p-3 rounded-2xl border border-slate-100 text-center flex flex-col justify-between">
+                        <span className="text-[9px] font-bold text-slate-450 uppercase tracking-wider block leading-tight">OPD Fee</span>
+                        <span className="text-sm font-extrabold text-blue-600 mt-1.5 block font-mono">
+                          ₹{viewingRecord.fee?.toLocaleString('en-IN')}
+                        </span>
+                      </div>
+                      <div className="bg-slate-50/50 p-3 rounded-2xl border border-slate-100 text-center flex flex-col justify-between">
+                        <span className="text-[9px] font-bold text-slate-450 uppercase tracking-wider block leading-tight">Follow-up</span>
+                        <span className="text-sm font-extrabold text-blue-600 mt-1.5 block font-mono">
+                          ₹{(viewingRecord.followupFee || 60)?.toLocaleString('en-IN')}
+                        </span>
+                      </div>
+                      <div className="bg-slate-50/50 p-3 rounded-2xl border border-slate-100 text-center flex flex-col justify-between">
+                        <span className="text-[9px] font-bold text-slate-455 uppercase tracking-wider block leading-tight">Consults</span>
+                        <span className="text-sm font-extrabold text-emerald-600 mt-1.5 block font-mono">
+                          {viewingRecord.totalConsultations ?? 0}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Section 3: Logistics & Bio */}
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between border-b border-slate-150 pb-1.5">
+                      <span className="text-[10px] font-bold text-blue-600 uppercase tracking-widest">Logistics & Biography</span>
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="bg-slate-50/50 p-3 rounded-2xl border border-slate-100">
+                        <span className="text-[10px] font-bold text-slate-455 uppercase tracking-wider block">Experience</span>
+                        <span className="text-sm font-semibold text-slate-755 mt-1 block">
+                          {viewingRecord.experience}
+                        </span>
+                      </div>
+                      <div className="bg-slate-50/50 p-3 rounded-2xl border border-slate-100">
+                        <span className="text-[10px] font-bold text-slate-455 uppercase tracking-wider block">Joining Date</span>
+                        <span className="text-sm font-semibold text-slate-755 mt-1 block">
+                          {viewingRecord.joiningDate}
+                        </span>
+                      </div>
+                      <div className="bg-slate-50/50 p-3 rounded-2xl border border-slate-100 col-span-2">
+                        <span className="text-[10px] font-bold text-slate-450 uppercase tracking-wider block">Working Hours</span>
+                        <span className="text-sm font-semibold text-slate-755 mt-1 block flex items-center gap-1.5">
+                          <Clock className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                          {viewingRecord.workingHours}
+                        </span>
                       </div>
                     </div>
                   </div>
                 </div>
               ) : (
-                // Simple Contact Fields for Admin / Staff
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-4 gap-x-6 text-sm">
-                  <div className="space-y-1">
-                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block">Email Address</span>
-                    <div className="font-semibold text-slate-700 flex items-center gap-2">
-                      <Mail className="w-4 h-4 text-blue-600" />
-                      <span>{viewingRecord.email}</span>
+                /* Simple Contact Fields for Admin / Staff */
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between border-b border-slate-150 pb-1.5">
+                    <span className="text-[10px] font-bold text-blue-600 uppercase tracking-widest">Regional & Identity</span>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="bg-slate-50/50 p-3.5 rounded-2xl border border-slate-100 text-center">
+                      <span className="text-[10px] font-bold text-slate-450 uppercase tracking-wider block">Gender</span>
+                      <span className={`text-sm font-semibold block mt-1 ${viewingRecord.gender ? 'text-slate-750' : 'text-slate-400 italic'}`}>
+                        {viewingRecord.gender || 'Not specified'}
+                      </span>
                     </div>
-                  </div>
-
-                  <div className="space-y-1">
-                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block">Mobile Contact</span>
-                    <div className="font-semibold text-slate-700 flex items-center gap-2">
-                      <Phone className="w-4 h-4 text-blue-600" />
-                      <span>{viewingRecord.mobile}</span>
+                    <div className="bg-slate-50/50 p-3.5 rounded-2xl border border-slate-100 text-center">
+                      <span className="text-[10px] font-bold text-slate-450 uppercase tracking-wider block">Date of Birth</span>
+                      <span className={`text-sm font-semibold block mt-1 ${viewingRecord.dateOfBirth ? 'text-slate-755' : 'text-slate-400 italic'}`}>
+                        {viewingRecord.dateOfBirth || 'Not specified'}
+                      </span>
                     </div>
-                  </div>
-
-                  <div className="space-y-1">
-                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block">Gender</span>
-                    <div className="font-semibold text-slate-700">{viewingRecord.gender || 'Not specified'}</div>
-                  </div>
-
-                  <div className="space-y-1">
-                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block">Date of Birth</span>
-                    <div className="font-semibold text-slate-700">{viewingRecord.dateOfBirth || 'Not specified'}</div>
                   </div>
                 </div>
               )}
 
-              <div className="flex justify-end pt-4 border-t border-slate-100">
-                <Button onClick={closeViewModal}>Close Details</Button>
+              {/* Full width Close details button */}
+              <div className="flex pt-4 border-t border-slate-100 mt-6 w-full">
+                <Button onClick={closeViewModal} className="w-full py-3 bg-brand-primary text-white rounded-xl font-bold text-sm justify-center shadow-sm">
+                  Close Details
+                </Button>
               </div>
             </div>
           )
