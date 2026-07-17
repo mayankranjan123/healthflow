@@ -2739,67 +2739,43 @@ export const PatientsPage: React.FC = () => {
         {isMobile ? (
           <div className="flex flex-col h-full -m-6 bg-slate-50/50">
             {/* Custom Mobile Header */}
-            <div className="flex items-center justify-between px-6 py-4.5 bg-white border-b border-slate-100 shrink-0 relative">
-              <button
-                type="button"
-                onClick={() => setIsCreatePrescriptionOpen(false)}
-                className="text-slate-700 hover:bg-slate-100 p-1.5 rounded-full cursor-pointer transition-colors"
-              >
-                <ArrowLeft className="w-5 h-5" />
-              </button>
-              <h3 className="font-display font-extrabold text-slate-800 text-base absolute left-1/2 -translate-x-1/2">
-                Compose Prescription
-              </h3>
-              <button
-                type="button"
-                onClick={handleCreatePrescriptionSubmit}
-                className="text-blue-600 hover:text-blue-800 font-extrabold text-xs tracking-wider cursor-pointer active:scale-95 transition-all"
-              >
-                SAVE
-              </button>
+            <div className="flex items-center justify-between bg-white px-6 py-4 border-b border-slate-200 sticky top-0 z-30 shadow-sm h-18 shrink-0">
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setIsCreatePrescriptionOpen(false)}
+                  className="text-slate-600 hover:text-slate-900 p-1 rounded-full hover:bg-slate-100 cursor-pointer"
+                >
+                  <ArrowLeft className="w-6 h-6" />
+                </button>
+                <h2 className="text-lg font-bold text-[#094093] font-display ml-1">
+                  New Prescription
+                </h2>
+              </div>
+              <div>
+                <img
+                  src={currentUser?.avatarUrl || "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?q=80&w=120&auto=format&fit=crop"}
+                  alt="Avatar"
+                  className="w-9 h-9 rounded-full object-cover border border-slate-200 cursor-pointer shadow-xs"
+                />
+              </div>
             </div>
 
             {/* Scrollable form body */}
             <form onSubmit={handleCreatePrescriptionSubmit} className="flex-1 flex flex-col justify-between overflow-hidden">
-              <div className="flex-1 p-6 overflow-y-auto space-y-5">
-                {/* Patient Header Box */}
-                {selectedPatient && (
-                  <div className="bg-slate-100/50 border border-slate-200/60 rounded-2xl p-4 flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 shrink-0">
-                      <User className="w-5 h-5" />
-                    </div>
-                    <div className="min-w-0 text-left">
-                      <h4 className="font-bold text-slate-800 text-sm leading-tight">
-                        {selectedPatient.firstName} {selectedPatient.lastName}
-                      </h4>
-                      <p className="text-[11px] text-slate-450 font-semibold mt-1">
-                        #{selectedPatient.patientNumber}  •  {(() => {
-                          if (!selectedPatient.dateOfBirth) return '';
-                          const birthDate = new Date(selectedPatient.dateOfBirth);
-                          const today = new Date();
-                          let age = today.getFullYear() - birthDate.getFullYear();
-                          const m = today.getMonth() - birthDate.getMonth();
-                          if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
-                            age--;
-                          }
-                          return age;
-                        })()} yrs
-                      </p>
-                    </div>
-                  </div>
-                )}
-
+              <div className="flex-1 p-6 overflow-y-auto space-y-6">
+                
                 {/* Prescribed By Selector */}
                 {currentUser?.role === 'DOCTOR' ? (
                   <div className="space-y-1.5 text-left">
-                    <span className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none">Prescribed By (Doctor)</span>
-                    <div className="px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold text-slate-700">
+                    <span className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none">Prescribed By (Doctor) *</span>
+                    <div className="px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold text-slate-700 shadow-3xs">
                       {doctorsList.find(d => d.email?.toLowerCase() === currentUser.email?.toLowerCase())?.name || (currentUser.firstName + " " + currentUser.lastName)}
                     </div>
                   </div>
                 ) : (
                   <div className="space-y-1.5 text-left">
-                    <span className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none">Prescribed By (Doctor)</span>
+                    <span className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none">Prescribed By (Doctor) *</span>
                     <Select
                       value={newPrescription.doctorId}
                       onChange={(e) => setNewPrescription({ ...newPrescription, doctorId: e.target.value })}
@@ -2819,7 +2795,7 @@ export const PatientsPage: React.FC = () => {
                     required
                   />
                   <Input
-                    label="Next Visit"
+                    label="Next Visit Date"
                     type="date"
                     value={newPrescription.nextVisitDate}
                     onChange={(e) => setNewPrescription({ ...newPrescription, nextVisitDate: e.target.value })}
@@ -2829,37 +2805,111 @@ export const PatientsPage: React.FC = () => {
                 {/* Diagnosis */}
                 <div className="space-y-1.5 text-left">
                   <span className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none">Diagnosis / Findings *</span>
-                  <textarea
+                  <Input
                     value={newPrescription.diagnosis}
                     onChange={(e) => setNewPrescription({ ...newPrescription, diagnosis: e.target.value })}
-                    className="w-full min-h-[80px] p-3 text-sm rounded-xl border border-slate-200 outline-none focus:border-brand-primary font-medium text-slate-700 bg-white"
-                    placeholder="e.g. Hypertension, suspected Type 2 Diabetes symptoms..."
+                    placeholder="e.g. Stage 1 Essential Hypertension"
                     required
                   />
                 </div>
 
-                {/* Medications section */}
-                <div className="space-y-3 pt-2">
+                {/* Symptoms */}
+                <div className="space-y-1.5 text-left">
+                  <span className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none">Symptoms</span>
+                  <textarea
+                    value={newPrescription.symptoms}
+                    onChange={(e) => setNewPrescription({ ...newPrescription, symptoms: e.target.value })}
+                    className="w-full min-h-[80px] p-3.5 text-sm rounded-xl border border-slate-200 outline-none focus:border-[#094093] font-medium text-slate-700 bg-white shadow-3xs"
+                    placeholder="Morning headaches, blood pressure 140/90..."
+                  />
+                </div>
+
+                {/* Clinical Notes */}
+                <div className="space-y-1.5 text-left">
+                  <span className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none">Clinical Notes</span>
+                  <textarea
+                    value={newPrescription.clinicalNotes}
+                    onChange={(e) => setNewPrescription({ ...newPrescription, clinicalNotes: e.target.value })}
+                    className="w-full min-h-[80px] p-3.5 text-sm rounded-xl border border-slate-200 outline-none focus:border-[#094093] font-medium text-slate-700 bg-white shadow-3xs"
+                    placeholder="Rhythm evaluation normal. Low sodium advice..."
+                  />
+                </div>
+
+                {/* Medicines Table */}
+                <div className="space-y-4 pt-2 border-t border-slate-100">
                   <div className="flex justify-between items-center">
-                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block leading-none">Medications</span>
-                    <span className="text-[9px] font-extrabold text-slate-400 uppercase block leading-none">At least one required</span>
+                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block leading-none">Medicines Table * (At least one required)</span>
                   </div>
 
-                  {/* Medicines List */}
-                  {medicinesList.length > 0 && (
-                    <div className="space-y-3">
+                  {/* Medicines Controller Add Card */}
+                  <div className="bg-slate-50 border border-slate-200/80 rounded-2xl p-4.5 space-y-4 text-left shadow-3xs">
+                    <Input
+                      label="Medicine Name"
+                      value={newMedicine.medicineName}
+                      onChange={(e) => setNewMedicine({ ...newMedicine, medicineName: e.target.value })}
+                      placeholder="Amlodipine / Paracetamol"
+                    />
+
+                    {/* Dosage, Freq, Duration Grid */}
+                    <div className="grid grid-cols-2 gap-3">
+                      <Input
+                        label="Dosage"
+                        value={newMedicine.dosage}
+                        onChange={(e) => setNewMedicine({ ...newMedicine, dosage: e.target.value })}
+                        placeholder="500 mg / 1 Puff"
+                      />
+                      <Input
+                        label="Frequency"
+                        value={newMedicine.frequency}
+                        onChange={(e) => setNewMedicine({ ...newMedicine, frequency: e.target.value })}
+                        placeholder="Once daily"
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3 items-end">
+                      <Input
+                        label="Duration"
+                        value={newMedicine.duration}
+                        onChange={(e) => setNewMedicine({ ...newMedicine, duration: e.target.value })}
+                        placeholder="7 Days"
+                      />
+                      <button
+                        type="button"
+                        onClick={handleAddMedicine}
+                        className="h-10 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold flex items-center justify-center gap-1.5 cursor-pointer shadow-3xs text-xs"
+                      >
+                        <Plus className="w-4 h-4" />
+                        <span>Add Med</span>
+                      </button>
+                    </div>
+
+                    <Input
+                      label="Instructions"
+                      value={newMedicine.instructions}
+                      onChange={(e) => setNewMedicine({ ...newMedicine, instructions: e.target.value })}
+                      placeholder="After food / Empty stomach / bedtime"
+                    />
+                  </div>
+
+                  {/* Already added medicines list */}
+                  {medicinesList.length === 0 ? (
+                    <p className="text-[11px] text-rose-600 font-bold italic bg-rose-50/60 p-3 rounded-xl border border-rose-150 text-center leading-normal">
+                      Please add at least one medicine using the controller above.
+                    </p>
+                  ) : (
+                    <div className="space-y-2.5">
                       {medicinesList.map((med) => (
                         <div
                           key={med.id}
-                          className="bg-white border border-slate-200 rounded-2xl p-4.5 flex items-center justify-between shadow-3xs text-left"
+                          className="bg-white border border-slate-200/90 rounded-2xl p-4 flex items-center justify-between shadow-3xs text-left"
                         >
-                          <div className="space-y-1">
-                            <h5 className="font-bold text-blue-600 text-sm leading-tight">{med.medicineName}</h5>
-                            <p className="text-[11px] text-slate-500 font-bold mt-0.5 leading-none">
-                              {med.dosage} &nbsp; {med.frequency}
+                          <div className="space-y-1 flex-1 min-w-0 pr-3">
+                            <h5 className="font-extrabold text-slate-800 text-sm leading-tight truncate">{med.medicineName}</h5>
+                            <p className="text-xs text-slate-500 font-bold mt-1.5 leading-none">
+                              {med.dosage} &nbsp;•&nbsp; {med.frequency} &nbsp;•&nbsp; {med.duration}
                             </p>
                             {med.instructions && (
-                              <p className="text-[10px] text-slate-400 font-medium italic mt-1 leading-tight">
+                              <p className="text-[10px] text-slate-400 font-semibold italic mt-1 leading-tight">
                                 {med.instructions}
                               </p>
                             )}
@@ -2867,128 +2917,52 @@ export const PatientsPage: React.FC = () => {
                           <button
                             type="button"
                             onClick={() => handleDeleteMedicine(med.id)}
-                            className="text-rose-500 hover:text-rose-700 p-2 shrink-0 cursor-pointer"
+                            className="text-rose-500 hover:text-rose-700 p-2 shrink-0 cursor-pointer hover:bg-rose-50 rounded-xl"
                           >
-                            <Trash2 className="w-4 h-4" />
+                            <Trash2 className="w-4.5 h-4.5" />
                           </button>
                         </div>
                       ))}
                     </div>
                   )}
-
-                  {/* Dashed placeholder card */}
-                  <div className="bg-slate-50/50 border border-dashed border-slate-200 rounded-2xl p-6 flex flex-col items-center justify-center gap-3">
-                    <div className="w-10 h-10 bg-slate-100 rounded-full flex items-center justify-center text-slate-400">
-                      <Pill className="w-5 h-5" />
-                    </div>
-                    <span className="text-xs text-slate-400 font-bold">No other medications added yet.</span>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const el = document.getElementById('new-entry-form-container');
-                        if (el) el.scrollIntoView({ behavior: 'smooth' });
-                      }}
-                      className="px-4 py-2 bg-brand-primary text-white font-bold text-xs rounded-xl shadow-3xs cursor-pointer active:scale-95 transition-all mt-1"
-                    >
-                      + ADD MEDICATION
-                    </button>
-                  </div>
-
-                  {/* New Entry box */}
-                  <div id="new-entry-form-container" className="bg-slate-100/50 border border-slate-200/80 rounded-2xl p-4.5 space-y-4 text-left">
-                    <div className="flex items-center gap-2 text-blue-700">
-                      <Plus className="w-4 h-4 text-blue-600 shrink-0" />
-                      <span className="font-display font-extrabold text-xs tracking-wide uppercase">New Entry</span>
-                    </div>
-
-                    <div className="space-y-3">
-                      <Input
-                        label="Medicine Name"
-                        value={newMedicine.medicineName}
-                        onChange={(e) => setNewMedicine({ ...newMedicine, medicineName: e.target.value })}
-                        placeholder="Medicine Name"
-                      />
-
-                      {/* Dosage, Freq, Duration Grid */}
-                      <div className="grid grid-cols-2 gap-3">
-                        <Input
-                          label="Dosage"
-                          value={newMedicine.dosage}
-                          onChange={(e) => setNewMedicine({ ...newMedicine, dosage: e.target.value })}
-                          placeholder="Dosage (e.g. 500mg)"
-                        />
-                        <Input
-                          label="Frequency"
-                          value={newMedicine.frequency}
-                          onChange={(e) => setNewMedicine({ ...newMedicine, frequency: e.target.value })}
-                          placeholder="Freq (e.g. 2x Daily)"
-                        />
-                      </div>
-
-                      <div className="grid grid-cols-2 gap-3 items-end">
-                        <Input
-                          label="Duration"
-                          value={newMedicine.duration}
-                          onChange={(e) => setNewMedicine({ ...newMedicine, duration: e.target.value })}
-                          placeholder="Duration (e.g. 7 Days)"
-                        />
-                        <button
-                          type="button"
-                          onClick={handleAddMedicine}
-                          className="h-10 bg-[#0b6466] hover:bg-teal-700 text-white rounded-xl font-bold flex items-center justify-center gap-1.5 cursor-pointer shadow-3xs text-xs"
-                        >
-                          <Plus className="w-4 h-4" />
-                          <span>ADD TO LIST</span>
-                        </button>
-                      </div>
-
-                      <Input
-                        label="Instructions (Optional)"
-                        value={newMedicine.instructions}
-                        onChange={(e) => setNewMedicine({ ...newMedicine, instructions: e.target.value })}
-                        placeholder="Instructions (Optional)"
-                      />
-                    </div>
-                  </div>
                 </div>
 
                 {/* Tests Recommended */}
-                <div className="space-y-1.5 text-left">
+                <div className="space-y-1.5 text-left border-t border-slate-100 pt-4">
                   <span className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none">Tests Recommended</span>
-                  <textarea
+                  <Input
                     value={newPrescription.testsRecommended}
                     onChange={(e) => setNewPrescription({ ...newPrescription, testsRecommended: e.target.value })}
-                    className="w-full min-h-[70px] p-3 text-sm rounded-xl border border-slate-200 outline-none focus:border-brand-primary font-medium text-slate-700 bg-white"
-                    placeholder="e.g. Lipid Profile, Complete Blood Count..."
+                    placeholder="e.g. Lipid Profile, Complete Blood Count, ECG"
                   />
                 </div>
 
-                {/* General Advice */}
+                {/* General Advice / Diet */}
                 <div className="space-y-1.5 text-left">
                   <span className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none">General Advice / Diet</span>
                   <textarea
                     value={newPrescription.advice}
                     onChange={(e) => setNewPrescription({ ...newPrescription, advice: e.target.value })}
-                    className="w-full min-h-[70px] p-3 text-sm rounded-xl border border-slate-200 outline-none focus:border-brand-primary font-medium text-slate-700 bg-white"
-                    placeholder="e.g. Low sodium diet, 30 min light walking..."
+                    className="w-full min-h-[85px] p-3.5 text-sm rounded-xl border border-slate-200 outline-none focus:border-[#094093] font-medium text-slate-700 bg-white shadow-3xs"
+                    placeholder="Please take medicines on time and review if symptoms"
                   />
                 </div>
               </div>
 
               {/* Bottom Sticky buttons */}
-              <div className="p-5 bg-white border-t border-slate-100 shrink-0 grid grid-cols-2 gap-3.5">
+              <div className="p-5 bg-white border-t border-slate-150 shrink-0 grid grid-cols-2 gap-3.5 shadow-lg">
                 <button
                   type="button"
                   onClick={() => setIsCreatePrescriptionOpen(false)}
-                  className="w-full py-3.5 border border-slate-200 hover:bg-slate-50 text-slate-700 font-bold rounded-xl text-center cursor-pointer text-xs"
+                  className="w-full py-3.5 border border-slate-200 hover:bg-slate-50 text-slate-700 font-extrabold rounded-xl text-center cursor-pointer text-xs uppercase tracking-wider"
                 >
-                  CANCEL
+                  Cancel
                 </button>
                 <button
                   type="submit"
-                  className="w-full py-3.5 bg-[#0a305e] hover:bg-[#08274d] text-white font-bold rounded-xl text-center cursor-pointer shadow-sm text-xs"
+                  className="w-full py-3.5 bg-blue-600 hover:bg-blue-700 text-white font-extrabold rounded-xl text-center cursor-pointer shadow-sm text-xs uppercase tracking-wider active:scale-95 transition-all"
                 >
-                  SAVE PRESCRIPTION
+                  Save Prescription
                 </button>
               </div>
             </form>
