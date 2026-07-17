@@ -1,20 +1,20 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  Plus, 
-  ShieldCheck, 
-  Users, 
-  Stethoscope, 
-  UserSquare2, 
-  Shield, 
-  CheckCircle2, 
-  Calendar, 
-  Activity, 
-  Briefcase, 
-  DollarSign, 
-  Clock, 
-  Mail, 
-  Phone, 
-  FileText 
+import {
+  Plus,
+  ShieldCheck,
+  Users,
+  Stethoscope,
+  UserSquare2,
+  Shield,
+  CheckCircle2,
+  Calendar,
+  Activity,
+  Briefcase,
+  DollarSign,
+  Clock,
+  Mail,
+  Phone,
+  FileText
 } from 'lucide-react';
 import { mockUsersApi } from '../utils/mockUsersApi';
 import { DoctorResponseDto, doctorService } from '../../../lib/apiClient';
@@ -68,7 +68,7 @@ export const UsersPage: React.FC<UsersPageProps> = ({ hideHeader = false }) => {
   // Derived Modal Type State (prevents cross-tab viewing crashes during transitions or background renders)
   const viewingRecordType = viewingRecord?.id ? (
     viewingRecord.id.startsWith('DOC-') ? 'doctor' :
-    viewingRecord.id.startsWith('STF-') ? 'staff' : 'admin'
+      viewingRecord.id.startsWith('STF-') ? 'staff' : 'admin'
   ) : null;
 
   const closeFormModal = () => {
@@ -147,12 +147,12 @@ export const UsersPage: React.FC<UsersPageProps> = ({ hideHeader = false }) => {
       status: adminStatus,
       search: debouncedAdminSearch
     })
-    .then((res) => {
-      setAdmins(res.items);
-      setAdminTotalItems(res.totalItems);
-      setAdminTotalPages(res.totalPages);
-    })
-    .catch(err => console.error(err));
+      .then((res) => {
+        setAdmins(res.items);
+        setAdminTotalItems(res.totalItems);
+        setAdminTotalPages(res.totalPages);
+      })
+      .catch(err => console.error(err));
   };
 
   const refreshDoctorsList = () => {
@@ -162,12 +162,12 @@ export const UsersPage: React.FC<UsersPageProps> = ({ hideHeader = false }) => {
       status: doctorStatus,
       search: debouncedDoctorSearch
     })
-    .then((res) => {
-      setDoctors(res.items);
-      setDoctorTotalItems(res.totalItems);
-      setDoctorTotalPages(res.totalPages);
-    })
-    .catch(err => console.error(err));
+      .then((res) => {
+        setDoctors(res.items);
+        setDoctorTotalItems(res.totalItems);
+        setDoctorTotalPages(res.totalPages);
+      })
+      .catch(err => console.error(err));
   };
 
   const refreshStaffList = () => {
@@ -177,12 +177,12 @@ export const UsersPage: React.FC<UsersPageProps> = ({ hideHeader = false }) => {
       status: staffStatus,
       search: debouncedStaffSearch
     })
-    .then((res) => {
-      setStaffList(res.items);
-      setStaffTotalItems(res.totalItems);
-      setStaffTotalPages(res.totalPages);
-    })
-    .catch(err => console.error(err));
+      .then((res) => {
+        setStaffList(res.items);
+        setStaffTotalItems(res.totalItems);
+        setStaffTotalPages(res.totalPages);
+      })
+      .catch(err => console.error(err));
   };
 
   // Load Admin list on activeTab changes or state dependencies changes
@@ -195,16 +195,16 @@ export const UsersPage: React.FC<UsersPageProps> = ({ hideHeader = false }) => {
         status: adminStatus,
         search: debouncedAdminSearch
       })
-      .then((res) => {
-        setAdmins(res.items);
-        setAdminTotalItems(res.totalItems);
-        setAdminTotalPages(res.totalPages);
-        setIsLoadingAdmins(false);
-      })
-      .catch(err => {
-        console.error(err);
-        setIsLoadingAdmins(false);
-      });
+        .then((res) => {
+          setAdmins(res.items);
+          setAdminTotalItems(res.totalItems);
+          setAdminTotalPages(res.totalPages);
+          setIsLoadingAdmins(false);
+        })
+        .catch(err => {
+          console.error(err);
+          setIsLoadingAdmins(false);
+        });
     }
   }, [activeTab, adminPage, adminStatus, debouncedAdminSearch]);
 
@@ -218,16 +218,16 @@ export const UsersPage: React.FC<UsersPageProps> = ({ hideHeader = false }) => {
         status: doctorStatus,
         search: debouncedDoctorSearch
       })
-      .then((res) => {
-        setDoctors(res.items);
-        setDoctorTotalItems(res.totalItems);
-        setDoctorTotalPages(res.totalPages);
-        setIsLoadingDoctors(false);
-      })
-      .catch(err => {
-        console.error(err);
-        setIsLoadingDoctors(false);
-      });
+        .then((res) => {
+          setDoctors(res.items);
+          setDoctorTotalItems(res.totalItems);
+          setDoctorTotalPages(res.totalPages);
+          setIsLoadingDoctors(false);
+        })
+        .catch(err => {
+          console.error(err);
+          setIsLoadingDoctors(false);
+        });
     }
   }, [activeTab, doctorPage, doctorStatus, debouncedDoctorSearch]);
 
@@ -241,16 +241,16 @@ export const UsersPage: React.FC<UsersPageProps> = ({ hideHeader = false }) => {
         status: staffStatus,
         search: debouncedStaffSearch
       })
-      .then((res) => {
-        setStaffList(res.items);
-        setStaffTotalItems(res.totalItems);
-        setStaffTotalPages(res.totalPages);
-        setIsLoadingStaff(false);
-      })
-      .catch(err => {
-        console.error(err);
-        setIsLoadingStaff(false);
-      });
+        .then((res) => {
+          setStaffList(res.items);
+          setStaffTotalItems(res.totalItems);
+          setStaffTotalPages(res.totalPages);
+          setIsLoadingStaff(false);
+        })
+        .catch(err => {
+          console.error(err);
+          setIsLoadingStaff(false);
+        });
     }
   }, [activeTab, staffPage, staffStatus, debouncedStaffSearch]);
 
@@ -496,7 +496,7 @@ export const UsersPage: React.FC<UsersPageProps> = ({ hideHeader = false }) => {
           <div className="flex items-center justify-between gap-3 text-left">
             <div>
               <h2 className="text-xl font-display font-extrabold text-slate-900 tracking-tight">Users & Roles</h2>
-              <p className="text-xs text-slate-500 font-semibold leading-normal mt-1">Manage clinical access and roles.</p>
+              {/* <p className="text-xs text-slate-500 font-semibold leading-normal mt-1">Manage clinical access and roles.</p> */}
             </div>
             {activeTab !== 'roles' && (
               <button
@@ -521,11 +521,10 @@ export const UsersPage: React.FC<UsersPageProps> = ({ hideHeader = false }) => {
                   key={tab}
                   type="button"
                   onClick={() => setActiveTab(tab)}
-                  className={`flex-1 py-2 text-center text-xs font-bold rounded-xl transition-all capitalize cursor-pointer ${
-                    isActive
+                  className={`flex-1 py-2 text-center text-xs font-bold rounded-xl transition-all capitalize cursor-pointer ${isActive
                       ? 'bg-white text-blue-600 shadow-2xs font-extrabold'
                       : 'text-slate-550 hover:text-slate-700'
-                  }`}
+                    }`}
                 >
                   {tab === 'roles' ? 'Roles' : tab}
                 </button>
@@ -554,8 +553,8 @@ export const UsersPage: React.FC<UsersPageProps> = ({ hideHeader = false }) => {
                   onClick={() => setActiveTab(tab)}
                   className={`
                     pb-4 text-sm font-bold border-b-2 transition-all cursor-pointer capitalize
-                    ${activeTab === tab 
-                      ? 'border-blue-600 text-blue-600' 
+                    ${activeTab === tab
+                      ? 'border-blue-600 text-blue-600'
                       : 'border-transparent text-slate-400 hover:text-slate-600'
                     }
                   `}
@@ -665,9 +664,8 @@ export const UsersPage: React.FC<UsersPageProps> = ({ hideHeader = false }) => {
       <Modal
         isOpen={isFormOpen}
         onClose={closeFormModal}
-        title={`${editingRecord ? 'Edit' : 'Add'} ${
-          activeTab === 'admin' ? 'Administrator' : activeTab === 'doctor' ? 'Doctor Profile' : 'Staff Member'
-        }`}
+        title={`${editingRecord ? 'Edit' : 'Add'} ${activeTab === 'admin' ? 'Administrator' : activeTab === 'doctor' ? 'Doctor Profile' : 'Staff Member'
+          }`}
       >
         {activeTab === 'admin' && (
           <AdminForm
@@ -696,9 +694,8 @@ export const UsersPage: React.FC<UsersPageProps> = ({ hideHeader = false }) => {
       <Modal
         isOpen={isViewOpen}
         onClose={closeViewModal}
-        title={`${
-          viewingRecordType === 'admin' ? 'Admin' : viewingRecordType === 'doctor' ? 'Doctor' : viewingRecordType === 'staff' ? 'Staff' : 'User'
-        } Details`}
+        title={`${viewingRecordType === 'admin' ? 'Admin' : viewingRecordType === 'doctor' ? 'Doctor' : viewingRecordType === 'staff' ? 'Staff' : 'User'
+          } Details`}
       >
         {viewingRecord && (
           viewingRecord.isLoadingDetails ? (
@@ -721,9 +718,8 @@ export const UsersPage: React.FC<UsersPageProps> = ({ hideHeader = false }) => {
                 <div>
                   <h4 className="font-bold text-slate-800 text-lg">{viewingRecord.name}</h4>
                   <p className="text-xs text-slate-400 font-bold font-mono">{viewingRecord.id}</p>
-                  <span className={`inline-flex items-center gap-1.5 mt-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${
-                    viewingRecord.isActive ? 'bg-emerald-50 text-emerald-700 border border-emerald-100' : 'bg-slate-100 text-slate-500 border border-slate-200'
-                  }`}>
+                  <span className={`inline-flex items-center gap-1.5 mt-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${viewingRecord.isActive ? 'bg-emerald-50 text-emerald-700 border border-emerald-100' : 'bg-slate-100 text-slate-500 border border-slate-200'
+                    }`}>
                     <span className={`w-1.5 h-1.5 rounded-full ${viewingRecord.isActive ? 'bg-emerald-500 animate-pulse' : 'bg-slate-400'}`} />
                     {viewingRecord.isActive ? 'Active Authorization' : 'Inactive'}
                   </span>
@@ -870,17 +866,17 @@ export const UsersPage: React.FC<UsersPageProps> = ({ hideHeader = false }) => {
             <p className="text-xs text-slate-500 leading-relaxed">
               For local testing and validation, copy or click on the onboarding link below to configure this user's password:
             </p>
-            <a 
-              href={createdUserLink || '#'} 
-              target="_blank" 
-              rel="noopener noreferrer" 
+            <a
+              href={createdUserLink || '#'}
+              target="_blank"
+              rel="noopener noreferrer"
               className="block font-mono text-xs text-blue-600 hover:text-blue-700 hover:underline break-all font-semibold bg-white p-2.5 rounded-lg border border-slate-100 shadow-sm"
             >
               {createdUserLink}
             </a>
           </div>
           <div className="flex justify-end gap-2 pt-2">
-            <Button 
+            <Button
               onClick={() => {
                 setCreatedUserLink(null);
                 setCreatedUserEmail(null);

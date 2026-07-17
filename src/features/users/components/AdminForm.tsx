@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Camera, Save, X } from 'lucide-react';
+import { Camera, Save, X, ChevronDown } from 'lucide-react';
 import { Button } from '../../../components/ui/Button';
 import { Input } from '../../../components/ui/Input';
 import { AdminUser } from '../types';
@@ -165,24 +165,26 @@ export const AdminForm: React.FC<AdminFormProps> = ({ admin, onSave, onCancel })
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       {/* Photo Uploader */}
-      <div className="flex flex-col items-center gap-3 pb-2">
-        <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">Profile Photo</label>
+      <div className="flex flex-col items-center gap-2 pb-1.5">
         <div className="relative group">
-          <div className="w-24 h-24 rounded-full bg-slate-100 border-2 border-slate-200 overflow-hidden flex items-center justify-center">
+          <div className="w-24 h-24 rounded-full bg-slate-50 border-2 border-dashed border-slate-300 overflow-hidden flex items-center justify-center">
             {avatarUrl ? (
               <img src={avatarUrl} alt="Avatar preview" className="w-full h-full object-cover" />
             ) : (
-              <div className="text-slate-400 font-bold text-xl uppercase">
+              <div className="text-slate-400 font-extrabold text-xl uppercase tracking-wider font-display">
                 {name ? name.split(' ').map((n) => n[0]).join('').substring(0, 2) : 'AD'}
               </div>
             )}
           </div>
-          <label className="absolute bottom-0 right-0 bg-blue-600 hover:bg-blue-700 text-white p-2 rounded-full cursor-pointer shadow-md transition-all">
+          <label className="absolute bottom-0 right-0 bg-[#0c66e4] hover:bg-blue-700 text-white p-2 rounded-full cursor-pointer shadow-md transition-all">
             <Camera className="w-4 h-4" />
             <input type="file" accept="image/*" className="hidden" onChange={handleFileChange} />
           </label>
         </div>
-        <p className="text-[11px] text-slate-400 font-medium">PNG only. Max 1MB.</p>
+        <div className="text-center mt-1">
+          <span className="block text-[10px] font-extrabold text-slate-500 uppercase tracking-widest leading-none">PROFILE PHOTO</span>
+          <span className="block text-[10px] text-slate-400 font-bold mt-1.5 leading-none">PNG only. Max 1MB.</span>
+        </div>
         {uploadError && (
           <p className="text-rose-600 text-[10px] font-bold mt-1 text-center animate-pulse">
             {uploadError}
@@ -195,42 +197,56 @@ export const AdminForm: React.FC<AdminFormProps> = ({ admin, onSave, onCancel })
         )}
       </div>
 
-      <div className="space-y-4">
+      <div className="space-y-5">
         <Input
           label="Admin Name"
           value={name}
           onChange={(e) => setName(e.target.value)}
           required
           placeholder="e.g. Dr. Robert Sterling"
+          className="rounded-xl h-11"
         />
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <Input
-            label="Mobile Number"
-            id="admin-mobile"
-            value={mobile}
-            onChange={(e) => { setMobile(e.target.value); e.target.setCustomValidity(''); }}
-            required
-            placeholder="e.g. +91 98765 00001"
-          />
-          <Input
-            label="Email Address"
-            id="admin-email"
-            type="email"
-            value={email}
-            onChange={(e) => { setEmail(e.target.value); e.target.setCustomValidity(''); }}
-            required
-            placeholder="e.g. admin@healthflow.com"
-          />
+        {/* Mobile Input with country selector prefix */}
+        <div className="space-y-1.5 w-full">
+          <label htmlFor="admin-mobile" className="text-xs font-bold text-slate-500 uppercase tracking-wider">
+            Mobile Number
+          </label>
+          <div className="flex border border-slate-200 rounded-xl overflow-hidden bg-white focus-within:border-brand-primary focus-within:ring-1 focus-within:ring-brand-primary transition-all">
+            <div className="flex items-center gap-1 px-3.5 bg-slate-50/50 border-r border-slate-200 select-none cursor-pointer">
+              <span className="text-xs font-bold text-slate-700 font-mono">+91</span>
+              <ChevronDown className="w-3.5 h-3.5 text-slate-550" />
+            </div>
+            <input
+              id="admin-mobile"
+              type="tel"
+              value={mobile}
+              onChange={(e) => { setMobile(e.target.value); e.target.setCustomValidity(''); }}
+              required
+              placeholder="Enter mobile number"
+              className="w-full py-3 px-3.5 text-sm outline-none bg-white text-slate-900 placeholder:text-slate-400 font-medium"
+            />
+          </div>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div className="space-y-1.5 flex-1">
+        <Input
+          label="Email Address"
+          id="admin-email"
+          type="email"
+          value={email}
+          onChange={(e) => { setEmail(e.target.value); e.target.setCustomValidity(''); }}
+          required
+          placeholder="e.g. admin@healthflow.com"
+          className="rounded-xl h-11"
+        />
+
+        <div className="grid grid-cols-2 gap-4">
+          <div className="space-y-1.5">
             <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider">Gender</label>
             <select
               value={gender}
               onChange={(e) => setGender(e.target.value)}
-              className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm bg-slate-50/50 text-slate-700 font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all h-[42px]"
+              className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm bg-white text-slate-700 font-semibold focus:outline-none focus:border-brand-primary focus:ring-1 focus:ring-brand-primary transition-all h-[42px]"
             >
               <option value="">Select Gender</option>
               <option value="Male">Male</option>
@@ -244,29 +260,29 @@ export const AdminForm: React.FC<AdminFormProps> = ({ admin, onSave, onCancel })
             type="date"
             value={dateOfBirth}
             onChange={(e) => { setDateOfBirth(e.target.value); e.target.setCustomValidity(''); }}
+            className="rounded-xl h-11"
           />
         </div>
 
-        <div className="flex items-center gap-2 pt-2">
+        <div className="flex items-center gap-2.5 pt-1.5">
           <input
             id="admin-status"
             type="checkbox"
             checked={isActive}
             onChange={(e) => setIsActive(e.target.checked)}
-            className="w-4 h-4 text-blue-600 border-slate-300 rounded focus:ring-blue-500 cursor-pointer"
+            className="w-5 h-5 text-blue-600 border-slate-350 rounded-md focus:ring-blue-500 cursor-pointer accent-blue-600"
           />
-          <label htmlFor="admin-status" className="text-sm text-slate-700 font-semibold cursor-pointer">
+          <label htmlFor="admin-status" className="text-sm text-slate-700 font-semibold cursor-pointer select-none">
             Authorized Account Active State
           </label>
         </div>
       </div>
 
-      <div className="flex justify-end gap-3 pt-4 border-t border-slate-100">
-        <Button type="button" variant="outline" onClick={onCancel}>
+      <div className="flex gap-3 pt-5 border-t border-slate-100 mt-8 w-full sm:justify-end">
+        <Button type="button" variant="outline" onClick={onCancel} className="flex-1 sm:flex-initial py-3 rounded-xl font-bold text-sm">
           Cancel
         </Button>
-        <Button type="submit" className="gap-2">
-          <Save className="w-4 h-4" />
+        <Button type="submit" className="flex-1 sm:flex-initial py-3 bg-brand-primary text-white rounded-xl font-bold text-sm justify-center gap-2">
           <span>Save Changes</span>
         </Button>
       </div>
