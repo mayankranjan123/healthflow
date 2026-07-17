@@ -154,26 +154,36 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
         </div>
 
         {/* Right Auth Form Panel */}
-        <div className="flex flex-col justify-center items-center px-6 py-12 md:px-12 bg-white">
-          <div className="w-full max-w-md space-y-8 animate-fade-in-up">
-            {/* Logo Badge in top of card */}
+        <div className="flex flex-col justify-center items-center px-4 py-10 xs:px-6 md:px-12 bg-gradient-to-tr from-slate-50 via-slate-100/50 to-blue-50/30 relative overflow-hidden">
+          {/* Subtle background glow orbs for mobile layout depth */}
+          <div className="absolute top-[-15%] left-[-15%] w-96 h-96 rounded-full bg-blue-400/10 blur-3xl pointer-events-none" />
+          <div className="absolute bottom-[-15%] right-[-15%] w-96 h-96 rounded-full bg-sky-400/10 blur-3xl pointer-events-none" />
+
+          <div className="w-full max-w-md space-y-8 relative z-10 animate-fade-in-up">
+            {/* Logo Badge at the top of the form container */}
             <div className="flex flex-col items-center justify-center text-center space-y-3">
-              <div className="w-14 h-14 bg-blue-600 rounded-2xl flex items-center justify-center text-white shadow-xl shadow-blue-600/20">
-                <Activity className="w-7 h-7" />
+              <div className="relative group">
+                <div className="absolute inset-0 rounded-2xl bg-blue-500/25 animate-pulse -z-10 scale-110 blur-xs" />
+                <div className="w-14 h-14 bg-gradient-to-tr from-blue-600 to-indigo-500 rounded-2xl flex items-center justify-center text-white shadow-xl shadow-blue-500/30 relative z-10 transition-transform duration-300 group-hover:scale-105">
+                  <Activity className="w-7 h-7 animate-pulse" />
+                </div>
               </div>
-              <h1 className="font-display font-bold text-2xl text-slate-900 tracking-tight flex items-center gap-2">
+              <h1 className="font-display font-extrabold text-3xl tracking-tight bg-gradient-to-r from-slate-900 via-blue-950 to-slate-800 bg-clip-text text-transparent flex items-center gap-2 mt-2">
                 HealthFlow
               </h1>
-              <p className="text-sm text-slate-500 font-semibold">Welcome back</p>
-              <p className="text-xs text-slate-400">Login to continue to your clinic dashboard</p>
+              <div className="space-y-1">
+                <p className="text-sm font-bold text-slate-700 tracking-wide uppercase text-xs">Welcome Back</p>
+                <p className="text-xs text-slate-450 font-medium">Login to continue to your secure clinic dashboard</p>
+              </div>
             </div>
 
-            {/* Card wrapper around login fields */}
-            <div className="bg-white p-8 border border-slate-100 rounded-2xl shadow-xl shadow-slate-100/80">
+            {/* Premium glassmorphic card wrapper */}
+            <div className="bg-white/80 backdrop-blur-md p-6 xs:p-8 border border-white/60 rounded-3xl shadow-xl shadow-blue-950/5 relative z-10 animate-scale-in">
               <form onSubmit={handleLogin} className="space-y-5">
                 {error && (
-                  <div className="bg-rose-50 text-rose-700 p-3 rounded-lg text-xs font-semibold border border-rose-100">
-                    {error}
+                  <div className="bg-rose-50 text-rose-700 p-3.5 rounded-xl text-xs font-semibold border border-rose-100 flex items-center gap-2 shadow-2xs">
+                    <div className="w-1.5 h-1.5 rounded-full bg-rose-500 shrink-0" />
+                    <span>{error}</span>
                   </div>
                 )}
 
@@ -184,7 +194,8 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="admin@healthflow.com"
                   required
-                  rightIcon={<Mail className="w-4 h-4 text-slate-400" />}
+                  rightIcon={<Mail className="w-4 h-4 text-slate-450" />}
+                  className="rounded-xl border-slate-200 focus:border-blue-600 focus:ring-4 focus:ring-blue-50/50"
                 />
 
                 <Input
@@ -196,25 +207,26 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
                   required
                   rightIcon={
                     showPassword ? (
-                      <EyeOff className="w-4 h-4 text-slate-400 hover:text-slate-700 transition-colors" onClick={() => setShowPassword(false)} />
+                      <EyeOff className="w-4 h-4 text-slate-450 hover:text-slate-755 transition-colors" onClick={() => setShowPassword(false)} />
                     ) : (
-                      <Eye className="w-4 h-4 text-slate-400 hover:text-slate-700 transition-colors" onClick={() => setShowPassword(true)} />
+                      <Eye className="w-4 h-4 text-slate-450 hover:text-slate-755 transition-colors" onClick={() => setShowPassword(true)} />
                     )
                   }
+                  className="rounded-xl border-slate-200 focus:border-blue-600 focus:ring-4 focus:ring-blue-50/50"
                 />
 
                 {/* Remember & Forgot row */}
                 <div className="flex items-center justify-between text-xs pt-1">
-                  <label className="flex items-center gap-2 text-slate-600 font-semibold cursor-pointer">
+                  <label className="flex items-center gap-2 text-slate-650 font-semibold cursor-pointer select-none">
                     <input
                       type="checkbox"
-                      className="w-4 h-4 text-brand-primary border-slate-200 rounded focus:ring-brand-primary cursor-pointer"
+                      className="w-4.5 h-4.5 accent-blue-600 border-slate-350 rounded focus:ring-blue-500 cursor-pointer"
                     />
                     <span>Remember me</span>
                   </label>
                   <Link
                     to="/forgot-password"
-                    className="text-brand-primary hover:text-blue-700 font-bold transition-colors"
+                    className="text-blue-600 hover:text-blue-700 font-bold transition-colors"
                   >
                     Forgot Password?
                   </Link>
@@ -222,16 +234,18 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
 
                 <Button
                   type="submit"
-                  className="w-full mt-6 py-3"
+                  className="w-full mt-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-extrabold text-xs transition-all rounded-xl shadow-md shadow-blue-500/10 hover:shadow-lg hover:shadow-blue-500/25 active:scale-[0.985] uppercase tracking-wider h-11 flex items-center justify-center cursor-pointer border border-transparent"
                   isLoading={isLoading}
                 >
-                  Login &rarr;
+                  <span>Login</span>
+                  <span className="ml-1">&rarr;</span>
                 </Button>
               </form>
 
-              <div className="mt-8 pt-6 border-t border-slate-100 flex items-center justify-center gap-2 text-[10px] font-bold text-slate-400 tracking-wider uppercase">
-                <ShieldCheck className="w-4 h-4 text-emerald-500" />
-                <span>Secure access for admin, doctor and staff</span>
+              {/* Secure compliance badge */}
+              <div className="mt-8 pt-5 border-t border-slate-100 flex items-center justify-center gap-2.5 bg-emerald-50/30 border border-emerald-100/50 rounded-2xl p-3.5 shadow-3xs text-[10px] font-bold text-emerald-800 tracking-wide uppercase">
+                <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0" />
+                <span className="truncate">Secure HIPAA Compliant Platform</span>
               </div>
             </div>
           </div>

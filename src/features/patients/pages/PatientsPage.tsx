@@ -1053,16 +1053,8 @@ export const PatientsPage: React.FC = () => {
         isMobile ? (
           <div className="space-y-4 pb-20 animate-fade-in-up">
             {/* Mobile Header */}
-            <div className="flex flex-col gap-3">
+            <div className="flex flex-col gap-1">
               <h2 className="text-2xl font-display font-bold text-slate-900 tracking-tight">Patient Directory</h2>
-              <Button
-                id="add-patient-btn"
-                onClick={() => setIsAddPatientOpen(true)}
-                className="w-full shadow-sm py-3 bg-brand-primary text-white font-semibold text-sm rounded-xl flex items-center justify-center gap-2 cursor-pointer h-11 animate-fade-in"
-              >
-                <Plus className="w-4.5 h-4.5" />
-                <span>Add Patient</span>
-              </Button>
             </div>
 
             {/* Metrics Cards: Side-by-side 2-column grid */}
@@ -3558,6 +3550,16 @@ export const PatientsPage: React.FC = () => {
             </div>
           </div>
         </Drawer>
+      )}
+
+      {/* Floating Action Button (FAB) for Mobile Add Patient */}
+      {isMobile && viewMode === 'list' && (
+        <button
+          onClick={() => setIsAddPatientOpen(true)}
+          className="fixed bottom-20 right-5 z-45 bg-brand-primary text-white w-14 h-14 rounded-full flex items-center justify-center shadow-lg hover:bg-blue-700 hover:scale-105 active:scale-95 transition-all cursor-pointer animate-scale-in"
+        >
+          <Plus className="w-6 h-6" />
+        </button>
       )}
     </div>
   );
