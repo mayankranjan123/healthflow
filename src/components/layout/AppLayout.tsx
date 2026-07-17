@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Sidebar } from './Sidebar';
 import { Header } from './Header';
 import { AnimatePresence, motion } from 'motion/react';
-import { X, LayoutDashboard, Users, CalendarDays, CreditCard, Menu } from 'lucide-react';
+import { X, LayoutDashboard, Users, CalendarDays, CreditCard, Menu, ClipboardList, Settings } from 'lucide-react';
 import { NavLink, useLocation } from 'react-router-dom';
 
 interface AppLayoutProps {
@@ -74,7 +74,7 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children, onLogout, curren
       {/* Main Container Area */}
       <div className="flex-1 flex flex-col overflow-hidden h-full relative">
         {/* Header */}
-        {(!isMobile || location.pathname !== '/more') && (
+        {(!isMobile || (location.pathname !== '/more' && location.pathname !== '/settings')) && (
           <Header onMenuToggle={toggleMobileSidebar} currentUser={currentUser} />
         )}
 
@@ -90,7 +90,6 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children, onLogout, curren
           </motion.div>
         </main>
 
-        {/* Mobile Bottom Navigation Bar */}
         <div className="md:hidden fixed bottom-0 left-0 right-0 h-16 bg-white border-t border-slate-200/80 flex items-center justify-around z-40 px-2 shadow-[0_-4px_12px_rgba(0,0,0,0.03)]">
           <NavLink
             to="/dashboard"
