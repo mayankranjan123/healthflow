@@ -16,6 +16,13 @@ export const SettingsPage: React.FC = () => {
   const [isLoadingClinic, setIsLoadingClinic] = useState(false);
   const [isLoadingBilling, setIsLoadingBilling] = useState(false);
   const [isLoadingPrescription, setIsLoadingPrescription] = useState(false);
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+
+  React.useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth < 768);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   // Load Clinic Settings (needed for CLINIC, BILLING, and PRESCRIPTION tabs)
   React.useEffect(() => {
@@ -67,71 +74,87 @@ export const SettingsPage: React.FC = () => {
   };
 
   return (
-    <div className="space-y-6 animate-fade-in-up">
+    <div className={`space-y-6 animate-fade-in-up ${isMobile ? 'pb-24' : ''}`}>
       {/* Page Title & Header */}
       <div className="flex items-center gap-3">
-        <div className="w-11 h-11 rounded-xl bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-600 shrink-0">
-          <Settings className="w-5 h-5 animate-spin-slow" />
+        <div className={`w-11 h-11 rounded-xl flex items-center justify-center shrink-0 border ${
+          isMobile 
+            ? 'bg-blue-50 border-blue-100 text-blue-600' 
+            : 'bg-indigo-50 border-indigo-100 text-indigo-600'
+        }`}>
+          <Settings className={`w-5 h-5 ${isMobile ? '' : 'animate-spin-slow'}`} />
         </div>
-        <div>
-          <h2 className="text-2xl font-display font-bold text-slate-900 tracking-tight">Settings</h2>
-          <p className="text-sm text-slate-500 font-medium">Configure clinic details, billing preferences and prescription templates</p>
+        <div className="text-left">
+          <h2 className={`font-display font-extrabold text-slate-900 tracking-tight ${isMobile ? 'text-lg leading-tight' : 'text-2xl'}`}>Settings</h2>
+          <p className={`text-slate-500 font-semibold ${isMobile ? 'text-[11px] leading-tight mt-1' : 'text-sm'}`}>Configure clinic details and regional preferences</p>
         </div>
       </div>
 
       {/* Tabs Selection Rail */}
-      <div className="border-b border-slate-200">
-        <div className="flex gap-6">
+      <div className="border-b border-slate-200 -mx-4 px-4 overflow-x-auto no-scrollbar">
+        <div className="flex gap-5 whitespace-nowrap min-w-max pb-1">
           
           {/* Tab 1: Clinic Settings */}
           <button
+            type="button"
             onClick={() => setActiveTab('CLINIC')}
-            className={`pb-3.5 text-xs font-bold uppercase tracking-wider flex items-center gap-2 border-b-2 transition-all cursor-pointer ${
+            className={`pb-3 text-xs font-bold uppercase tracking-wider flex items-center gap-2 border-b-2 transition-all cursor-pointer ${
               activeTab === 'CLINIC'
-                ? 'border-indigo-600 text-indigo-700 font-black'
+                ? isMobile
+                  ? 'border-blue-600 text-blue-755 font-black'
+                  : 'border-indigo-600 text-indigo-700 font-black'
                 : 'border-transparent text-slate-400 hover:text-slate-600'
             }`}
           >
-            <Building className="w-4.5 h-4.5" />
+            <Building className="w-4 h-4" />
             <span>Clinic Settings</span>
           </button>
 
           {/* Tab 2: Users & Roles */}
           <button
+            type="button"
             onClick={() => setActiveTab('USERS')}
-            className={`pb-3.5 text-xs font-bold uppercase tracking-wider flex items-center gap-2 border-b-2 transition-all cursor-pointer ${
+            className={`pb-3 text-xs font-bold uppercase tracking-wider flex items-center gap-2 border-b-2 transition-all cursor-pointer ${
               activeTab === 'USERS'
-                ? 'border-indigo-600 text-indigo-700 font-black'
+                ? isMobile
+                  ? 'border-blue-600 text-blue-755 font-black'
+                  : 'border-indigo-600 text-indigo-700 font-black'
                 : 'border-transparent text-slate-400 hover:text-slate-600'
             }`}
           >
-            <UserSquare2 className="w-4.5 h-4.5" />
+            <UserSquare2 className="w-4 h-4" />
             <span>Users & Roles</span>
           </button>
 
           {/* Tab 3: Billing Settings */}
           <button
+            type="button"
             onClick={() => setActiveTab('BILLING')}
-            className={`pb-3.5 text-xs font-bold uppercase tracking-wider flex items-center gap-2 border-b-2 transition-all cursor-pointer ${
+            className={`pb-3 text-xs font-bold uppercase tracking-wider flex items-center gap-2 border-b-2 transition-all cursor-pointer ${
               activeTab === 'BILLING'
-                ? 'border-indigo-600 text-indigo-700 font-black'
+                ? isMobile
+                  ? 'border-blue-600 text-blue-755 font-black'
+                  : 'border-indigo-600 text-indigo-700 font-black'
                 : 'border-transparent text-slate-400 hover:text-slate-600'
             }`}
           >
-            <Receipt className="w-4.5 h-4.5" />
+            <Receipt className="w-4 h-4" />
             <span>Billing Settings</span>
           </button>
 
           {/* Tab 4: Prescription Settings */}
           <button
+            type="button"
             onClick={() => setActiveTab('PRESCRIPTION')}
-            className={`pb-3.5 text-xs font-bold uppercase tracking-wider flex items-center gap-2 border-b-2 transition-all cursor-pointer ${
+            className={`pb-3 text-xs font-bold uppercase tracking-wider flex items-center gap-2 border-b-2 transition-all cursor-pointer ${
               activeTab === 'PRESCRIPTION'
-                ? 'border-indigo-600 text-indigo-700 font-black'
+                ? isMobile
+                  ? 'border-blue-600 text-blue-755 font-black'
+                  : 'border-indigo-600 text-indigo-700 font-black'
                 : 'border-transparent text-slate-400 hover:text-slate-600'
             }`}
           >
-            <Pill className="w-4.5 h-4.5" />
+            <Pill className="w-4 h-4" />
             <span>Prescription Settings</span>
           </button>
 

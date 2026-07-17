@@ -2688,213 +2688,473 @@ export const PatientsPage: React.FC = () => {
         isOpen={isCreatePrescriptionOpen}
         onClose={() => setIsCreatePrescriptionOpen(false)}
         title="Compose New Patient Prescription"
+        hideHeader={isMobile}
       >
-        <form onSubmit={handleCreatePrescriptionSubmit} className="space-y-5">
-          {/* Prescribing Doctor Selector */}
-          {currentUser?.role === 'DOCTOR' ? (
-            <div className="space-y-1.5 text-left">
-              <span className="block text-xs font-semibold text-slate-500 uppercase tracking-wider">Prescribing Doctor</span>
-              <div className="px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm font-bold text-slate-700">
-                {doctorsList.find(d => d.email?.toLowerCase() === currentUser.email?.toLowerCase())?.name || (currentUser.firstName + " " + currentUser.lastName)}
-              </div>
+        {isMobile ? (
+          <div className="flex flex-col h-full -m-6 bg-slate-50/50">
+            {/* Custom Mobile Header */}
+            <div className="flex items-center justify-between px-6 py-4.5 bg-white border-b border-slate-100 shrink-0 relative">
+              <button
+                type="button"
+                onClick={() => setIsCreatePrescriptionOpen(false)}
+                className="text-slate-700 hover:bg-slate-100 p-1.5 rounded-full cursor-pointer transition-colors"
+              >
+                <ArrowLeft className="w-5 h-5" />
+              </button>
+              <h3 className="font-display font-extrabold text-slate-800 text-base absolute left-1/2 -translate-x-1/2">
+                Compose Prescription
+              </h3>
+              <button
+                type="button"
+                onClick={handleCreatePrescriptionSubmit}
+                className="text-blue-600 hover:text-blue-800 font-extrabold text-xs tracking-wider cursor-pointer active:scale-95 transition-all"
+              >
+                SAVE
+              </button>
             </div>
-          ) : (
-            <Select
-              label="Prescribed By (Doctor) *"
-              value={newPrescription.doctorId}
-              onChange={(e) => setNewPrescription({ ...newPrescription, doctorId: e.target.value })}
-              options={doctorsList.map((d) => ({ value: d.id, label: `${d.name} (${d.specialization})` }))}
-              required
-            />
-          )}
 
-          <div className="grid grid-cols-2 gap-4">
-            <Input
-              label="Issue Date *"
-              type="date"
-              value={newPrescription.issueDate}
-              onChange={(e) => setNewPrescription({ ...newPrescription, issueDate: e.target.value })}
-              required
-            />
-            <Input
-              label="Next Visit Date"
-              type="date"
-              value={newPrescription.nextVisitDate}
-              onChange={(e) => setNewPrescription({ ...newPrescription, nextVisitDate: e.target.value })}
-            />
-          </div>
-
-          {prescriptionSettings?.showDiagnosis !== false && (
-            <Input
-              label="Diagnosis / Findings *"
-              value={newPrescription.diagnosis}
-              onChange={(e) => setNewPrescription({ ...newPrescription, diagnosis: e.target.value })}
-              required
-              placeholder="e.g. Stage 1 Essential Hypertension"
-            />
-          )}
-
-          <div className="grid grid-cols-2 gap-4 text-left">
-            {prescriptionSettings?.showPatientHistory !== false && (
-              <div className="flex flex-col gap-1.5">
-                <label className="text-xs font-semibold text-slate-700 uppercase tracking-wider">Symptoms</label>
-                <textarea
-                  value={newPrescription.symptoms}
-                  onChange={(e) => setNewPrescription({ ...newPrescription, symptoms: e.target.value })}
-                  className="w-full min-h-[60px] p-2.5 text-xs rounded-lg border border-slate-200 outline-none focus:border-brand-primary"
-                  placeholder="Morning headaches, blood pressure 140/90..."
-                />
-              </div>
-            )}
-            {prescriptionSettings?.showVitals !== false && (
-              <div className="flex flex-col gap-1.5">
-                <label className="text-xs font-semibold text-slate-700 uppercase tracking-wider">Clinical Notes</label>
-                <textarea
-                  value={newPrescription.clinicalNotes}
-                  onChange={(e) => setNewPrescription({ ...newPrescription, clinicalNotes: e.target.value })}
-                  className="w-full min-h-[60px] p-2.5 text-xs rounded-lg border border-slate-200 outline-none focus:border-brand-primary"
-                  placeholder="Rhythm evaluation normal. Low sodium advice..."
-                />
-              </div>
-            )}
-          </div>
-
-          {/* MEDICINES FORM TABLE INTERFACE */}
-          <div className="border-t border-slate-200 pt-4 space-y-3">
-            <label className="text-xs font-bold text-slate-800 uppercase tracking-wider block text-left">
-              Medicines Table * (At least one required)
-            </label>
-
-            {/* Quick Medicine Add Form */}
-            <div className="bg-slate-50 border border-slate-200/60 rounded-xl p-3 space-y-3">
-              <div className="grid grid-cols-2 gap-2 text-left">
-                <Input
-                  label="Medicine Name"
-                  value={newMedicine.medicineName}
-                  onChange={(e) => setNewMedicine({ ...newMedicine, medicineName: e.target.value })}
-                  placeholder="Amlodipine / Paracetamol"
-                />
-                {prescriptionSettings?.showDosageInstructions !== false ? (
-                  <Input
-                    label="Dosage"
-                    value={newMedicine.dosage}
-                    onChange={(e) => setNewMedicine({ ...newMedicine, dosage: e.target.value })}
-                    placeholder="500 mg / 1 Puff"
-                  />
-                ) : (
-                  <div />
+            {/* Scrollable form body */}
+            <form onSubmit={handleCreatePrescriptionSubmit} className="flex-1 flex flex-col justify-between overflow-hidden">
+              <div className="flex-1 p-6 overflow-y-auto space-y-5">
+                {/* Patient Header Box */}
+                {selectedPatient && (
+                  <div className="bg-slate-100/50 border border-slate-200/60 rounded-2xl p-4 flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 shrink-0">
+                      <User className="w-5 h-5" />
+                    </div>
+                    <div className="min-w-0 text-left">
+                      <h4 className="font-bold text-slate-800 text-sm leading-tight">
+                        {selectedPatient.firstName} {selectedPatient.lastName}
+                      </h4>
+                      <p className="text-[11px] text-slate-450 font-semibold mt-1">
+                        #{selectedPatient.patientNumber}  •  {(() => {
+                          if (!selectedPatient.dateOfBirth) return '';
+                          const birthDate = new Date(selectedPatient.dateOfBirth);
+                          const today = new Date();
+                          let age = today.getFullYear() - birthDate.getFullYear();
+                          const m = today.getMonth() - birthDate.getMonth();
+                          if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+                            age--;
+                          }
+                          return age;
+                        })()} yrs
+                      </p>
+                    </div>
+                  </div>
                 )}
-              </div>
-              <div className="grid grid-cols-3 gap-2 text-left">
-                <Input
-                  label="Frequency"
-                  value={newMedicine.frequency}
-                  onChange={(e) => setNewMedicine({ ...newMedicine, frequency: e.target.value })}
-                  placeholder="Once daily"
-                />
-                {prescriptionSettings?.showDuration !== false ? (
-                  <Input
-                    label="Duration"
-                    value={newMedicine.duration}
-                    onChange={(e) => setNewMedicine({ ...newMedicine, duration: e.target.value })}
-                    placeholder="7 Days"
-                  />
+
+                {/* Prescribed By Selector */}
+                {currentUser?.role === 'DOCTOR' ? (
+                  <div className="space-y-1.5 text-left">
+                    <span className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none">Prescribed By (Doctor)</span>
+                    <div className="px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold text-slate-700">
+                      {doctorsList.find(d => d.email?.toLowerCase() === currentUser.email?.toLowerCase())?.name || (currentUser.firstName + " " + currentUser.lastName)}
+                    </div>
+                  </div>
                 ) : (
-                  <div />
+                  <div className="space-y-1.5 text-left">
+                    <span className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none">Prescribed By (Doctor)</span>
+                    <Select
+                      value={newPrescription.doctorId}
+                      onChange={(e) => setNewPrescription({ ...newPrescription, doctorId: e.target.value })}
+                      options={doctorsList.map((d) => ({ value: d.id, label: `${d.name} (${d.specialization})` }))}
+                      required
+                    />
+                  </div>
                 )}
-                <div className="flex flex-col gap-1">
-                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider invisible">Add</span>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={handleAddMedicine}
-                    className="w-full h-[38px] text-xs font-bold border-brand-primary text-brand-primary hover:bg-blue-50 shrink-0"
-                  >
-                    Add Med
-                  </Button>
+
+                {/* Issue Date & Next Visit */}
+                <div className="grid grid-cols-2 gap-4">
+                  <Input
+                    label="Issue Date *"
+                    type="date"
+                    value={newPrescription.issueDate}
+                    onChange={(e) => setNewPrescription({ ...newPrescription, issueDate: e.target.value })}
+                    required
+                  />
+                  <Input
+                    label="Next Visit"
+                    type="date"
+                    value={newPrescription.nextVisitDate}
+                    onChange={(e) => setNewPrescription({ ...newPrescription, nextVisitDate: e.target.value })}
+                  />
                 </div>
-              </div>
-              <Input
-                label="Instructions"
-                value={newMedicine.instructions}
-                onChange={(e) => setNewMedicine({ ...newMedicine, instructions: e.target.value })}
-                placeholder="After food / Empty stomach / bedtime"
-              />
-            </div>
 
-            {/* Added Medicines Table list */}
-            {medicinesList.length === 0 ? (
-              <p className="text-xs text-rose-600 font-bold italic bg-rose-50/50 p-2.5 rounded border border-rose-100 text-center">
-                Please add at least one medicine using the controller above.
-              </p>
-            ) : (
-              <div className="bg-white border border-slate-200 rounded-lg overflow-hidden max-h-[160px] overflow-y-auto">
-                <table className="w-full text-left border-collapse text-xs">
-                  <thead className="bg-slate-50 border-b border-slate-100">
-                    <tr>
-                      <th className="p-2 font-semibold text-slate-500">Name</th>
-                      <th className="p-2 font-semibold text-slate-500">Dosage</th>
-                      <th className="p-2 font-semibold text-slate-500">Frequency / Duration</th>
-                      <th className="p-2 font-semibold text-slate-500 text-right">Delete</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100">
-                    {medicinesList.map((med) => (
-                      <tr key={med.id} className="hover:bg-slate-50/50">
-                        <td className="p-2">
-                          <p className="font-bold text-slate-800">{med.medicineName}</p>
-                          <p className="text-[10px] text-slate-400">{med.instructions}</p>
-                        </td>
-                        <td className="p-2 font-semibold text-slate-700">{med.dosage}</td>
-                        <td className="p-2 text-slate-600 font-medium">
-                          {med.frequency} • {med.duration}
-                        </td>
-                        <td className="p-2 text-right">
+                {/* Diagnosis */}
+                <div className="space-y-1.5 text-left">
+                  <span className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none">Diagnosis / Findings *</span>
+                  <textarea
+                    value={newPrescription.diagnosis}
+                    onChange={(e) => setNewPrescription({ ...newPrescription, diagnosis: e.target.value })}
+                    className="w-full min-h-[80px] p-3 text-sm rounded-xl border border-slate-200 outline-none focus:border-brand-primary font-medium text-slate-700 bg-white"
+                    placeholder="e.g. Hypertension, suspected Type 2 Diabetes symptoms..."
+                    required
+                  />
+                </div>
+
+                {/* Medications section */}
+                <div className="space-y-3 pt-2">
+                  <div className="flex justify-between items-center">
+                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block leading-none">Medications</span>
+                    <span className="text-[9px] font-extrabold text-slate-400 uppercase block leading-none">At least one required</span>
+                  </div>
+
+                  {/* Medicines List */}
+                  {medicinesList.length > 0 && (
+                    <div className="space-y-3">
+                      {medicinesList.map((med) => (
+                        <div
+                          key={med.id}
+                          className="bg-white border border-slate-200 rounded-2xl p-4.5 flex items-center justify-between shadow-3xs text-left"
+                        >
+                          <div className="space-y-1">
+                            <h5 className="font-bold text-blue-600 text-sm leading-tight">{med.medicineName}</h5>
+                            <p className="text-[11px] text-slate-500 font-bold mt-0.5 leading-none">
+                              {med.dosage} &nbsp; {med.frequency}
+                            </p>
+                            {med.instructions && (
+                              <p className="text-[10px] text-slate-400 font-medium italic mt-1 leading-tight">
+                                {med.instructions}
+                              </p>
+                            )}
+                          </div>
                           <button
                             type="button"
                             onClick={() => handleDeleteMedicine(med.id)}
-                            className="text-rose-500 hover:text-rose-700 p-1"
+                            className="text-rose-500 hover:text-rose-700 p-2 shrink-0 cursor-pointer"
                           >
                             <Trash2 className="w-4 h-4" />
                           </button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Dashed placeholder card */}
+                  <div className="bg-slate-50/50 border border-dashed border-slate-200 rounded-2xl p-6 flex flex-col items-center justify-center gap-3">
+                    <div className="w-10 h-10 bg-slate-100 rounded-full flex items-center justify-center text-slate-400">
+                      <Pill className="w-5 h-5" />
+                    </div>
+                    <span className="text-xs text-slate-400 font-bold">No other medications added yet.</span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const el = document.getElementById('new-entry-form-container');
+                        if (el) el.scrollIntoView({ behavior: 'smooth' });
+                      }}
+                      className="px-4 py-2 bg-brand-primary text-white font-bold text-xs rounded-xl shadow-3xs cursor-pointer active:scale-95 transition-all mt-1"
+                    >
+                      + ADD MEDICATION
+                    </button>
+                  </div>
+
+                  {/* New Entry box */}
+                  <div id="new-entry-form-container" className="bg-slate-100/50 border border-slate-200/80 rounded-2xl p-4.5 space-y-4 text-left">
+                    <div className="flex items-center gap-2 text-blue-700">
+                      <Plus className="w-4 h-4 text-blue-600 shrink-0" />
+                      <span className="font-display font-extrabold text-xs tracking-wide uppercase">New Entry</span>
+                    </div>
+
+                    <div className="space-y-3">
+                      <Input
+                        label="Medicine Name"
+                        value={newMedicine.medicineName}
+                        onChange={(e) => setNewMedicine({ ...newMedicine, medicineName: e.target.value })}
+                        placeholder="Medicine Name"
+                      />
+
+                      {/* Dosage, Freq, Duration Grid */}
+                      <div className="grid grid-cols-2 gap-3">
+                        <Input
+                          label="Dosage"
+                          value={newMedicine.dosage}
+                          onChange={(e) => setNewMedicine({ ...newMedicine, dosage: e.target.value })}
+                          placeholder="Dosage (e.g. 500mg)"
+                        />
+                        <Input
+                          label="Frequency"
+                          value={newMedicine.frequency}
+                          onChange={(e) => setNewMedicine({ ...newMedicine, frequency: e.target.value })}
+                          placeholder="Freq (e.g. 2x Daily)"
+                        />
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-3 items-end">
+                        <Input
+                          label="Duration"
+                          value={newMedicine.duration}
+                          onChange={(e) => setNewMedicine({ ...newMedicine, duration: e.target.value })}
+                          placeholder="Duration (e.g. 7 Days)"
+                        />
+                        <button
+                          type="button"
+                          onClick={handleAddMedicine}
+                          className="h-10 bg-[#0b6466] hover:bg-teal-700 text-white rounded-xl font-bold flex items-center justify-center gap-1.5 cursor-pointer shadow-3xs text-xs"
+                        >
+                          <Plus className="w-4 h-4" />
+                          <span>ADD TO LIST</span>
+                        </button>
+                      </div>
+
+                      <Input
+                        label="Instructions (Optional)"
+                        value={newMedicine.instructions}
+                        onChange={(e) => setNewMedicine({ ...newMedicine, instructions: e.target.value })}
+                        placeholder="Instructions (Optional)"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Tests Recommended */}
+                <div className="space-y-1.5 text-left">
+                  <span className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none">Tests Recommended</span>
+                  <textarea
+                    value={newPrescription.testsRecommended}
+                    onChange={(e) => setNewPrescription({ ...newPrescription, testsRecommended: e.target.value })}
+                    className="w-full min-h-[70px] p-3 text-sm rounded-xl border border-slate-200 outline-none focus:border-brand-primary font-medium text-slate-700 bg-white"
+                    placeholder="e.g. Lipid Profile, Complete Blood Count..."
+                  />
+                </div>
+
+                {/* General Advice */}
+                <div className="space-y-1.5 text-left">
+                  <span className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none">General Advice / Diet</span>
+                  <textarea
+                    value={newPrescription.advice}
+                    onChange={(e) => setNewPrescription({ ...newPrescription, advice: e.target.value })}
+                    className="w-full min-h-[70px] p-3 text-sm rounded-xl border border-slate-200 outline-none focus:border-brand-primary font-medium text-slate-700 bg-white"
+                    placeholder="e.g. Low sodium diet, 30 min light walking..."
+                  />
+                </div>
               </div>
+
+              {/* Bottom Sticky buttons */}
+              <div className="p-5 bg-white border-t border-slate-100 shrink-0 grid grid-cols-2 gap-3.5">
+                <button
+                  type="button"
+                  onClick={() => setIsCreatePrescriptionOpen(false)}
+                  className="w-full py-3.5 border border-slate-200 hover:bg-slate-50 text-slate-700 font-bold rounded-xl text-center cursor-pointer text-xs"
+                >
+                  CANCEL
+                </button>
+                <button
+                  type="submit"
+                  className="w-full py-3.5 bg-[#0a305e] hover:bg-[#08274d] text-white font-bold rounded-xl text-center cursor-pointer shadow-sm text-xs"
+                >
+                  SAVE PRESCRIPTION
+                </button>
+              </div>
+            </form>
+          </div>
+        ) : (
+          <form onSubmit={handleCreatePrescriptionSubmit} className="space-y-5">
+            {/* Prescribing Doctor Selector */}
+            {currentUser?.role === 'DOCTOR' ? (
+              <div className="space-y-1.5 text-left">
+                <span className="block text-xs font-semibold text-slate-500 uppercase tracking-wider">Prescribing Doctor</span>
+                <div className="px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm font-bold text-slate-700">
+                  {doctorsList.find(d => d.email?.toLowerCase() === currentUser.email?.toLowerCase())?.name || (currentUser.firstName + " " + currentUser.lastName)}
+                </div>
+              </div>
+            ) : (
+              <Select
+                label="Prescribed By (Doctor) *"
+                value={newPrescription.doctorId}
+                onChange={(e) => setNewPrescription({ ...newPrescription, doctorId: e.target.value })}
+                options={doctorsList.map((d) => ({ value: d.id, label: `${d.name} (${d.specialization})` }))}
+                required
+              />
             )}
-          </div>
 
-          <div className="border-t border-slate-200 pt-4 space-y-3">
-            <Input
-              label="Tests Recommended"
-              value={newPrescription.testsRecommended}
-              onChange={(e) => setNewPrescription({ ...newPrescription, testsRecommended: e.target.value })}
-              placeholder="e.g. Lipid Profile, Complete Blood Count, ECG"
-            />
-            <Input
-              label="General Advice / Diet"
-              value={newPrescription.advice}
-              onChange={(e) => setNewPrescription({ ...newPrescription, advice: e.target.value })}
-              placeholder="e.g. Limit salt. Drink plenty of water."
-            />
-          </div>
+            <div className="grid grid-cols-2 gap-4">
+              <Input
+                label="Issue Date *"
+                type="date"
+                value={newPrescription.issueDate}
+                onChange={(e) => setNewPrescription({ ...newPrescription, issueDate: e.target.value })}
+                required
+              />
+              <Input
+                label="Next Visit Date"
+                type="date"
+                value={newPrescription.nextVisitDate}
+                onChange={(e) => setNewPrescription({ ...newPrescription, nextVisitDate: e.target.value })}
+              />
+            </div>
 
-          <div className="flex gap-3 pt-4 border-t border-slate-200">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => setIsCreatePrescriptionOpen(false)}
-              className="w-full"
-            >
-              Cancel
-            </Button>
-            <Button type="submit" className="w-full">
-              Save Prescription
-            </Button>
-          </div>
-        </form>
+            {prescriptionSettings?.showDiagnosis !== false && (
+              <Input
+                label="Diagnosis / Findings *"
+                value={newPrescription.diagnosis}
+                onChange={(e) => setNewPrescription({ ...newPrescription, diagnosis: e.target.value })}
+                required
+                placeholder="e.g. Stage 1 Essential Hypertension"
+              />
+            )}
+
+            <div className="grid grid-cols-2 gap-4 text-left">
+              {prescriptionSettings?.showPatientHistory !== false && (
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-xs font-semibold text-slate-700 uppercase tracking-wider">Symptoms</label>
+                  <textarea
+                    value={newPrescription.symptoms}
+                    onChange={(e) => setNewPrescription({ ...newPrescription, symptoms: e.target.value })}
+                    className="w-full min-h-[60px] p-2.5 text-xs rounded-lg border border-slate-200 outline-none focus:border-brand-primary"
+                    placeholder="Morning headaches, blood pressure 140/90..."
+                  />
+                </div>
+              )}
+              {prescriptionSettings?.showVitals !== false && (
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-xs font-semibold text-slate-700 uppercase tracking-wider">Clinical Notes</label>
+                  <textarea
+                    value={newPrescription.clinicalNotes}
+                    onChange={(e) => setNewPrescription({ ...newPrescription, clinicalNotes: e.target.value })}
+                    className="w-full min-h-[60px] p-2.5 text-xs rounded-lg border border-slate-200 outline-none focus:border-brand-primary"
+                    placeholder="Rhythm evaluation normal. Low sodium advice..."
+                  />
+                </div>
+              )}
+            </div>
+
+            {/* MEDICINES FORM TABLE INTERFACE */}
+            <div className="border-t border-slate-200 pt-4 space-y-3">
+              <label className="text-xs font-bold text-slate-800 uppercase tracking-wider block text-left">
+                Medicines Table * (At least one required)
+              </label>
+
+              {/* Quick Medicine Add Form */}
+              <div className="bg-slate-50 border border-slate-200/60 rounded-xl p-3 space-y-3">
+                <div className="grid grid-cols-2 gap-2 text-left">
+                  <Input
+                    label="Medicine Name"
+                    value={newMedicine.medicineName}
+                    onChange={(e) => setNewMedicine({ ...newMedicine, medicineName: e.target.value })}
+                    placeholder="Amlodipine / Paracetamol"
+                  />
+                  {prescriptionSettings?.showDosageInstructions !== false ? (
+                    <Input
+                      label="Dosage"
+                      value={newMedicine.dosage}
+                      onChange={(e) => setNewMedicine({ ...newMedicine, dosage: e.target.value })}
+                      placeholder="500 mg / 1 Puff"
+                    />
+                  ) : (
+                    <div />
+                  )}
+                </div>
+                <div className="grid grid-cols-3 gap-2 text-left">
+                  <Input
+                    label="Frequency"
+                    value={newMedicine.frequency}
+                    onChange={(e) => setNewMedicine({ ...newMedicine, frequency: e.target.value })}
+                    placeholder="Once daily"
+                  />
+                  {prescriptionSettings?.showDuration !== false ? (
+                    <Input
+                      label="Duration"
+                      value={newMedicine.duration}
+                      onChange={(e) => setNewMedicine({ ...newMedicine, duration: e.target.value })}
+                      placeholder="7 Days"
+                    />
+                  ) : (
+                    <div />
+                  )}
+                  <div className="flex flex-col gap-1">
+                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider invisible">Add</span>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={handleAddMedicine}
+                      className="w-full h-[38px] text-xs font-bold border-brand-primary text-brand-primary hover:bg-blue-50 shrink-0"
+                    >
+                      Add Med
+                    </Button>
+                  </div>
+                </div>
+                <Input
+                  label="Instructions"
+                  value={newMedicine.instructions}
+                  onChange={(e) => setNewMedicine({ ...newMedicine, instructions: e.target.value })}
+                  placeholder="After food / Empty stomach / bedtime"
+                />
+              </div>
+
+              {/* Added Medicines Table list */}
+              {medicinesList.length === 0 ? (
+                <p className="text-xs text-rose-600 font-bold italic bg-rose-50/50 p-2.5 rounded border border-rose-100 text-center">
+                  Please add at least one medicine using the controller above.
+                </p>
+              ) : (
+                <div className="bg-white border border-slate-200 rounded-lg overflow-hidden max-h-[160px] overflow-y-auto">
+                  <table className="w-full text-left border-collapse text-xs">
+                    <thead className="bg-slate-50 border-b border-slate-100">
+                      <tr>
+                        <th className="p-2 font-semibold text-slate-500">Name</th>
+                        <th className="p-2 font-semibold text-slate-500">Dosage</th>
+                        <th className="p-2 font-semibold text-slate-500">Frequency / Duration</th>
+                        <th className="p-2 font-semibold text-slate-500 text-right">Delete</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100">
+                      {medicinesList.map((med) => (
+                        <tr key={med.id} className="hover:bg-slate-50/50">
+                          <td className="p-2">
+                            <p className="font-bold text-slate-800">{med.medicineName}</p>
+                            <p className="text-[10px] text-slate-400">{med.instructions}</p>
+                          </td>
+                          <td className="p-2 font-semibold text-slate-700">{med.dosage}</td>
+                          <td className="p-2 text-slate-600 font-medium">
+                            {med.frequency} • {med.duration}
+                          </td>
+                          <td className="p-2 text-right">
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteMedicine(med.id)}
+                              className="text-rose-500 hover:text-rose-700 p-1"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+
+            <div className="border-t border-slate-200 pt-4 space-y-3">
+              <Input
+                label="Tests Recommended"
+                value={newPrescription.testsRecommended}
+                onChange={(e) => setNewPrescription({ ...newPrescription, testsRecommended: e.target.value })}
+                placeholder="e.g. Lipid Profile, Complete Blood Count, ECG"
+              />
+              <Input
+                label="General Advice / Diet"
+                value={newPrescription.advice}
+                onChange={(e) => setNewPrescription({ ...newPrescription, advice: e.target.value })}
+                placeholder="e.g. Limit salt. Drink plenty of water."
+              />
+            </div>
+
+            <div className="flex gap-3 pt-4 border-t border-slate-200">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setIsCreatePrescriptionOpen(false)}
+                className="w-full"
+              >
+                Cancel
+              </Button>
+              <Button type="submit" className="w-full">
+                Save Prescription
+              </Button>
+            </div>
+          </form>
+        )}
       </Drawer>
 
       {/* D. PRESCRIPTION PREVIEW MODAL (A4 PRINTABLE STYLE) */}

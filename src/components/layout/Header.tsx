@@ -1,5 +1,5 @@
 import React from 'react';
-import { Search, Bell, Menu } from 'lucide-react';
+import { Search, Bell, Menu, Activity } from 'lucide-react';
 
 interface HeaderProps {
   onMenuToggle: () => void;
@@ -21,10 +21,16 @@ export const Header: React.FC<HeaderProps> = ({ onMenuToggle, currentUser }) => 
       <div className="flex items-center gap-4 flex-1">
         <button
           onClick={onMenuToggle}
-          className="md:hidden text-slate-500 hover:text-slate-800 p-1.5 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
+          className="md:hidden text-slate-500 hover:text-slate-800 p-1.5 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer shrink-0"
         >
           <Menu className="w-5 h-5" />
         </button>
+
+        {/* Mobile Heartbeat Brand Logo */}
+        <div className="flex md:hidden items-center gap-2 shrink-0">
+          <Activity className="w-5 h-5 text-blue-600 shrink-0" />
+          <span className="font-display font-black text-slate-800 text-base tracking-wide leading-none">HealthFlow</span>
+        </div>
 
         {/* Global Search Bar */}
         <div className="relative max-w-md w-full hidden sm:block">
