@@ -74,12 +74,16 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children, onLogout, curren
       {/* Main Container Area */}
       <div className="flex-1 flex flex-col overflow-hidden h-full relative">
         {/* Header */}
-        {(!isMobile || (location.pathname !== '/more' && location.pathname !== '/settings')) && (
+        {(!isMobile || (location.pathname !== '/more' && location.pathname !== '/settings' && location.pathname !== '/profile' && location.pathname !== '/reports' && location.pathname !== '/doctors')) && (
           <Header onMenuToggle={toggleMobileSidebar} currentUser={currentUser} />
         )}
 
         {/* Content Body */}
-        <main className="flex-1 overflow-y-auto p-6 md:p-8 bg-slate-50 pb-20 md:pb-8">
+        <main className={`flex-1 overflow-y-auto bg-slate-50 pb-20 md:pb-8 ${
+          isMobile && (location.pathname === '/settings' || location.pathname === '/more' || location.pathname === '/profile' || location.pathname === '/reports' || location.pathname === '/doctors')
+            ? 'p-0'
+            : 'p-6 md:p-8'
+        }`}>
           <motion.div
             initial={{ opacity: 0, y: 15 }}
             animate={{ opacity: 1, y: 0 }}

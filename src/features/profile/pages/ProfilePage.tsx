@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { 
   User, 
   Mail, 
@@ -16,7 +17,9 @@ import {
   KeyRound,
   Building,
   Globe,
-  MapPin
+  MapPin,
+  ArrowLeft,
+  ChevronLeft
 } from 'lucide-react';
 import { Button } from '../../../components/ui/Button';
 import { Input } from '../../../components/ui/Input';
@@ -30,6 +33,14 @@ export const ProfilePage: React.FC = () => {
   const [profileDetails, setProfileDetails] = useState<any>(null);
   const [clinicData, setClinicData] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth < 768);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   // Change Password States
   const [currentPassword, setCurrentPassword] = useState('');
@@ -155,13 +166,41 @@ export const ProfilePage: React.FC = () => {
 
   return (
     <div className="space-y-8 animate-fade-in-up max-w-5xl mx-auto pb-10">
-      {/* Header */}
-      <div>
-        <h1 className="text-2xl font-display font-bold text-slate-900">Account Profile</h1>
-        <p className="text-sm text-slate-500">
-          View your credential coordinates and manage your access security configuration.
-        </p>
-      </div>
+      {/* Mobile Header */}
+      {isMobile && (
+        <div className="flex items-center justify-between bg-white px-6 py-4 border-b border-slate-200 sticky top-0 z-30 shadow-sm h-18">
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => navigate('/more')}
+              className="text-slate-600 hover:text-slate-900 p-1 rounded-full hover:bg-slate-100 cursor-pointer"
+            >
+              <ArrowLeft className="w-6 h-6" />
+            </button>
+            <h2 className="text-lg font-bold text-[#094093] font-display ml-1">
+              Account Profile
+            </h2>
+          </div>
+          <div>
+            <img
+              src={currentUser?.avatarUrl || "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?q=80&w=120&auto=format&fit=crop"}
+              alt="Avatar"
+              className="w-9 h-9 rounded-full object-cover border border-slate-200 cursor-pointer shadow-xs"
+              onClick={() => navigate('/profile')}
+            />
+          </div>
+        </div>
+      )}
+
+      <div className={isMobile ? 'px-6 space-y-6' : 'space-y-8'}>
+        {/* Header */}
+        {!isMobile && (
+          <div>
+            <h1 className="text-2xl font-display font-bold text-slate-900">Account Profile</h1>
+            <p className="text-sm text-slate-500">
+              View your credential coordinates and manage your access security configuration.
+            </p>
+          </div>
+        )}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Left Column - Card Summary & Clinic Profile */}
@@ -429,6 +468,7 @@ export const ProfilePage: React.FC = () => {
             </form>
           </div>
         </div>
+      </div>
       </div>
     </div>
   );

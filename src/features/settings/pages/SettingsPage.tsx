@@ -154,7 +154,7 @@ export const SettingsPage: React.FC = () => {
 
   if (isMobile) {
     return (
-      <div className="space-y-6 pb-24 -mx-6 -mt-6">
+      <div className="space-y-6 pb-24">
         <div className="flex items-center justify-between bg-white px-6 py-4 border-b border-slate-200 sticky top-0 z-30 shadow-sm h-18">
           <div className="flex items-center gap-2">
             {activeMobileTab === null ? (
@@ -199,7 +199,7 @@ export const SettingsPage: React.FC = () => {
           {activeMobileTab === null ? (
             <>
               {/* Info Badges & Subtitle */}
-              <div>
+              {/* <div>
                 <div className="flex items-center gap-2 mt-2">
                   <span className="bg-[#0c66e4] text-white text-[10px] font-black uppercase tracking-wider rounded px-2.5 py-1">
                     ADMIN
@@ -211,7 +211,7 @@ export const SettingsPage: React.FC = () => {
                 <p className="text-slate-600 font-medium text-sm leading-relaxed mt-3">
                   Configure your clinic's workspace and operational preferences.
                 </p>
-              </div>
+              </div> */}
 
               {/* Navigation settings cards stack */}
               <div className="space-y-4 pt-1">
@@ -289,12 +289,12 @@ export const SettingsPage: React.FC = () => {
               </div>
 
               {/* Administrative warning block */}
-              <div className="border border-dashed border-slate-350 bg-slate-50/50 rounded-2xl p-4 flex items-start gap-3 mt-6">
+              {/* <div className="border border-dashed border-slate-350 bg-slate-50/50 rounded-2xl p-4 flex items-start gap-3 mt-6">
                 <Info className="w-5 h-5 text-slate-500 shrink-0 mt-0.5" />
                 <p className="text-xs text-slate-550 font-semibold leading-relaxed text-left">
                   Some settings may require administrative elevation to modify. Please contact the Clinic Director for permission changes.
                 </p>
-              </div>
+              </div> */}
             </>
           ) : (
             <div className="pt-2 text-left">
@@ -327,11 +327,10 @@ export const SettingsPage: React.FC = () => {
           <button
             type="button"
             onClick={() => setActiveTab('CLINIC')}
-            className={`pb-3 text-xs font-bold uppercase tracking-wider flex items-center gap-2 border-b-2 transition-all cursor-pointer ${
-              activeTab === 'CLINIC'
-                ? 'border-indigo-600 text-indigo-700 font-black'
-                : 'border-transparent text-slate-400 hover:text-slate-600'
-            }`}
+            className={`pb-3 text-xs font-bold uppercase tracking-wider flex items-center gap-2 border-b-2 transition-all cursor-pointer ${activeTab === 'CLINIC'
+              ? 'border-indigo-600 text-indigo-700 font-black'
+              : 'border-transparent text-slate-400 hover:text-slate-600'
+              }`}
           >
             <Building className="w-4 h-4" />
             <span>Clinic Settings</span>
@@ -341,11 +340,10 @@ export const SettingsPage: React.FC = () => {
           <button
             type="button"
             onClick={() => setActiveTab('USERS')}
-            className={`pb-3 text-xs font-bold uppercase tracking-wider flex items-center gap-2 border-b-2 transition-all cursor-pointer ${
-              activeTab === 'USERS'
-                ? 'border-indigo-600 text-indigo-700 font-black'
-                : 'border-transparent text-slate-400 hover:text-slate-600'
-            }`}
+            className={`pb-3 text-xs font-bold uppercase tracking-wider flex items-center gap-2 border-b-2 transition-all cursor-pointer ${activeTab === 'USERS'
+              ? 'border-indigo-600 text-indigo-700 font-black'
+              : 'border-transparent text-slate-400 hover:text-slate-600'
+              }`}
           >
             <UserSquare2 className="w-4 h-4" />
             <span>Users & Roles</span>
@@ -355,11 +353,10 @@ export const SettingsPage: React.FC = () => {
           <button
             type="button"
             onClick={() => setActiveTab('BILLING')}
-            className={`pb-3 text-xs font-bold uppercase tracking-wider flex items-center gap-2 border-b-2 transition-all cursor-pointer ${
-              activeTab === 'BILLING'
-                ? 'border-indigo-600 text-indigo-700 font-black'
-                : 'border-transparent text-slate-400 hover:text-slate-600'
-            }`}
+            className={`pb-3 text-xs font-bold uppercase tracking-wider flex items-center gap-2 border-b-2 transition-all cursor-pointer ${activeTab === 'BILLING'
+              ? 'border-indigo-600 text-indigo-700 font-black'
+              : 'border-transparent text-slate-400 hover:text-slate-600'
+              }`}
           >
             <Receipt className="w-4 h-4" />
             <span>Billing Settings</span>
@@ -369,11 +366,10 @@ export const SettingsPage: React.FC = () => {
           <button
             type="button"
             onClick={() => setActiveTab('PRESCRIPTION')}
-            className={`pb-3 text-xs font-bold uppercase tracking-wider flex items-center gap-2 border-b-2 transition-all cursor-pointer ${
-              activeTab === 'PRESCRIPTION'
-                ? 'border-indigo-600 text-indigo-700 font-black'
-                : 'border-transparent text-slate-400 hover:text-slate-600'
-            }`}
+            className={`pb-3 text-xs font-bold uppercase tracking-wider flex items-center gap-2 border-b-2 transition-all cursor-pointer ${activeTab === 'PRESCRIPTION'
+              ? 'border-indigo-600 text-indigo-700 font-black'
+              : 'border-transparent text-slate-400 hover:text-slate-600'
+              }`}
           >
             <Pill className="w-4 h-4" />
             <span>Prescription Settings</span>

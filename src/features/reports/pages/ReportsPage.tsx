@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { Download, Calendar, RefreshCcw, TrendingUp, HelpCircle, CheckCircle2, DollarSign, Users, AlertCircle, Clock } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Download, Calendar, RefreshCcw, TrendingUp, HelpCircle, CheckCircle2, DollarSign, Users, AlertCircle, Clock, ArrowLeft, ChevronLeft } from 'lucide-react';
 import { MonthlyRevenueTrend } from '../components/MonthlyRevenueTrend';
 import { TopDoctorPerformers } from '../components/TopDoctorPerformers';
 import { ReportsFilters, ReportsData } from '../types';
@@ -31,6 +32,19 @@ export const ReportsPage: React.FC = () => {
 
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [isMobile, setIsMobile] = useState<boolean>(window.innerWidth < 768);
+  const [currentUser, setCurrentUser] = useState<any>(null);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const cached = localStorage.getItem('healthflow_user');
+    if (cached) {
+      try {
+        setCurrentUser(JSON.parse(cached));
+      } catch (e) {
+        console.error(e);
+      }
+    }
+  }, []);
 
   useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth < 768);
@@ -176,8 +190,33 @@ export const ReportsPage: React.FC = () => {
 
   return (
     <div className="space-y-6 animate-fade-in-up">
+      {/* Mobile Header */}
+      {isMobile && (
+        <div className="flex items-center justify-between bg-white px-6 py-4 border-b border-slate-200 sticky top-0 z-30 shadow-sm h-18">
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => navigate('/more')}
+              className="text-slate-600 hover:text-slate-900 p-1 rounded-full hover:bg-slate-100 cursor-pointer"
+            >
+              <ArrowLeft className="w-6 h-6" />
+            </button>
+            <h2 className="text-lg font-bold text-[#094093] font-display ml-1">
+              Reports
+            </h2>
+          </div>
+          <div>
+            <img
+              src={currentUser?.avatarUrl || "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?q=80&w=120&auto=format&fit=crop"}
+              alt="Avatar"
+              className="w-9 h-9 rounded-full object-cover border border-slate-200 cursor-pointer shadow-xs"
+              onClick={() => navigate('/profile')}
+            />
+          </div>
+        </div>
+      )}
+
       {isMobile ? (
-        <div className="space-y-5 pb-24 animate-fade-in-up">
+        <div className="space-y-5 pb-24 px-6 pt-4 animate-fade-in-up">
           {/* Mobile Header with Export button */}
           <div className="flex items-center justify-between">
             <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Clinic Performance Overview</span>

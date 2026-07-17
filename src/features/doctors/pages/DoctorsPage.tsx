@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Plus,
   Search,
@@ -41,6 +42,7 @@ export const DoctorsPage: React.FC = () => {
   const [doctors, setDoctors] = useState<DoctorProfileExtended[]>([]);
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
   const [currentUser, setCurrentUser] = useState<any>(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth < 768);
@@ -330,18 +332,48 @@ export const DoctorsPage: React.FC = () => {
   };
 
   return (
-    <div className="space-y-6">
-      {/* 1. LIST VIEW */}
-      {!selectedDoctorId && (
-        <div className="space-y-6 animate-fade-in-up">
-          {isMobile ? (
-            <div className="space-y-5 text-left pb-24">
-              <div>
-                <h1 className="text-xl font-display font-extrabold text-slate-800">Doctors</h1>
-                <p className="text-xs text-slate-500 mt-1">
-                  Manage profiles and availability.
-                </p>
-              </div>
+    <div className={`space-y-6 ${isMobile ? 'pb-24' : ''}`}>
+      {/* Mobile Header */}
+      {isMobile && (
+        <div className="flex items-center justify-between bg-white px-6 py-4 border-b border-slate-200 sticky top-0 z-30 shadow-sm h-18">
+          <div className="flex items-center gap-2">
+            {selectedDoctorId === null ? (
+              <button
+                onClick={() => navigate('/more')}
+                className="text-slate-600 hover:text-slate-900 p-1 rounded-full hover:bg-slate-100 cursor-pointer"
+              >
+                <ArrowLeft className="w-6 h-6" />
+              </button>
+            ) : (
+              <button
+                onClick={() => setSelectedDoctorId(null)}
+                className="text-slate-600 hover:text-slate-900 p-1 rounded-full hover:bg-slate-100 cursor-pointer"
+              >
+                <ChevronLeft className="w-6 h-6" />
+              </button>
+            )}
+            <h2 className="text-lg font-bold text-[#094093] font-display ml-1">
+              {selectedDoctorId === null ? 'Doctors' : 'Doctor Profile'}
+            </h2>
+          </div>
+          <div>
+            <img
+              src={currentUser?.avatarUrl || "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?q=80&w=120&auto=format&fit=crop"}
+              alt="Avatar"
+              className="w-9 h-9 rounded-full object-cover border border-slate-200 cursor-pointer shadow-xs"
+              onClick={() => navigate('/profile')}
+            />
+          </div>
+        </div>
+      )}
+
+      <div className={isMobile ? 'px-6 space-y-6' : 'space-y-6'}>
+        {/* 1. LIST VIEW */}
+        {!selectedDoctorId && (
+          <div className="space-y-6 animate-fade-in-up">
+            {isMobile ? (
+              <div className="space-y-5 text-left pb-24">
+                {/* Redundant page title hidden on mobile view */}
 
               {/* Search Bar */}
               <div className="relative w-full">
@@ -741,14 +773,16 @@ export const DoctorsPage: React.FC = () => {
       {selectedDoctorId && activeDoctor && (
         <div className="space-y-6 animate-fade-in-up text-left">
           {/* Back button (Stitch screenshot style) */}
-          <button
-            id="back-to-doctors"
-            onClick={() => setSelectedDoctorId(null)}
-            className="flex items-center gap-2 text-xs font-bold text-blue-600 hover:text-blue-850 transition-colors"
-          >
-            <ArrowLeft className="w-4.5 h-4.5" />
-            <span>Back to Doctors</span>
-          </button>
+          {!isMobile && (
+            <button
+              id="back-to-doctors"
+              onClick={() => setSelectedDoctorId(null)}
+              className="flex items-center gap-2 text-xs font-bold text-blue-600 hover:text-blue-850 transition-colors"
+            >
+              <ArrowLeft className="w-4.5 h-4.5" />
+              <span>Back to Doctors</span>
+            </button>
+          )}
 
           {isMobile ? (
             <div className="space-y-5 pb-24">
@@ -1862,6 +1896,7 @@ export const DoctorsPage: React.FC = () => {
           </div>
         </div>
       )}
+      </div>
     </div>
   );
 };

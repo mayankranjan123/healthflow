@@ -40,7 +40,7 @@ export const MorePage: React.FC<MorePageProps> = ({ currentUser, onLogout }) => 
   };
 
   return (
-    <div className="space-y-6 pb-20 animate-fade-in-up md:max-w-md md:mx-auto">
+    <div className="space-y-6 pb-20 px-6 pt-4 animate-fade-in-up md:max-w-md md:mx-auto">
       {/* Mobile Header block (Only visible on mobile path /more) */}
       {/* <div className="flex justify-between items-center bg-white -mx-6 -mt-6 p-6 border-b border-slate-200/80 sticky top-0 z-30 md:hidden">
         <div className="flex items-center gap-3">
