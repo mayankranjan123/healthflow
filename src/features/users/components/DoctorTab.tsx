@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Search, Edit2, Eye, ToggleLeft, ToggleRight, Plus, ChevronLeft, ChevronRight, RefreshCw } from 'lucide-react';
+import { Search, Edit2, Eye, ToggleLeft, ToggleRight, Plus, ChevronLeft, ChevronRight, RefreshCw, Phone, Mail } from 'lucide-react';
 import { Button } from '../../../components/ui/Button';
 import { DoctorUser } from '../types';
 
@@ -17,6 +17,7 @@ interface DoctorTabProps {
   onEdit: (doctor: DoctorUser) => void;
   onAdd: () => void;
   onView: (doctor: DoctorUser) => void;
+  isMobile?: boolean;
 }
 
 export const DoctorTab: React.FC<DoctorTabProps> = ({
@@ -33,6 +34,7 @@ export const DoctorTab: React.FC<DoctorTabProps> = ({
   onEdit,
   onAdd,
   onView,
+  isMobile,
 }) => {
   const [specFilter, setSpecFilter] = useState('ALL');
   const itemsPerPage = 5;
@@ -53,7 +55,171 @@ export const DoctorTab: React.FC<DoctorTabProps> = ({
     onPageChange(1);
   };
 
-  return (
+  return isMobile ? (
+    <div className="space-y-4 animate-fade-in text-left">
+      {/* Mobile Search bar */}
+      <div className="relative w-full">
+        <Search className="absolute left-4 top-3.5 w-4 h-4 text-slate-400" />
+        <input
+          type="text"
+          placeholder="Search by name or email..."
+          value={searchTerm}
+          onChange={(e) => {
+            setSearchTerm(e.target.value);
+            onPageChange(1);
+          }}
+          className="w-full pl-11 pr-4 h-11 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold text-slate-700 outline-none focus:border-blue-500 focus:bg-white transition-all"
+        />
+      </div>
+
+      {/* Specialization & Status Filters */}
+      <div className="grid grid-cols-2 gap-3">
+        <div className="flex flex-col gap-1.5">
+          <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none">Specialization</label>
+          <select
+            value={specFilter}
+            onChange={(e) => {
+              setSpecFilter(e.target.value);
+              onPageChange(1);
+            }}
+            className="w-full px-3 h-11 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 outline-none focus:border-blue-500"
+          >
+            <option value="ALL">All Specialities</option>
+            {specializations.map((spec) => (
+              <option key={spec} value={spec}>{spec}</option>
+            ))}
+          </select>
+        </div>
+
+        <div className="flex flex-col gap-1.5">
+          <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none">Status</label>
+          <select
+            value={statusFilter}
+            onChange={(e) => {
+              setStatusFilter(e.target.value as any);
+              onPageChange(1);
+            }}
+            className="w-full px-3 h-11 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 outline-none focus:border-blue-500"
+          >
+            <option value="ALL">All Status</option>
+            <option value="ACTIVE">Active Only</option>
+            <option value="INACTIVE">Inactive Only</option>
+          </select>
+        </div>
+      </div>
+
+      {/* Cards list */}
+      <div className="space-y-4">
+        {filtered.length === 0 ? (
+          <div className="py-12 bg-white border border-slate-200 rounded-2xl text-center text-slate-400 font-semibold text-xs">
+            No doctors found matching filters.
+          </div>
+        ) : (
+          filtered.map((doctor) => {
+            const initials = doctor.name.replace('Dr. ', '').split(' ').map((n) => n[0]).join('').substring(0, 2).toUpperCase();
+            return (
+              <div key={doctor.id} className="bg-white border border-slate-200 rounded-2xl p-5 shadow-3xs flex flex-col gap-4 relative">
+                {/* Top: Avatar, Name, ID, Toggle */}
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 rounded-full overflow-hidden bg-blue-50 border border-slate-200 flex items-center justify-center font-bold text-blue-600 text-xs shrink-0">
+                      {doctor.avatarUrl ? (
+                        <img src={doctor.avatarUrl} alt={doctor.name} className="w-full h-full object-cover" />
+                      ) : (
+                        initials
+                      )}
+                    </div>
+                    <div>
+                      <h4 className="font-extrabold text-slate-800 text-sm leading-tight">{doctor.name}</h4>
+                      <div className="flex items-center gap-2 mt-1.5">
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-blue-50 text-blue-600 border border-blue-100">
+                          {doctor.id}
+                        </span>
+                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">
+                          {doctor.specialization}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Toggle Switch */}
+                  <button
+                    type="button"
+                    onClick={() => onToggleStatus(doctor.id)}
+                    className="cursor-pointer focus:outline-none shrink-0"
+                  >
+                    <div className={`w-11 h-6 rounded-full p-0.5 transition-colors flex ${doctor.isActive ? 'bg-[#0F766E] justify-end' : 'bg-slate-200 justify-start'} items-center`}>
+                      <div className="w-5 h-5 bg-white rounded-full shadow-md" />
+                    </div>
+                  </button>
+                </div>
+
+                {/* Divider */}
+                <div className="h-px bg-slate-100 -mx-5" />
+
+                {/* Contact Info */}
+                <div className="space-y-2 text-xs font-semibold text-slate-500">
+                  <div className="flex items-center gap-2.5">
+                    <Phone className="w-4 h-4 text-slate-400 shrink-0" />
+                    <span>{doctor.mobile}</span>
+                  </div>
+                  <div className="flex items-center gap-2.5">
+                    <Mail className="w-4 h-4 text-slate-400 shrink-0" />
+                    <span className="truncate">{doctor.email}</span>
+                  </div>
+                </div>
+
+                {/* Bottom Actions */}
+                <div className="flex items-center justify-end gap-1 pt-1.5 border-t border-slate-50">
+                  <button
+                    type="button"
+                    onClick={() => onView(doctor)}
+                    className="p-2 text-slate-400 hover:text-blue-600 rounded-xl hover:bg-slate-50 transition-all cursor-pointer"
+                  >
+                    <Eye className="w-5 h-5" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => onEdit(doctor)}
+                    className="p-2 text-slate-400 hover:text-blue-600 rounded-xl hover:bg-slate-50 transition-all cursor-pointer"
+                  >
+                    <Edit2 className="w-5 h-5" />
+                  </button>
+                </div>
+              </div>
+            );
+          })
+        )}
+      </div>
+
+      {/* Pagination footer */}
+      <div className="flex items-center justify-between gap-4 mt-6 pb-6">
+        <div className="text-xs text-slate-500 font-semibold">
+          Showing <span className="text-slate-800">{startIndex + 1}</span>-
+          <span className="text-slate-800">{Math.min(startIndex + itemsPerPage, totalItems)}</span> of{' '}
+          <span className="text-slate-800">{totalItems}</span> Doctors
+        </div>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => onPageChange(currentPage - 1)}
+            disabled={currentPage === 1}
+            className="w-10 h-10 rounded-xl border border-slate-200 flex items-center justify-center hover:bg-slate-50 disabled:opacity-40 disabled:hover:bg-transparent cursor-pointer"
+          >
+            <ChevronLeft className="w-5 h-5 text-slate-600" />
+          </button>
+          <button
+            type="button"
+            onClick={() => onPageChange(currentPage + 1)}
+            disabled={currentPage === totalPages}
+            className="w-10 h-10 rounded-xl border border-slate-200 flex items-center justify-center hover:bg-slate-50 disabled:opacity-40 disabled:hover:bg-transparent cursor-pointer"
+          >
+            <ChevronRight className="w-5 h-5 text-slate-600" />
+          </button>
+        </div>
+      </div>
+    </div>
+  ) : (
     <div className="space-y-4 animate-fade-in">
       {/* Search and Action Bar */}
       <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm space-y-4">
@@ -102,10 +268,10 @@ export const DoctorTab: React.FC<DoctorTabProps> = ({
                 <select
                   value={statusFilter}
                   onChange={(e) => {
-                    setStatusFilter(e.target.value);
+                    setStatusFilter(e.target.value as any);
                     onPageChange(1);
                   }}
-                  className="bg-white border border-slate-200 rounded-lg text-sm font-semibold px-3 py-2 outline-none text-slate-700 focus:border-blue-600 flex-1 h-[38px]"
+                  className="bg-white border border-slate-200 rounded-lg text-sm font-semibold px-3 py-2 outline-none text-slate-700 focus:border-blue-600 h-[38px] flex-1"
                 >
                   <option value="ALL">All Status</option>
                   <option value="ACTIVE">Active Only</option>
@@ -114,9 +280,9 @@ export const DoctorTab: React.FC<DoctorTabProps> = ({
                 <button
                   onClick={resetFilters}
                   title="Reset Filters"
-                  className="p-2 border border-slate-200 hover:border-slate-300 rounded-lg bg-slate-50 hover:bg-slate-100 transition-all cursor-pointer flex items-center justify-center shrink-0 w-[38px] h-[38px]"
+                  className="p-2 border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors shrink-0 cursor-pointer h-[38px] w-[38px] flex items-center justify-center text-slate-500"
                 >
-                  <RefreshCw className="w-4 h-4 text-slate-500" />
+                  <RefreshCw className="w-4 h-4" />
                 </button>
               </div>
             </div>
@@ -137,108 +303,85 @@ export const DoctorTab: React.FC<DoctorTabProps> = ({
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="bg-slate-50 border-b border-slate-100">
-                <th className="px-6 py-4 text-[11px] font-bold text-slate-400 uppercase tracking-wider">Doctor Details</th>
+                <th className="px-6 py-4 text-[11px] font-bold text-slate-400 uppercase tracking-wider w-24">Profile</th>
+                <th className="px-6 py-4 text-[11px] font-bold text-slate-400 uppercase tracking-wider">Doctor Name</th>
                 <th className="px-6 py-4 text-[11px] font-bold text-slate-400 uppercase tracking-wider">Specialization</th>
-                <th className="px-6 py-4 text-[11px] font-bold text-slate-400 uppercase tracking-wider">Qualification</th>
-                <th className="px-6 py-4 text-[11px] font-bold text-slate-400 uppercase tracking-wider text-center">Exp.</th>
-                <th className="px-6 py-4 text-[11px] font-bold text-slate-400 uppercase tracking-wider text-right">Consultation Fee</th>
-                <th className="px-6 py-4 text-[11px] font-bold text-slate-400 uppercase tracking-wider text-right">Total Completed Consultations</th>
-                <th className="px-6 py-4 text-[11px] font-bold text-slate-400 uppercase tracking-wider text-right">Followup Fee</th>
-                <th className="px-6 py-4 text-[11px] font-bold text-slate-400 uppercase tracking-wider">Working Hours</th>
-                <th className="px-6 py-4 text-[11px] font-bold text-slate-400 uppercase tracking-wider text-center w-28">Status</th>
+                <th className="px-6 py-4 text-[11px] font-bold text-slate-400 uppercase tracking-wider">Mobile</th>
+                <th className="px-6 py-4 text-[11px] font-bold text-slate-400 uppercase tracking-wider">Email</th>
+                <th className="px-6 py-4 text-[11px] font-bold text-slate-400 uppercase tracking-wider text-center w-32">Status</th>
                 <th className="px-6 py-4 text-[11px] font-bold text-slate-400 uppercase tracking-wider text-right w-28">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
               {filtered.length === 0 ? (
                 <tr>
-                  <td colSpan={10} className="px-6 py-10 text-center text-sm text-slate-400 font-medium">
+                  <td colSpan={7} className="px-6 py-10 text-center text-sm text-slate-400 font-medium">
                     No doctor profiles found.
                   </td>
                 </tr>
               ) : (
-                filtered.map((doc) => (
-                  <tr key={doc.id} className="hover:bg-slate-50/50 transition-colors">
-                    {/* Doctor Details */}
+                filtered.map((doctor) => (
+                  <tr key={doctor.id} className="hover:bg-slate-50/50 transition-colors">
+                    {/* Profile */}
                     <td className="px-6 py-4.5">
-                      <div className="flex items-center gap-3">
-                        <div className="w-11 h-11 rounded-full overflow-hidden bg-slate-100 border border-slate-200 flex items-center justify-center shrink-0">
-                          {doc.avatarUrl ? (
-                            <img src={doc.avatarUrl} alt={doc.name} className="w-full h-full object-cover" />
-                          ) : (
-                            <span className="text-sm font-bold text-slate-600 uppercase">
-                              {doc.name.replace('Dr. ', '').split(' ').map((n) => n[0]).join('').substring(0, 2)}
-                            </span>
-                          )}
-                        </div>
-                        <div>
-                          <div className="font-semibold text-slate-800 text-sm">{doc.name}</div>
-                          <div className="text-[11px] text-slate-400 font-medium font-mono">{doc.email}</div>
-                        </div>
+                      <div className="w-11 h-11 rounded-full overflow-hidden bg-slate-100 border border-slate-200 flex items-center justify-center">
+                        {doctor.avatarUrl ? (
+                          <img src={doctor.avatarUrl} alt={doctor.name} className="w-full h-full object-cover" />
+                        ) : (
+                          <span className="text-sm font-bold text-slate-600 uppercase">
+                            {doctor.name.replace('Dr. ', '').split(' ').map((n) => n[0]).join('').substring(0, 2)}
+                          </span>
+                        )}
                       </div>
+                    </td>
+                    {/* Name */}
+                    <td className="px-6 py-4.5">
+                      <div className="font-semibold text-slate-800 text-sm">{doctor.name}</div>
+                      <div className="text-[11px] text-slate-400 font-medium font-mono">{doctor.id}</div>
                     </td>
                     {/* Specialization */}
-                    <td className="px-6 py-4.5 text-sm font-semibold text-slate-700">
-                      {doc.specialization}
+                    <td className="px-6 py-4.5">
+                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-indigo-50 text-indigo-700">
+                        {doctor.specialization}
+                      </span>
                     </td>
-                    {/* Qualification */}
+                    {/* Mobile */}
                     <td className="px-6 py-4.5 text-sm text-slate-600 font-medium">
-                      {doc.qualification}
+                      {doctor.mobile}
                     </td>
-                    {/* Exp */}
-                    <td className="px-6 py-4.5 text-sm text-slate-600 font-semibold text-center">
-                      {doc.experience}
+                    {/* Email */}
+                    <td className="px-6 py-4.5 text-sm text-slate-600 font-medium">
+                      {doctor.email}
                     </td>
-                    {/* Consultation Fee */}
-                    <td className="px-6 py-4.5 text-sm font-bold text-blue-600 text-right">
-                      ₹{doc.fee.toFixed(2)}
-                    </td>
-                    {/* Total Completed Consultations */}
-                    <td className="px-6 py-4.5 text-sm font-bold text-slate-700 text-right">
-                      {doc.totalConsultations.toLocaleString()}
-                    </td>
-                    {/* Followup Fee (calculated as 1/3 of consultation fee or defaulted to ₹40.00 for Aisha / Rohit / Samuel / Kavya based on standard clinical math) */}
-                    <td className="px-6 py-4.5 text-sm font-bold text-blue-600 text-right">
-                      ₹{doc.followupFee.toFixed(2)}
-                    </td>
-                    {/* Working Hours */}
-                    <td className="px-6 py-4.5 text-sm text-slate-600 font-medium font-mono">
-                      {doc.workingHours}
-                    </td>
-                    {/* Status Badge & Toggle */}
+                    {/* Status Toggle */}
                     <td className="px-6 py-4.5 text-center">
-                      <div className="flex flex-col items-center gap-1.5 justify-center">
-                        <span className={`inline-flex px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${doc.isActive ? 'bg-emerald-50 text-emerald-700 border border-emerald-100' : 'bg-slate-100 text-slate-500 border border-slate-200'
-                          }`}>
-                          {doc.isActive ? 'Active' : 'Inactive'}
-                        </span>
-                        <button
-                          onClick={() => onToggleStatus(doc.id)}
-                          className="cursor-pointer text-slate-400 hover:text-slate-600 transition-all"
-                        >
-                          {doc.isActive ? (
-                            <ToggleRight className="w-8 h-5 text-emerald-500 fill-emerald-50" />
-                          ) : (
-                            <ToggleLeft className="w-8 h-5 text-slate-300" />
-                          )}
-                        </button>
-                      </div>
+                      <button
+                        onClick={() => onToggleStatus(doctor.id)}
+                        className="inline-flex items-center justify-center cursor-pointer text-slate-400 hover:text-slate-600 transition-colors"
+                      >
+                        {doctor.isActive ? (
+                          <ToggleRight className="w-10 h-6 text-emerald-600 fill-emerald-100" />
+                        ) : (
+                          <ToggleLeft className="w-10 h-6 text-slate-300" />
+                        )}
+                      </button>
                     </td>
                     {/* Actions */}
                     <td className="px-6 py-4.5 text-right">
-                      <div className="flex items-center justify-end gap-2">
+                      <div className="flex items-center justify-end gap-2.5">
                         <button
-                          onClick={() => onView(doc)}
-                          className="text-xs font-semibold text-blue-600 hover:text-blue-700 bg-blue-50 hover:bg-blue-100/80 border border-blue-100 px-3 py-1.5 rounded-md transition-all cursor-pointer"
+                          onClick={() => onView(doctor)}
+                          title="View Details"
+                          className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-all cursor-pointer"
                         >
-                          View
+                          <Eye className="w-4 h-4" />
                         </button>
                         <button
-                          onClick={() => onEdit(doc)}
+                          onClick={() => onEdit(doctor)}
                           title="Edit Profile"
                           className="p-1.5 text-slate-400 hover:text-amber-600 hover:bg-amber-50 rounded-md transition-all cursor-pointer"
                         >
-                          <Edit2 className="w-3.5 h-3.5" />
+                          <Edit2 className="w-4 h-4" />
                         </button>
                       </div>
                     </td>

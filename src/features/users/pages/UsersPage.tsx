@@ -43,6 +43,13 @@ type ActiveTab = 'admin' | 'doctor' | 'staff' | 'roles';
 
 export const UsersPage: React.FC<UsersPageProps> = ({ hideHeader = false }) => {
   const [activeTab, setActiveTab] = useState<ActiveTab>('admin');
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth < 768);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   // Core States
   const [admins, setAdmins] = useState<AdminUser[]>([]);
@@ -484,36 +491,82 @@ export const UsersPage: React.FC<UsersPageProps> = ({ hideHeader = false }) => {
   return (
     <div className="space-y-6 animate-fade-in-up">
       {/* Dynamic Module Header */}
-      {!hideHeader && (
-        <div>
-          <span className="text-[10px] font-bold text-blue-600 tracking-widest uppercase block mb-1">
-            {header.category}
-          </span>
-          <h2 className="text-2xl font-display font-bold text-slate-900">{header.title}</h2>
-          <p className="text-sm text-slate-500 font-medium leading-relaxed">{header.subtitle}</p>
-        </div>
-      )}
+      {isMobile ? (
+        <div className="space-y-2">
+          <div className="flex items-center justify-between gap-3 text-left">
+            <div>
+              <h2 className="text-xl font-display font-extrabold text-slate-900 tracking-tight">Users & Roles</h2>
+              <p className="text-xs text-slate-500 font-semibold leading-normal mt-1">Manage clinical access and roles.</p>
+            </div>
+            {activeTab !== 'roles' && (
+              <button
+                type="button"
+                onClick={handleAddClick}
+                className="bg-blue-600 hover:bg-blue-700 text-white font-extrabold text-xs px-4 py-2.5 rounded-xl shadow-3xs flex items-center gap-1.5 shrink-0 cursor-pointer transition-all active:scale-95"
+              >
+                <Plus className="w-4 h-4" />
+                <span>
+                  {activeTab === 'admin' ? 'Add New Admin' : activeTab === 'doctor' ? 'Add New Doctor' : 'Add New Staff'}
+                </span>
+              </button>
+            )}
+          </div>
 
-      {/* Tabs Menu */}
-      <div className="border-b border-slate-200">
-        <div className="flex gap-8">
-          {(['admin', 'doctor', 'staff', 'roles'] as ActiveTab[]).map((tab) => (
-            <button
-              key={tab}
-              onClick={() => setActiveTab(tab)}
-              className={`
-                pb-4 text-sm font-bold border-b-2 transition-all cursor-pointer capitalize
-                ${activeTab === tab 
-                  ? 'border-blue-600 text-blue-600' 
-                  : 'border-transparent text-slate-400 hover:text-slate-600'
-                }
-              `}
-            >
-              {tab === 'roles' ? 'Roles' : tab}
-            </button>
-          ))}
+          {/* Pill Picker Tabs */}
+          <div className="bg-slate-100 p-1 rounded-2xl flex gap-1 w-full mt-4">
+            {(['admin', 'doctor', 'staff', 'roles'] as ActiveTab[]).map((tab) => {
+              const isActive = activeTab === tab;
+              return (
+                <button
+                  key={tab}
+                  type="button"
+                  onClick={() => setActiveTab(tab)}
+                  className={`flex-1 py-2 text-center text-xs font-bold rounded-xl transition-all capitalize cursor-pointer ${
+                    isActive
+                      ? 'bg-white text-blue-600 shadow-2xs font-extrabold'
+                      : 'text-slate-550 hover:text-slate-700'
+                  }`}
+                >
+                  {tab === 'roles' ? 'Roles' : tab}
+                </button>
+              );
+            })}
+          </div>
         </div>
-      </div>
+      ) : (
+        <>
+          {!hideHeader && (
+            <div>
+              <span className="text-[10px] font-bold text-blue-600 tracking-widest uppercase block mb-1">
+                {header.category}
+              </span>
+              <h2 className="text-2xl font-display font-bold text-slate-900">{header.title}</h2>
+              <p className="text-sm text-slate-500 font-medium leading-relaxed">{header.subtitle}</p>
+            </div>
+          )}
+
+          {/* Tabs Menu */}
+          <div className="border-b border-slate-200">
+            <div className="flex gap-8">
+              {(['admin', 'doctor', 'staff', 'roles'] as ActiveTab[]).map((tab) => (
+                <button
+                  key={tab}
+                  onClick={() => setActiveTab(tab)}
+                  className={`
+                    pb-4 text-sm font-bold border-b-2 transition-all cursor-pointer capitalize
+                    ${activeTab === tab 
+                      ? 'border-blue-600 text-blue-600' 
+                      : 'border-transparent text-slate-400 hover:text-slate-600'
+                    }
+                  `}
+                >
+                  {tab === 'roles' ? 'Roles' : tab}
+                </button>
+              ))}
+            </div>
+          </div>
+        </>
+      )}
 
       {/* Active Tab View */}
       <div>
@@ -538,6 +591,7 @@ export const UsersPage: React.FC<UsersPageProps> = ({ hideHeader = false }) => {
               onEdit={handleEditClick}
               onAdd={handleAddClick}
               onView={handleViewClick}
+              isMobile={isMobile}
             />
           )
         )}
@@ -562,6 +616,7 @@ export const UsersPage: React.FC<UsersPageProps> = ({ hideHeader = false }) => {
               onEdit={handleEditClick}
               onAdd={handleAddClick}
               onView={handleViewClick}
+              isMobile={isMobile}
             />
           )
         )}
@@ -586,6 +641,7 @@ export const UsersPage: React.FC<UsersPageProps> = ({ hideHeader = false }) => {
               onEdit={handleEditClick}
               onAdd={handleAddClick}
               onView={handleViewClick}
+              isMobile={isMobile}
             />
           )
         )}
@@ -599,6 +655,7 @@ export const UsersPage: React.FC<UsersPageProps> = ({ hideHeader = false }) => {
             <RolesTab
               permissions={permissions}
               onSave={savePermissionsToStore}
+              isMobile={isMobile}
             />
           )
         )}
