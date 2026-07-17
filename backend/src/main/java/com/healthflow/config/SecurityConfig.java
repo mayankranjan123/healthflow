@@ -24,6 +24,8 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import java.util.Arrays;
 import java.util.List;
 
+import org.springframework.http.HttpMethod;
+
 @Configuration
 @EnableWebSecurity
 @EnableMethodSecurity
@@ -70,6 +72,7 @@ public class SecurityConfig {
             // 4. Configure Endpoint Auth Filters
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/auth/**").permitAll() // Authenticate & forgot-pwd routes public
+                .requestMatchers(HttpMethod.GET, "/uploads/**").permitAll() // Allow public logo downloading
                 .anyRequest().authenticated()
             )
             // 5. Add custom JWT filter

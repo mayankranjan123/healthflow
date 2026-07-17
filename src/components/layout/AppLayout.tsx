@@ -8,7 +8,7 @@ import { NavLink, useLocation } from 'react-router-dom';
 interface AppLayoutProps {
   children: React.ReactNode;
   onLogout: () => void;
-  currentUser: { firstName: string; lastName: string; role: string; email: string } | null;
+  currentUser: { firstName: string; lastName: string; role: string; email: string; avatarUrl?: string } | null;
 }
 
 export const AppLayout: React.FC<AppLayoutProps> = ({ children, onLogout, currentUser }) => {

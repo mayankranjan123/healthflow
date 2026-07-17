@@ -3,7 +3,7 @@ import { Search, Bell, Menu, Activity } from 'lucide-react';
 
 interface HeaderProps {
   onMenuToggle: () => void;
-  currentUser: { firstName: string; lastName: string; role: string; email: string } | null;
+  currentUser: { firstName: string; lastName: string; role: string; email: string; avatarUrl?: string } | null;
 }
 
 export const Header: React.FC<HeaderProps> = ({ onMenuToggle, currentUser }) => {
@@ -11,6 +11,7 @@ export const Header: React.FC<HeaderProps> = ({ onMenuToggle, currentUser }) => 
     firstName: 'Neha',
     lastName: 'Kapoor',
     role: 'ADMIN',
+    avatarUrl: ''
   };
 
   const user = currentUser || defaultUser;
@@ -68,7 +69,7 @@ export const Header: React.FC<HeaderProps> = ({ onMenuToggle, currentUser }) => 
           {/* Avatar Picture */}
           <div className="relative">
             <img
-              src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?q=80&w=120&auto=format&fit=crop"
+              src={user.avatarUrl || "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?q=80&w=120&auto=format&fit=crop"}
               alt={`${user.firstName} ${user.lastName}`}
               className="w-10 h-10 rounded-full object-cover border-2 border-slate-100 shadow-sm"
               referrerPolicy="no-referrer"

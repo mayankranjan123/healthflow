@@ -109,6 +109,7 @@ export const mockUsersApi = {
           isActive: admin.isActive,
           gender: admin.gender,
           dateOfBirth: admin.dateOfBirth,
+          avatarUrl: admin.avatarUrl,
         });
         link = res.setPasswordLink;
       } else {
@@ -119,6 +120,7 @@ export const mockUsersApi = {
           isActive: admin.isActive,
           gender: admin.gender,
           dateOfBirth: admin.dateOfBirth,
+          avatarUrl: admin.avatarUrl,
         });
       }
     }
@@ -202,6 +204,7 @@ export const mockUsersApi = {
           registrationNumber: doc.registrationNumber,
           totalConsultations: doc.totalConsultations ? doc.totalConsultations.toString() : undefined,
           joiningDate: doc.joiningDate,
+          avatarUrl: doc.avatarUrl,
         });
         link = res.setPasswordLink;
       } else {
@@ -221,6 +224,7 @@ export const mockUsersApi = {
           registrationNumber: doc.registrationNumber,
           totalConsultations: doc.totalConsultations ? doc.totalConsultations.toString() : undefined,
           joiningDate: doc.joiningDate,
+          avatarUrl: doc.avatarUrl,
         });
       }
     }
@@ -283,6 +287,7 @@ export const mockUsersApi = {
           isActive: s.isActive,
           gender: s.gender,
           dateOfBirth: s.dateOfBirth,
+          avatarUrl: s.avatarUrl,
         });
         link = res.setPasswordLink;
       } else {
@@ -293,6 +298,7 @@ export const mockUsersApi = {
           isActive: s.isActive,
           gender: s.gender,
           dateOfBirth: s.dateOfBirth,
+          avatarUrl: s.avatarUrl,
         });
       }
     }

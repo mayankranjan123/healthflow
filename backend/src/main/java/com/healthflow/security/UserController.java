@@ -33,7 +33,7 @@ public class UserController {
         Long userId = principal.getId();
 
         // Fetch basic user details
-        String sql = "SELECT u.id, u.email, u.first_name, u.last_name, u.phone, u.is_active, u.gender, u.date_of_birth, u.clinic_id, r.name as role_name " +
+        String sql = "SELECT u.id, u.email, u.first_name, u.last_name, u.phone, u.is_active, u.gender, u.date_of_birth, u.clinic_id, u.avatar_url, r.name as role_name " +
                      "FROM users u " +
                      "LEFT JOIN user_roles ur ON u.id = ur.user_id " +
                      "LEFT JOIN roles r ON ur.role_id = r.id " +
@@ -79,7 +79,7 @@ public class UserController {
             profile.put("role", role != null ? role : "STAFF");
             profile.put("gender", map.get("gender") != null ? map.get("gender") : "");
             profile.put("dateOfBirth", map.get("date_of_birth") != null ? map.get("date_of_birth").toString() : "");
-            profile.put("avatarUrl", "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?q=80&w=120&auto=format&fit=crop");
+            profile.put("avatarUrl", map.get("avatar_url") != null ? map.get("avatar_url") : "");
 
             // If Doctor, fetch additional fields from doctors table
             if ("DOCTOR".equals(role)) {
@@ -175,7 +175,7 @@ public class UserController {
             jakarta.servlet.http.HttpServletResponse response
     ) {
         StringBuilder sql = new StringBuilder(
-            "SELECT u.id, u.email, u.first_name, u.last_name, u.phone, u.is_active, u.gender, u.date_of_birth, r.name as role_name " +
+            "SELECT u.id, u.email, u.first_name, u.last_name, u.phone, u.is_active, u.gender, u.date_of_birth, u.avatar_url, r.name as role_name " +
             "FROM users u " +
             "LEFT JOIN user_roles ur ON u.id = ur.user_id " +
             "LEFT JOIN roles r ON ur.role_id = r.id " +
@@ -239,7 +239,7 @@ public class UserController {
             map.put("mobile", rs.getString("phone") != null ? rs.getString("phone") : "");
             map.put("isActive", rs.getBoolean("is_active"));
             map.put("role", role != null ? role : "STAFF");
-            map.put("avatarUrl", "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?q=80&w=120&auto=format&fit=crop");
+            map.put("avatarUrl", rs.getString("avatar_url") != null ? rs.getString("avatar_url") : "");
             map.put("gender", rs.getString("gender") != null ? rs.getString("gender") : "");
             map.put("dateOfBirth", rs.getDate("date_of_birth") != null ? rs.getDate("date_of_birth").toString() : "");
 
@@ -301,6 +301,7 @@ public class UserController {
         boolean isActive = request.get("isActive") == null || (Boolean) request.get("isActive");
         String gender = (String) request.get("gender");
         String dateOfBirth = (String) request.get("dateOfBirth");
+        String avatarUrl = (String) request.get("avatarUrl");
         Object followupFeeObj = request.get("followupFee");
         String followupFeeStr = followupFeeObj != null ? String.valueOf(followupFeeObj) : null;
         Object consultationFeeObj = request.get("consultationFee");
@@ -338,9 +339,9 @@ public class UserController {
 
         // Insert user
         jdbcTemplate.update(
-            "INSERT INTO users (clinic_id, email, password, first_name, last_name, phone, is_active, gender, date_of_birth) " +
-            "VALUES (?, ?, '$2a$10$IECeaBY.MVk4eD9tr5Y57OkDL0lbOqPwz4lpxUT0dmzsGYNAo0Yq2', ?, ?, ?, ?, ?, ?)",
-            principal.getClinicId(), email.trim(), firstName, lastName, mobile, isActive, gender, dobDate
+            "INSERT INTO users (clinic_id, email, password, first_name, last_name, phone, is_active, gender, date_of_birth, avatar_url) " +
+            "VALUES (?, ?, '$2a$10$IECeaBY.MVk4eD9tr5Y57OkDL0lbOqPwz4lpxUT0dmzsGYNAo0Yq2', ?, ?, ?, ?, ?, ?, ?)",
+            principal.getClinicId(), email.trim(), firstName, lastName, mobile, isActive, gender, dobDate, avatarUrl
         );
 
         Long userId = jdbcTemplate.queryForObject("SELECT id FROM users WHERE LOWER(email) = LOWER(?)", Long.class, email.trim());
@@ -431,6 +432,7 @@ public class UserController {
         boolean isActive = request.get("isActive") == null || (Boolean) request.get("isActive");
         String gender = (String) request.get("gender");
         String dateOfBirth = (String) request.get("dateOfBirth");
+        String avatarUrl = (String) request.get("avatarUrl");
         Object followupFeeObj = request.get("followupFee");
         String followupFeeStr = followupFeeObj != null ? String.valueOf(followupFeeObj) : null;
         Object consultationFeeObj = request.get("consultationFee");
@@ -451,8 +453,8 @@ public class UserController {
         }
 
         jdbcTemplate.update(
-            "UPDATE users SET email = ?, first_name = ?, last_name = ?, phone = ?, is_active = ?, gender = ?, date_of_birth = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?",
-            email, firstName, lastName, mobile, isActive, gender, dobDate, id
+            "UPDATE users SET email = ?, first_name = ?, last_name = ?, phone = ?, is_active = ?, gender = ?, date_of_birth = ?, avatar_url = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?",
+            email, firstName, lastName, mobile, isActive, gender, dobDate, avatarUrl, id
         );
 
         java.math.BigDecimal followupFee = null;

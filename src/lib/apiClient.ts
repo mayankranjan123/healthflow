@@ -131,6 +131,7 @@ export interface PatientFile {
   category: string;
   size: string;
   fileType: string;
+  uploadId?: string;
 }
 
 export interface MobileCheckResultDto {

@@ -59,16 +59,21 @@ public class AuthController {
         data.put("role", role);
         
         String name = principal.getUsername();
+        String avatarUrl = "";
         try {
-            Map<String, Object> userMap = jdbcTemplate.queryForMap("SELECT first_name, last_name FROM users WHERE id = ?", principal.getId());
+            Map<String, Object> userMap = jdbcTemplate.queryForMap("SELECT first_name, last_name, avatar_url FROM users WHERE id = ?", principal.getId());
             String firstName = (String) userMap.get("first_name");
             String lastName = (String) userMap.get("last_name");
             String fullName = (firstName != null ? firstName : "") + (lastName != null ? " " + lastName : "");
             if (!fullName.trim().isEmpty()) {
                 name = fullName.trim();
             }
+            if (userMap.get("avatar_url") != null) {
+                avatarUrl = (String) userMap.get("avatar_url");
+            }
         } catch (Exception e) {}
         data.put("name", name);
+        data.put("avatarUrl", avatarUrl);
 
         return ResponseEntity.ok(ApiResponse.success("Login successful", data));
     }

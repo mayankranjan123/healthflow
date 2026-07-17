@@ -42,7 +42,8 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
         lastName,
         role: data.role,
         email: data.email,
-        token: data.token
+        token: data.token,
+        avatarUrl: (data as any).avatarUrl || ''
       };
 
       localStorage.setItem('healthflow_user', JSON.stringify(userObj));

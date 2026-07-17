@@ -29,6 +29,9 @@ public class PatientFile {
     @Column(name = "file_type")
     private String fileType;
 
+    @Column(name = "upload_id")
+    private String uploadId;
+
     public PatientFile() {}
 
     public PatientFile(Long patientId, String fileName, LocalDate uploadedDate, String category, String size, String fileType) {
@@ -38,6 +41,16 @@ public class PatientFile {
         this.category = category;
         this.size = size;
         this.fileType = fileType;
+    }
+
+    public PatientFile(Long patientId, String fileName, LocalDate uploadedDate, String category, String size, String fileType, String uploadId) {
+        this.patientId = patientId;
+        this.fileName = fileName;
+        this.uploadedDate = uploadedDate;
+        this.category = category;
+        this.size = size;
+        this.fileType = fileType;
+        this.uploadId = uploadId;
     }
 
     // Getters and Setters
@@ -61,4 +74,7 @@ public class PatientFile {
 
     public String getFileType() { return fileType; }
     public void setFileType(String fileType) { this.fileType = fileType; }
+
+    public String getUploadId() { return uploadId; }
+    public void setUploadId(String uploadId) { this.uploadId = uploadId; }
 }

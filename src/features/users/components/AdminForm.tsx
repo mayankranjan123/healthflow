@@ -39,14 +39,57 @@ export const AdminForm: React.FC<AdminFormProps> = ({ admin, onSave, onCancel })
     }
   }, [admin]);
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const [uploadError, setUploadError] = useState<string | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setAvatarUrl(reader.result as string);
-      };
-      reader.readAsDataURL(file);
+    if (!file) return;
+
+    // Frontend validation: size less than 1MB
+    if (file.size >= 1024 * 1024) {
+      setUploadError("File size must be less than 1MB");
+      return;
+    }
+
+    // Frontend validation: must be PNG
+    if (file.type !== "image/png") {
+      setUploadError("Only PNG files are allowed");
+      return;
+    }
+
+    setUploadError(null);
+    setIsUploading(true);
+
+    try {
+      const formDataUpload = new FormData();
+      formDataUpload.append("file", file);
+
+      const tokenCached = localStorage.getItem('healthflow_user');
+      let headers = {};
+      if (tokenCached) {
+        const parsed = JSON.parse(tokenCached);
+        if (parsed && parsed.token) {
+          headers["Authorization"] = "Bearer " + parsed.token;
+        }
+      }
+
+      const response = await fetch("/api/v1/uploads", {
+        method: "POST",
+        headers: headers,
+        body: formDataUpload
+      });
+
+      const result = await response.json();
+      if (response.ok && result.success) {
+        setAvatarUrl(result.data.url);
+      } else {
+        setUploadError(result.message || "Failed to upload photo");
+      }
+    } catch (err) {
+      setUploadError("Upload error: " + err.message);
+    } finally {
+      setIsUploading(false);
     }
   };
 
@@ -139,7 +182,17 @@ export const AdminForm: React.FC<AdminFormProps> = ({ admin, onSave, onCancel })
             <input type="file" accept="image/*" className="hidden" onChange={handleFileChange} />
           </label>
         </div>
-        <p className="text-[11px] text-slate-400 font-medium">PNG, JPG or GIF. Max 2MB.</p>
+        <p className="text-[11px] text-slate-400 font-medium">PNG only. Max 1MB.</p>
+        {uploadError && (
+          <p className="text-rose-600 text-[10px] font-bold mt-1 text-center animate-pulse">
+            {uploadError}
+          </p>
+        )}
+        {isUploading && (
+          <p className="text-blue-600 text-[10px] font-bold mt-1 text-center animate-pulse">
+            Uploading photo...
+          </p>
+        )}
       </div>
 
       <div className="space-y-4">

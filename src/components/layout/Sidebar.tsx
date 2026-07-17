@@ -16,7 +16,7 @@ import {
 
 interface SidebarProps {
   onLogout: () => void;
-  currentUser: { firstName: string; lastName: string; role: string } | null;
+  currentUser: { firstName: string; lastName: string; role: string; avatarUrl?: string } | null;
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({ onLogout, currentUser }) => {

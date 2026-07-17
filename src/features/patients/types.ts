@@ -5,6 +5,7 @@ export interface PatientAttachment {
   category: 'Lab Report' | 'Other' | 'X-ray' | 'Prescription' | 'Scan';
   size: string; // e.g., "1.2 MB"
   fileType: string; // e.g., "PDF", "JPEG", "PNG"
+  uploadId?: string;
 }
 
 export interface PatientAppointment {

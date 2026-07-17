@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Building, Phone, Mail, Globe, MapPin, DollarSign, Languages, Upload, Trash2, ShieldCheck, AlertCircle } from 'lucide-react';
 import { ClinicSettings } from '../types';
 
@@ -20,6 +20,9 @@ export const ClinicSettingsTab: React.FC<ClinicSettingsTabProps> = ({ initialSet
   const [formData, setFormData] = useState<ClinicSettings>(initialSettings);
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
 
   useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth < 768);
@@ -35,15 +38,64 @@ export const ClinicSettingsTab: React.FC<ClinicSettingsTabProps> = ({ initialSet
   };
 
   const handleLogoUploadClick = () => {
-    // Simulate uploading a new logo with a high quality clinical icon from unsplash
-    const logos = [
-      'https://images.unsplash.com/photo-1628157582853-a796fa650a6a?w=120&auto=format&fit=crop&q=80', // blue cross icon
-      'https://images.unsplash.com/photo-1576091160550-2173dba999ef?w=120&auto=format&fit=crop&q=80', // stethoscope/med
-      'https://images.unsplash.com/photo-1505751172876-fa1923c5c528?w=120&auto=format&fit=crop&q=80', // clinical cross
-    ];
-    // Cycle logos or pick first
-    const nextLogo = logos[Math.floor(Math.random() * logos.length)];
-    handleChange('logoUrl', nextLogo);
+    fileInputRef.current?.click();
+  };
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Frontend validation: Size must be less than 1MB (1024 * 1024 bytes)
+    if (file.size >= 1024 * 1024) {
+      setUploadError("File size must be less than 1MB");
+      return;
+    }
+
+    // Frontend validation: Must be PNG
+    if (file.type !== "image/png") {
+      setUploadError("Only PNG files are allowed");
+      return;
+    }
+
+    setUploadError(null);
+    setIsUploading(true);
+
+    try {
+      const formDataUpload = new FormData();
+      formDataUpload.append("file", file);
+
+      // Call Backend API using fetch
+      const tokenCached = localStorage.getItem('healthflow_user');
+      let headers: HeadersInit = {};
+      if (tokenCached) {
+        const parsed = JSON.parse(tokenCached);
+        if (parsed && parsed.token) {
+          headers["Authorization"] = `Bearer ${parsed.token}`;
+        }
+      }
+
+      const response = await fetch("/api/v1/uploads", {
+        method: "POST",
+        headers: headers,
+        body: formDataUpload
+      });
+
+      const result = await response.json();
+      if (response.ok && result.success) {
+        // The URL returned from backend is "/api/v1/uploads/{uploadId}"
+        const downloadUrl = result.data.url;
+        handleChange('logoUrl', downloadUrl);
+      } else {
+        setUploadError(result.message || "Failed to upload logo");
+      }
+    } catch (err: any) {
+      setUploadError("Error uploading file: " + err.message);
+    } finally {
+      setIsUploading(false);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+    }
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -57,6 +109,13 @@ export const ClinicSettingsTab: React.FC<ClinicSettingsTabProps> = ({ initialSet
 
   return isMobile ? (
     <form onSubmit={handleSubmit} className="space-y-6 text-left pb-24">
+      <input
+        type="file"
+        ref={fileInputRef}
+        onChange={handleFileChange}
+        accept="image/png"
+        className="hidden"
+      />
       {/* Card 1: Clinic Profile */}
       <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-xs space-y-5">
         <div className="flex items-center gap-2 pb-3.5 border-b border-slate-100">
@@ -103,6 +162,16 @@ export const ClinicSettingsTab: React.FC<ClinicSettingsTabProps> = ({ initialSet
                 </button>
               )}
             </div>
+            {uploadError && (
+              <p className="text-rose-600 text-[10px] font-bold mt-1 text-center animate-pulse">
+                {uploadError}
+              </p>
+            )}
+            {isUploading && (
+              <p className="text-blue-600 text-[10px] font-bold mt-1 text-center animate-pulse">
+                Uploading...
+              </p>
+            )}
           </div>
         </div>
 
@@ -387,6 +456,13 @@ export const ClinicSettingsTab: React.FC<ClinicSettingsTabProps> = ({ initialSet
       {/* Left Column (2/3 width) - Edit Form */}
       <div className="lg:col-span-2 space-y-6">
         <form onSubmit={handleSubmit} className="space-y-6">
+          <input
+            type="file"
+            ref={fileInputRef}
+            onChange={handleFileChange}
+            accept="image/png"
+            className="hidden"
+          />
 
           {/* Card 1: Clinic Profile details */}
           <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm space-y-5">
@@ -434,6 +510,16 @@ export const ClinicSettingsTab: React.FC<ClinicSettingsTabProps> = ({ initialSet
                     </button>
                   )}
                 </div>
+                {uploadError && (
+                  <p className="text-rose-600 text-[11px] font-bold mt-1.5 text-center sm:text-left animate-pulse">
+                    {uploadError}
+                  </p>
+                )}
+                {isUploading && (
+                  <p className="text-indigo-600 text-[11px] font-bold mt-1.5 text-center sm:text-left animate-pulse">
+                    Uploading logo...
+                  </p>
+                )}
               </div>
             </div>
 

@@ -214,13 +214,21 @@ export const PatientsPage: React.FC = () => {
   });
 
   // Single File Upload Modal Form
-  const [newUploadedFile, setNewUploadedFile] = useState({
+  const [newUploadedFile, setNewUploadedFile] = useState<{
+    fileName: string;
+    category: 'Lab Report' | 'Other' | 'X-ray' | 'Prescription' | 'Scan';
+    sizeBytes: number;
+    fileType: string;
+    uploadId?: string;
+  }>({
     fileName: '',
-    category: 'Lab Report' as 'Lab Report' | 'Other' | 'X-ray' | 'Prescription' | 'Scan',
+    category: 'Lab Report',
     sizeBytes: 0,
     fileType: 'PDF'
   });
   const [fileError, setFileError] = useState<string | null>(null);
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
+  const [isUploadingFile, setIsUploadingFile] = useState(false);
 
   // Prescription Settings State
   const [prescriptionSettings, setPrescriptionSettings] = useState<any>(null);
@@ -649,18 +657,71 @@ export const PatientsPage: React.FC = () => {
   };
 
   // Upload file on files tab
+  const handleRealFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate size limit (< 2MB)
+    const limitBytes = 2 * 1024 * 1024;
+    if (file.size >= limitBytes) {
+      setFileError("File size must be less than 2MB.");
+      return;
+    }
+
+    // Validate type (PDF, PNG, JPG/JPEG)
+    const ext = file.name.split('.').pop()?.toLowerCase() || '';
+    const isValidExt = ext === 'pdf' || ext === 'png' || ext === 'jpg' || ext === 'jpeg';
+    if (!isValidExt) {
+      setFileError("Only PDF, PNG, and JPG files are allowed.");
+      return;
+    }
+
+    setFileError(null);
+    setIsUploadingFile(true);
+
+    try {
+      const formDataUpload = new FormData();
+      formDataUpload.append("file", file);
+
+      const tokenCached = localStorage.getItem('healthflow_user');
+      let headers: HeadersInit = {};
+      if (tokenCached) {
+        const parsed = JSON.parse(tokenCached);
+        if (parsed && parsed.token) {
+          headers["Authorization"] = `Bearer ${parsed.token}`;
+        }
+      }
+
+      const response = await fetch("/api/v1/uploads", {
+        method: "POST",
+        headers: headers,
+        body: formDataUpload
+      });
+
+      const result = await response.json();
+      if (response.ok && result.success) {
+        setNewUploadedFile({
+          fileName: file.name,
+          category: newUploadedFile.category,
+          sizeBytes: file.size,
+          fileType: ext.toUpperCase(),
+          uploadId: result.data.uploadId
+        });
+      } else {
+        setFileError(result.message || "Failed to upload file to storage.");
+      }
+    } catch (err: any) {
+      setFileError("Upload error: " + err.message);
+    } finally {
+      setIsUploadingFile(false);
+    }
+  };
+
   const handleFileUploadSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedPatient) return;
     if (!newUploadedFile.fileName) {
       setFileError('Please select a file to upload.');
-      return;
-    }
-
-    // Limit validation (Max 10MB)
-    const MAX_BYTES = 10 * 1024 * 1024; // 10 MB
-    if (newUploadedFile.sizeBytes > MAX_BYTES) {
-      setFileError('File size exceeds the maximum limit of 10 MB.');
       return;
     }
 
@@ -670,7 +731,8 @@ export const PatientsPage: React.FC = () => {
       uploadedDate: new Date().toISOString().split('T')[0],
       category: newUploadedFile.category,
       size: `${(newUploadedFile.sizeBytes / (1024 * 1024)).toFixed(2)} MB`,
-      fileType: newUploadedFile.fileType
+      fileType: newUploadedFile.fileType,
+      uploadId: newUploadedFile.uploadId
     };
 
     mockPatientsApi.uploadFile(selectedPatient.id, newFile).then(() => {
@@ -2167,7 +2229,11 @@ export const PatientsPage: React.FC = () => {
                             </div>
                             <button
                               onClick={() => {
-                                alert(`Mock download for file ${file.fileName} initiated successfully.`);
+                                if (file.uploadId) {
+                                  window.open(`/api/v1/uploads/${file.uploadId}`, '_blank');
+                                } else {
+                                  alert(`Mock download for file ${file.fileName} initiated successfully.`);
+                                }
                               }}
                               className="w-10 h-10 border border-slate-200 rounded-full flex items-center justify-center text-slate-500 hover:text-slate-800 active:scale-95 transition-all shadow-3xs cursor-pointer shrink-0"
                             >
@@ -2284,7 +2350,11 @@ export const PatientsPage: React.FC = () => {
                                   size="sm"
                                   variant="outline"
                                   onClick={() => {
-                                    alert(`Mock download for file ${file.fileName} initiated successfully.`);
+                                    if (file.uploadId) {
+                                      window.open(`/api/v1/uploads/${file.uploadId}`, '_blank');
+                                    } else {
+                                      alert(`Mock download for file ${file.fileName} initiated successfully.`);
+                                    }
                                   }}
                                   className="p-1.5 border-slate-200 text-slate-500 hover:text-slate-800"
                                   title="Download"
@@ -3396,18 +3466,31 @@ export const PatientsPage: React.FC = () => {
               File Attachment *
             </label>
 
-            {/* Simulation drag and drop area */}
+            {/* Real file chooser drag and drop area */}
             <div
-              onClick={() => simulateFileChoose(newUploadedFile.category)}
+              onClick={() => fileInputRef.current?.click()}
               className="border-2 border-dashed border-slate-200 hover:border-brand-primary bg-slate-50 hover:bg-blue-50/20 rounded-xl p-8 text-center cursor-pointer transition-all duration-150 space-y-2 group"
             >
+              <input
+                type="file"
+                ref={fileInputRef}
+                onChange={handleRealFileChange}
+                accept=".pdf,image/png,image/jpeg"
+                className="hidden"
+              />
               <UploadCloud className="w-8 h-8 text-slate-400 group-hover:text-brand-primary mx-auto transition-colors" />
               <div>
-                <p className="text-xs font-bold text-slate-700">Click to simulated choose a file</p>
-                <p className="text-[10px] text-slate-400 mt-0.5">Supports PDF, PNG, JPG, XLSX (Max 10 MB per file)</p>
+                <p className="text-xs font-bold text-slate-700">Click to choose a file</p>
+                <p className="text-[10px] text-slate-400 mt-0.5">Supports PDF, PNG, JPG (Max 2 MB)</p>
               </div>
             </div>
           </div>
+
+          {isUploadingFile && (
+            <p className="text-blue-650 text-xs font-bold text-center animate-pulse">
+              Uploading patient attachment...
+            </p>
+          )}
 
           {newUploadedFile.fileName && (
             <div className="bg-slate-50 border border-slate-200/60 rounded-xl p-3 flex justify-between items-center text-xs">
@@ -3415,7 +3498,7 @@ export const PatientsPage: React.FC = () => {
                 <FileText className="w-4 h-4 text-brand-primary" />
                 <span className="font-bold text-slate-800 truncate">{newUploadedFile.fileName}</span>
               </div>
-              <span className={`font-mono font-bold text-[10px] px-2 py-0.5 rounded ${newUploadedFile.sizeBytes > 10 * 1024 * 1024 ? 'text-rose-700 bg-rose-50' : 'text-slate-600 bg-slate-100'
+              <span className={`font-mono font-bold text-[10px] px-2 py-0.5 rounded ${newUploadedFile.sizeBytes > 2 * 1024 * 1024 ? 'text-rose-700 bg-rose-50' : 'text-slate-600 bg-slate-100'
                 }`}>
                 {(newUploadedFile.sizeBytes / (1024 * 1024)).toFixed(2)} MB
               </span>
@@ -3433,7 +3516,7 @@ export const PatientsPage: React.FC = () => {
             <Button type="button" variant="outline" onClick={() => setIsFileUploadOpen(false)}>
               Cancel
             </Button>
-            <Button type="submit" disabled={!newUploadedFile.fileName || !!fileError}>
+            <Button type="submit" disabled={!newUploadedFile.fileName || !!fileError || isUploadingFile}>
               Submit Document
             </Button>
           </div>

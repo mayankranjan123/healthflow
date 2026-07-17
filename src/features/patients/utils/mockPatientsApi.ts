@@ -123,7 +123,8 @@ export const mockPatientsApi = {
       category: file.category,
       size: file.size,
       fileType: file.fileType,
-      uploadedDate: file.uploadedDate || new Date().toISOString().split('T')[0]
+      uploadedDate: file.uploadedDate || new Date().toISOString().split('T')[0],
+      uploadId: file.uploadId
     });
   },
 

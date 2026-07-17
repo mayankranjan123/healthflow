@@ -21,14 +21,16 @@ public class DoctorController {
     private final DoctorRepository doctorRepository;
     private final AppointmentRepository appointmentRepository;
     private final AuthorizationHelper authHelper;
+    private final org.springframework.jdbc.core.JdbcTemplate jdbcTemplate;
 
     @jakarta.persistence.PersistenceContext
     private jakarta.persistence.EntityManager entityManager;
 
-    public DoctorController(DoctorRepository doctorRepository, AppointmentRepository appointmentRepository, AuthorizationHelper authHelper) {
+    public DoctorController(DoctorRepository doctorRepository, AppointmentRepository appointmentRepository, AuthorizationHelper authHelper, org.springframework.jdbc.core.JdbcTemplate jdbcTemplate) {
         this.doctorRepository = doctorRepository;
         this.appointmentRepository = appointmentRepository;
         this.authHelper = authHelper;
+        this.jdbcTemplate = jdbcTemplate;
     }
 
     private Long getCurrentDoctorUserId() {
@@ -246,7 +248,13 @@ public class DoctorController {
         dto.setWorkingHours("09:00 AM - 05:00 PM");
         dto.setGender("Female");
         dto.setLanguages("English, Hindi");
-        dto.setAvatarUrl("https://images.unsplash.com/photo-1622253692010-333f2da6031d?q=80&w=250&auto=format&fit=crop");
+        try {
+            String sql = "SELECT avatar_url FROM users WHERE id = ?";
+            String avatar = jdbcTemplate.queryForObject(sql, String.class, doctor.getUserId());
+            dto.setAvatarUrl(avatar != null ? avatar : "");
+        } catch (Exception e) {
+            dto.setAvatarUrl("");
+        }
 
         long completedConsultations = appointmentRepository.countByClinicIdAndDoctorIdAndStatus(
                 doctor.getClinicId(), doctor.getId(), "COMPLETED");

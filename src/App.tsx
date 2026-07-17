@@ -21,6 +21,7 @@ interface CurrentUser {
   lastName: string;
   role: string;
   email: string;
+  avatarUrl?: string;
 }
 
 const hasModulePermission = (moduleName: string, role: string): boolean => {
