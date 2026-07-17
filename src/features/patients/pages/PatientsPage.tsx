@@ -2092,22 +2092,7 @@ export const PatientsPage: React.FC = () => {
             isMobile ? (
               <div className="space-y-4 animate-fade-in-up pb-10">
                 {/* Upload Banner */}
-                {showUploadBanner && (
-                  <div className="bg-white border border-slate-200 rounded-2xl p-4 flex items-center justify-between shadow-3xs relative overflow-hidden">
-                    <div className="flex items-center gap-2.5">
-                      <Info className="w-5 h-5 text-blue-600 shrink-0" />
-                      <span className="text-xs font-semibold text-slate-700">Preparing secure upload...</span>
-                    </div>
-                    <button 
-                      onClick={() => setShowUploadBanner(false)}
-                      className="text-slate-400 hover:text-slate-650 cursor-pointer active:scale-90 transition-transform"
-                    >
-                      <X className="w-4 h-4" />
-                    </button>
-                    {/* Secure Line indicator at the very top */}
-                    <div className="absolute top-0 left-0 right-0 h-0.5 bg-blue-600" />
-                  </div>
-                )}
+                {showUploadBanner}
 
                 {/* Inline Search and Upload button */}
                 <div className="flex gap-2">
@@ -2125,9 +2110,9 @@ export const PatientsPage: React.FC = () => {
                       className="w-full pl-10 pr-3 h-11 bg-white border border-slate-200 rounded-xl text-sm outline-none focus:border-brand-primary focus:ring-1 focus:ring-brand-primary transition-all text-slate-700 font-medium shadow-3xs"
                     />
                   </div>
-                  <Button 
-                    id="upload-file-btn" 
-                    onClick={() => setIsFileUploadOpen(true)} 
+                  <Button
+                    id="upload-file-btn"
+                    onClick={() => setIsFileUploadOpen(true)}
                     className="h-11 px-5 bg-brand-primary text-white rounded-xl font-semibold flex items-center gap-2 cursor-pointer shadow-3xs text-xs"
                   >
                     <UploadCloud className="w-4 h-4" />
@@ -2154,11 +2139,10 @@ export const PatientsPage: React.FC = () => {
                               setMobileFileCategory(tab.key);
                               setFileCurrentPage(1);
                             }}
-                            className={`px-4.5 py-2 rounded-full font-bold text-xs whitespace-nowrap transition-all shadow-3xs cursor-pointer ${
-                              isActive
-                                ? 'bg-[#0b6466] text-white'
-                                : 'bg-slate-100 text-slate-500 hover:bg-slate-200'
-                            }`}
+                            className={`px-4.5 py-2 rounded-full font-bold text-xs whitespace-nowrap transition-all shadow-3xs cursor-pointer ${isActive
+                              ? 'bg-[#0b6466] text-white'
+                              : 'bg-slate-100 text-slate-500 hover:bg-slate-200'
+                              }`}
                           >
                             {tab.label}
                           </button>
