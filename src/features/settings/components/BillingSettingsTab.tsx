@@ -9,6 +9,7 @@ interface BillingSettingsTabProps {
   clinicPhone: string;
   clinicGst?: string;
   onSave: (data: BillingSettings) => void;
+  isMobile?: boolean;
 }
 
 export const BillingSettingsTab: React.FC<BillingSettingsTabProps> = ({
@@ -17,7 +18,8 @@ export const BillingSettingsTab: React.FC<BillingSettingsTabProps> = ({
   clinicAddress,
   clinicPhone,
   clinicGst,
-  onSave
+  onSave,
+  isMobile
 }) => {
   const [formData, setFormData] = useState<BillingSettings>(initialSettings);
   const [saveSuccess, setSaveSuccess] = useState(false);
@@ -64,7 +66,473 @@ export const BillingSettingsTab: React.FC<BillingSettingsTabProps> = ({
     }
   ];
 
-  return (
+  return isMobile ? (
+    <div className="space-y-4 animate-fade-in text-left">
+      <form onSubmit={handleSubmit} className="space-y-4 pb-6">
+
+        {/* Card 1: Invoice Numbering */}
+        <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-3xs space-y-4">
+          <div className="flex items-center gap-2 pb-3 border-b border-slate-100">
+            <FileSpreadsheet className="w-5 h-5 text-blue-600" />
+            <h3 className="font-display font-extrabold text-slate-900 text-sm">Invoice Numbering</h3>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3.5">
+            <div className="space-y-1.5">
+              <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none">
+                Invoice Prefix
+              </label>
+              <input
+                type="text"
+                value={formData.invoicePrefix}
+                onChange={(e) => handleValChange('invoicePrefix', e.target.value)}
+                placeholder="e.g. INV"
+                className="w-full px-3 h-11 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold text-slate-700 outline-none focus:border-blue-500 focus:bg-white transition-all"
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none">
+                Starting Number
+              </label>
+              <input
+                type="number"
+                value={formData.startingInvoiceNumber}
+                onChange={(e) => handleValChange('startingInvoiceNumber', parseInt(e.target.value) || 1)}
+                className="w-full px-3 h-11 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold text-slate-700 outline-none focus:border-blue-500 focus:bg-white transition-all"
+              />
+            </div>
+          </div>
+
+          <div className="text-xs font-bold text-blue-600">
+            Preview: <span className="font-mono">{formData.invoicePrefix}-{formData.startingInvoiceNumber}</span>
+          </div>
+
+          <div className="h-px bg-slate-100 -mx-5" />
+
+          {/* Auto-generate switch */}
+          <div className="flex items-center justify-between">
+            <div className="space-y-0.5">
+              <span className="block text-xs font-bold text-slate-800 uppercase tracking-wider">
+                Auto-Generate Invoice No
+              </span>
+              <span className="block text-[10px] font-bold text-slate-400">
+                Sequentially increment starting number
+              </span>
+            </div>
+            <button
+              type="button"
+              onClick={() => handleToggle('autoGenerateInvoiceNumber')}
+              className="cursor-pointer focus:outline-none shrink-0"
+            >
+              <div className={`w-11 h-6 rounded-full p-0.5 transition-colors flex \${formData.autoGenerateInvoiceNumber ? 'bg-blue-600 justify-end' : 'bg-slate-200 justify-start'} items-center`}>
+                <div className="w-5 h-5 bg-white rounded-full shadow-md" />
+              </div>
+            </button>
+          </div>
+        </div>
+
+        {/* Card 2: Tax and Discount Settings */}
+        <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-3xs space-y-4">
+          <div className="flex items-center gap-2 pb-3 border-b border-slate-100">
+            <Percent className="w-5 h-5 text-blue-600" />
+            <h3 className="font-display font-extrabold text-slate-900 text-sm">Tax & Discount Settings</h3>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3.5">
+            <div className="space-y-1.5">
+              <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none">
+                Default Tax (%)
+              </label>
+              <input
+                type="number"
+                step="0.1"
+                value={formData.defaultTaxPercent}
+                onChange={(e) => handleValChange('defaultTaxPercent', parseFloat(e.target.value) || 0)}
+                className="w-full px-3 h-11 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold text-slate-700 outline-none focus:border-blue-500 focus:bg-white transition-all"
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none">
+                Tax Label
+              </label>
+              <input
+                type="text"
+                value={formData.taxLabel}
+                onChange={(e) => handleValChange('taxLabel', e.target.value)}
+                placeholder="e.g. GST"
+                className="w-full px-3 h-11 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold text-slate-700 outline-none focus:border-blue-500 focus:bg-white transition-all"
+              />
+            </div>
+          </div>
+
+          <div className="h-px bg-slate-100 -mx-5" />
+
+          {/* Switches */}
+          <div className="space-y-4 pt-1">
+            <div className="flex items-center justify-between">
+              <div className="space-y-0.5">
+                <span className="block text-xs font-bold text-slate-800 uppercase tracking-wider">
+                  Enable Item-Level Tax
+                </span>
+                <span className="block text-[10px] font-bold text-slate-400">
+                  Apply tax calculation to individual line items
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={() => handleToggle('enableItemLevelTax')}
+                className="cursor-pointer focus:outline-none shrink-0"
+              >
+                <div className={`w-11 h-6 rounded-full p-0.5 transition-colors flex \${formData.enableItemLevelTax ? 'bg-blue-600 justify-end' : 'bg-slate-200 justify-start'} items-center`}>
+                  <div className="w-5 h-5 bg-white rounded-full shadow-md" />
+                </div>
+              </button>
+            </div>
+
+            <div className="flex items-center justify-between">
+              <div className="space-y-0.5">
+                <span className="block text-xs font-bold text-slate-800 uppercase tracking-wider">
+                  Enable Invoice Discount
+                </span>
+                <span className="block text-[10px] font-bold text-slate-400">
+                  Allow flat discount on bottom ledger
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={() => handleToggle('enableInvoiceLevelDiscount')}
+                className="cursor-pointer focus:outline-none shrink-0"
+              >
+                <div className={`w-11 h-6 rounded-full p-0.5 transition-colors flex \${formData.enableInvoiceLevelDiscount ? 'bg-blue-600 justify-end' : 'bg-slate-200 justify-start'} items-center`}>
+                  <div className="w-5 h-5 bg-white rounded-full shadow-md" />
+                </div>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Card 3: Invoice Template Selection */}
+        <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-3xs space-y-4">
+          <div className="flex items-center gap-2 pb-3 border-b border-slate-100">
+            <Receipt className="w-5 h-5 text-blue-600" />
+            <h3 className="font-display font-extrabold text-slate-900 text-sm">Invoice Template</h3>
+          </div>
+
+          <div className="flex flex-col gap-3">
+            {templates.map((tpl) => {
+              const isSelected = formData.selectedTemplateId === tpl.id;
+
+              return (
+                <div
+                  key={tpl.id}
+                  onClick={() => handleValChange('selectedTemplateId', tpl.id)}
+                  className={`border rounded-xl p-4.5 cursor-pointer transition-all flex flex-col justify-between select-none relative \${isSelected
+                      ? 'border-blue-600 bg-blue-50/10 ring-1 ring-blue-600 shadow-3xs'
+                      : 'border-slate-200 hover:border-slate-350'
+                    }`}
+                >
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2.5">
+                      <input
+                        type="radio"
+                        name="invoiceTemplate"
+                        checked={isSelected}
+                        onChange={() => { }}
+                        className="w-4.5 h-4.5 text-blue-600 focus:ring-blue-500 border-slate-300 shrink-0"
+                      />
+                      <span className="font-extrabold text-slate-800 text-sm">{tpl.name}</span>
+                    </div>
+                    <p className="text-[11px] text-slate-450 font-semibold leading-relaxed pl-7">
+                      {tpl.desc}
+                    </p>
+                  </div>
+
+                  <div className="flex items-center justify-between pt-2.5 border-t border-slate-100 mt-3 pl-7">
+                    <span className="text-[9px] font-black text-blue-600 uppercase tracking-wider bg-blue-50 border border-blue-100 px-1.5 py-0.5 rounded">
+                      {tpl.tag}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setPreviewTemplateId(tpl.id);
+                      }}
+                      className="text-[10px] font-black text-blue-600 hover:text-blue-800 flex items-center gap-1 cursor-pointer"
+                    >
+                      <Eye className="w-4 h-4" />
+                      <span>PREVIEW</span>
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Card 4: Invoice Content Options */}
+        <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-3xs space-y-4">
+          <div className="flex items-center gap-2 pb-3 border-b border-slate-100">
+            <FileText className="w-5 h-5 text-blue-600" />
+            <h3 className="font-display font-extrabold text-slate-900 text-sm">Invoice Content Options</h3>
+          </div>
+
+          <div className="flex flex-col gap-3 text-xs font-bold text-slate-700">
+            <label className="flex items-center gap-3.5 cursor-pointer p-1">
+              <input
+                type="checkbox"
+                checked={formData.showClinicLogo}
+                onChange={() => handleToggle('showClinicLogo')}
+                className="w-5 h-5 text-blue-600 border-slate-300 rounded focus:ring-blue-500"
+              />
+              <span>Show clinic logo</span>
+            </label>
+
+            <label className="flex items-center gap-3.5 cursor-pointer p-1">
+              <input
+                type="checkbox"
+                checked={formData.showClinicAddress}
+                onChange={() => handleToggle('showClinicAddress')}
+                className="w-5 h-5 text-blue-600 border-slate-300 rounded focus:ring-blue-500"
+              />
+              <span>Show clinic address</span>
+            </label>
+
+            <label className="flex items-center gap-3.5 cursor-pointer p-1">
+              <input
+                type="checkbox"
+                checked={formData.showClinicContact}
+                onChange={() => handleToggle('showClinicContact')}
+                className="w-5 h-5 text-blue-600 border-slate-300 rounded focus:ring-blue-500"
+              />
+              <span>Show clinic phone/email</span>
+            </label>
+
+            <label className="flex items-center gap-3.5 cursor-pointer p-1">
+              <input
+                type="checkbox"
+                checked={formData.showDoctorName}
+                onChange={() => handleToggle('showDoctorName')}
+                className="w-5 h-5 text-blue-600 border-slate-300 rounded focus:ring-blue-500"
+              />
+              <span>Show doctor name</span>
+            </label>
+
+            <label className="flex items-center gap-3.5 cursor-pointer p-1">
+              <input
+                type="checkbox"
+                checked={formData.showPatientMobile}
+                onChange={() => handleToggle('showPatientMobile')}
+                className="w-5 h-5 text-blue-600 border-slate-300 rounded focus:ring-blue-500"
+              />
+              <span>Show patient mobile number</span>
+            </label>
+
+            <label className="flex items-center gap-3.5 cursor-pointer p-1">
+              <input
+                type="checkbox"
+                checked={formData.showPaymentSummary}
+                onChange={() => handleToggle('showPaymentSummary')}
+                className="w-5 h-5 text-blue-600 border-slate-300 rounded focus:ring-blue-500"
+              />
+              <span>Show payment summary</span>
+            </label>
+
+            <label className="flex items-center gap-3.5 cursor-pointer p-1">
+              <input
+                type="checkbox"
+                checked={formData.showFooterMessage}
+                onChange={() => handleToggle('showFooterMessage')}
+                className="w-5 h-5 text-blue-600 border-slate-300 rounded focus:ring-blue-500"
+              />
+              <span>Show footer message</span>
+            </label>
+
+            <label className="flex items-center gap-3.5 cursor-pointer p-1">
+              <input
+                type="checkbox"
+                checked={formData.showAuthorizedSignature}
+                onChange={() => handleToggle('showAuthorizedSignature')}
+                className="w-5 h-5 text-blue-600 border-slate-300 rounded focus:ring-blue-500"
+              />
+              <span>Show authorized signature area</span>
+            </label>
+          </div>
+
+          {/* Footer message textarea */}
+          {formData.showFooterMessage && (
+            <div className="space-y-1.5 pt-2">
+              <div className="flex justify-between items-center text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                <span>Footer Message text</span>
+                <span className="font-mono">
+                  {formData.footerMessage.length} / 150
+                </span>
+              </div>
+              <textarea
+                maxLength={150}
+                value={formData.footerMessage}
+                onChange={(e) => handleValChange('footerMessage', e.target.value)}
+                placeholder="e.g. Thank you for visiting HealthFlow. Wish you a speedy recovery!"
+                className="w-full p-3.5 h-20 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold text-slate-700 outline-none focus:border-blue-500 focus:bg-white transition-all resize-none leading-relaxed"
+              />
+            </div>
+          )}
+        </div>
+
+        {/* Actions Footer Card */}
+        <div className="bg-white border border-slate-200 rounded-2xl p-4.5 flex gap-3 shadow-3xs justify-center items-center mt-2 relative">
+          {saveSuccess && (
+            <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-emerald-600 text-white font-extrabold text-[10px] tracking-wide uppercase px-3 py-1 rounded-full shadow flex items-center gap-1">
+              <CheckCircle className="w-3.5 h-3.5" />
+              <span>SAVED SUCCESS!</span>
+            </div>
+          )}
+          <button
+            type="button"
+            onClick={() => setFormData(initialSettings)}
+            className="flex-1 h-11 border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 rounded-xl text-xs font-bold transition-all uppercase tracking-wider flex items-center justify-center cursor-pointer"
+          >
+            Cancel
+          </button>
+          <button type="submit" className="flex-1 h-11 bg-blue-600 hover:bg-blue-700 text-white font-extrabold text-xs transition-all rounded-xl shadow-3xs flex items-center justify-center gap-1.5 cursor-pointer uppercase tracking-wider" > <span>Save</span> </button>
+        </div>
+      </form>
+
+      {/* Expanded Template Preview Modal */}
+      {previewTemplateId && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/45 p-4 animate-fade-in text-left">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-2xl overflow-hidden animate-zoom-in">
+            <div className="px-5 py-4 border-b border-slate-150 flex items-center justify-between bg-slate-50">
+              <h3 className="font-display font-bold text-slate-900 text-sm">
+                Template Preview: {templates.find(t => t.id === previewTemplateId)?.name}
+              </h3>
+              <button
+                type="button"
+                onClick={() => setPreviewTemplateId(null)}
+                className="w-8 h-8 rounded-full hover:bg-slate-250 text-slate-505 flex items-center justify-center font-bold text-sm cursor-pointer"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="p-4 overflow-y-auto max-h-[65vh]">
+              {/* Fully stylized actual document structure to impress the user */}
+              <div className="border border-slate-300 rounded-xl p-4 space-y-4 text-[10px] text-slate-600 bg-white shadow-3xs font-sans">
+                {/* Simulated Header block */}
+                <div className="flex justify-between items-start">
+                  <div>
+                    <span className="text-xl font-black text-blue-600 block leading-none">✦</span>
+                    <h2 className="text-xs font-extrabold text-slate-900 leading-normal mt-1">{clinicName}</h2>
+                    <p className="text-[9px] text-slate-450 font-semibold leading-normal mt-0.5 max-w-xs">{clinicAddress}</p>
+                    <p className="text-[9px] text-slate-450 font-semibold leading-none mt-1">{clinicPhone}</p>
+                  </div>
+                  <div className="text-right">
+                    <h1 className="text-sm font-bold tracking-wider text-slate-900 font-mono">INVOICE</h1>
+                    <p className="font-mono font-bold text-blue-600 mt-1">No: {formData.invoicePrefix}-1024</p>
+                    <p className="text-slate-400 font-bold font-mono mt-0.5">Date: October 24, 2023</p>
+                  </div>
+                </div>
+
+                {/* Patient / Consultation info */}
+                <div className="grid grid-cols-2 gap-4 border-t border-b border-slate-200 py-3 font-semibold text-[9px]">
+                  <div>
+                    <span className="text-[8px] uppercase text-slate-400 tracking-wider block font-bold">Billed To</span>
+                    <p className="font-bold text-slate-800 mt-0.5">Mr. Rohan Mehra</p>
+                    <p className="text-slate-505 font-mono mt-0.5">+91 99000 88776</p>
+                  </div>
+                  <div>
+                    <span className="text-[8px] uppercase text-slate-400 tracking-wider block font-bold">Clinical Care</span>
+                    <p className="font-bold text-slate-800 mt-0.5">Dr. Aisha Mehta</p>
+                    <p className="text-slate-555 mt-0.5">Cardiology Department</p>
+                  </div>
+                </div>
+
+                {/* Consultation Items Table */}
+                <table className="w-full text-left border-collapse text-[9px]">
+                  <thead>
+                    <tr className="border-b border-slate-200 text-[8px] font-bold text-slate-400 uppercase tracking-wider bg-slate-550">
+                      <th className="px-2 py-1.5">Service Item Name</th>
+                      <th className="px-2 py-1.5 text-center">Quantity</th>
+                      <th className="px-2 py-1.5 text-right">Rate</th>
+                      {formData.enableItemLevelTax && (
+                        <th className="px-2 py-1.5 text-right">{formData.taxLabel} Tax</th>
+                      )}
+                      <th className="px-2 py-1.5 text-right">Total</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100 font-bold text-slate-650">
+                    <tr>
+                      <td className="px-2 py-2">
+                        <span className="block text-slate-850 font-bold">Comprehensive ECG</span>
+                      </td>
+                      <td className="px-2 py-2 text-center font-mono">1</td>
+                      <td className="px-2 py-2 text-right font-mono">₹1,200.00</td>
+                      {formData.enableItemLevelTax && (
+                        <td className="px-2 py-2 text-right font-mono">18% (₹216)</td>
+                      )}
+                      <td className="px-2 py-2 text-right font-mono">₹1,416.00</td>
+                    </tr>
+                    <tr>
+                      <td className="px-2 py-2">
+                        <span className="block text-slate-850 font-bold">Outpatient Consultation</span>
+                      </td>
+                      <td className="px-2 py-2 text-center font-mono">1</td>
+                      <td className="px-2 py-2 text-right font-mono">₹500.00</td>
+                      {formData.enableItemLevelTax && (
+                        <td className="px-2 py-2 text-right font-mono">18% (₹90)</td>
+                      )}
+                      <td className="px-2 py-2 text-right font-mono">₹590.00</td>
+                    </tr>
+                  </tbody>
+                </table>
+
+                {/* Subtotals & Grand totals summary block */}
+                <div className="flex flex-col items-end space-y-1 font-bold border-t border-slate-200 pt-3 text-[9px]">
+                  <div className="flex justify-between w-48">
+                    <span className="text-slate-400">Services Subtotal:</span>
+                    <span className="font-mono">₹1,700.00</span>
+                  </div>
+                  {formData.enableInvoiceLevelDiscount && (
+                    <div className="flex justify-between w-48 text-rose-500">
+                      <span>Promo Discount (10%):</span>
+                      <span className="font-mono">-₹170.00</span>
+                    </div>
+                  )}
+                  <div className="flex justify-between w-48">
+                    <span className="text-slate-400">{formData.taxLabel} Combined ({formData.defaultTaxPercent}%):</span>
+                    <span className="font-mono">₹306.00</span>
+                  </div>
+                  <div className="flex justify-between w-48 pt-1 border-t border-slate-200 text-xs font-black text-blue-650">
+                    <span>Grand Total:</span>
+                    <span className="font-mono">₹1,836.00</span>
+                  </div>
+                </div>
+
+                {/* Footer notes */}
+                <div className="pt-3 border-t border-slate-150 text-center space-y-1">
+                  <p className="text-[9px] italic font-semibold text-slate-505 leading-normal">
+                    "{formData.footerMessage}"
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="px-5 py-4 border-t border-slate-150 flex justify-end gap-2 bg-slate-50">
+              <button
+                type="button"
+                onClick={() => setPreviewTemplateId(null)}
+                className="px-4.5 h-10 bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold text-xs transition-colors rounded-lg cursor-pointer uppercase tracking-wider"
+              >
+                Close Preview
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  ) : (
+
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
 
       {/* Left Column (2/3 width) - Edit Form */}
@@ -239,8 +707,8 @@ export const BillingSettingsTab: React.FC<BillingSettingsTabProps> = ({
                     key={tpl.id}
                     onClick={() => handleValChange('selectedTemplateId', tpl.id)}
                     className={`border rounded-xl p-4.5 cursor-pointer transition-all flex flex-col justify-between h-44 relative overflow-hidden group select-none ${isSelected
-                        ? 'border-indigo-600 bg-indigo-50/20 ring-1 ring-indigo-600 shadow-sm'
-                        : 'border-slate-200 hover:border-slate-350 hover:bg-slate-50/50'
+                      ? 'border-indigo-600 bg-indigo-50/20 ring-1 ring-indigo-600 shadow-sm'
+                      : 'border-slate-200 hover:border-slate-350 hover:bg-slate-50/50'
                       }`}
                   >
                     {/* Visual miniature mockup blueprint lines */}
@@ -443,8 +911,8 @@ export const BillingSettingsTab: React.FC<BillingSettingsTabProps> = ({
 
           {/* Scaled-down Physical Invoice Container */}
           <div className={`bg-white border rounded-xl shadow-md p-4 min-h-[460px] flex flex-col justify-between text-[10px] text-slate-600 select-none ${formData.selectedTemplateId === 'CLASSIC_MEDICAL' ? 'border-slate-200' :
-              formData.selectedTemplateId === 'MODERN_COMPACT' ? 'border-indigo-200' :
-                formData.selectedTemplateId === 'GST_DETAILED' ? 'border-emerald-200' : 'border-slate-300'
+            formData.selectedTemplateId === 'MODERN_COMPACT' ? 'border-indigo-200' :
+              formData.selectedTemplateId === 'GST_DETAILED' ? 'border-emerald-200' : 'border-slate-300'
             }`}>
 
             {/* Template Specific Header Bar */}

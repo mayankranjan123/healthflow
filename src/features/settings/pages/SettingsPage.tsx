@@ -195,6 +195,7 @@ export const SettingsPage: React.FC = () => {
               clinicPhone={clinic.phone}
               clinicGst={clinic.gstNumber}
               onSave={handleSaveBilling}
+              isMobile={isMobile}
             />
           )
         )}

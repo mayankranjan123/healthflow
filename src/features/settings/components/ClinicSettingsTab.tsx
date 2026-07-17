@@ -3,11 +3,11 @@ import { Building, Phone, Mail, Globe, MapPin, DollarSign, Languages, Upload, Tr
 import { ClinicSettings } from '../types';
 
 const INDIAN_STATES = [
-  "Andhra Pradesh", "Arunachal Pradesh", "Assam", "Bihar", "Chhattisgarh", "Goa", "Gujarat", "Haryana", 
-  "Himachal Pradesh", "Jharkhand", "Karnataka", "Kerala", "Madhya Pradesh", "Maharashtra", "Manipur", 
-  "Meghalaya", "Mizoram", "Nagaland", "Odisha", "Punjab", "Rajasthan", "Sikkim", "Tamil Nadu", "Telangana", 
+  "Andhra Pradesh", "Arunachal Pradesh", "Assam", "Bihar", "Chhattisgarh", "Goa", "Gujarat", "Haryana",
+  "Himachal Pradesh", "Jharkhand", "Karnataka", "Kerala", "Madhya Pradesh", "Maharashtra", "Manipur",
+  "Meghalaya", "Mizoram", "Nagaland", "Odisha", "Punjab", "Rajasthan", "Sikkim", "Tamil Nadu", "Telangana",
   "Tripura", "Uttar Pradesh", "Uttarakhand", "West Bengal",
-  "Andaman and Nicobar Islands", "Chandigarh", "Dadra and Nagar Haveli and Daman and Diu", "Delhi", 
+  "Andaman and Nicobar Islands", "Chandigarh", "Dadra and Nagar Haveli and Daman and Diu", "Delhi",
   "Jammu and Kashmir", "Ladakh", "Lakshadweep", "Puducherry"
 ];
 
@@ -68,11 +68,11 @@ export const ClinicSettingsTab: React.FC<ClinicSettingsTabProps> = ({ initialSet
         <div className="flex flex-col items-center gap-4 py-2">
           <div className="w-20 h-20 rounded-2xl bg-slate-50 border border-dashed border-slate-200 flex items-center justify-center overflow-hidden shrink-0 relative group">
             {formData.logoUrl ? (
-              <img 
-                src={formData.logoUrl} 
-                alt="Clinic Logo Preview" 
+              <img
+                src={formData.logoUrl}
+                alt="Clinic Logo Preview"
                 referrerPolicy="no-referrer"
-                className="w-full h-full object-cover" 
+                className="w-full h-full object-cover"
               />
             ) : (
               <Building className="w-8 h-8 text-slate-400" />
@@ -365,7 +365,7 @@ export const ClinicSettingsTab: React.FC<ClinicSettingsTabProps> = ({ initialSet
         >
           Cancel
         </button>
-        
+
         <div className="flex-1 flex items-center gap-2 justify-end">
           {saveSuccess && (
             <span className="text-emerald-600 text-[10px] font-bold shrink-0 animate-pulse hidden xs:inline">
@@ -376,18 +376,18 @@ export const ClinicSettingsTab: React.FC<ClinicSettingsTabProps> = ({ initialSet
             type="submit"
             className="flex-1 h-11 bg-blue-600 hover:bg-blue-700 text-white font-extrabold text-xs transition-all rounded-xl shadow-3xs flex items-center justify-center gap-1.5 cursor-pointer uppercase tracking-wider"
           >
-            <span>Save All Changes</span>
+            <span>Save</span>
           </button>
         </div>
       </div>
     </form>
   ) : (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-      
+
       {/* Left Column (2/3 width) - Edit Form */}
       <div className="lg:col-span-2 space-y-6">
         <form onSubmit={handleSubmit} className="space-y-6">
-          
+
           {/* Card 1: Clinic Profile details */}
           <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm space-y-5">
             <div className="flex items-center gap-2 pb-3 border-b border-slate-100">
@@ -399,11 +399,11 @@ export const ClinicSettingsTab: React.FC<ClinicSettingsTabProps> = ({ initialSet
             <div className="flex flex-col sm:flex-row items-center gap-5">
               <div className="w-20 h-20 rounded-xl bg-slate-50 border-2 border-dashed border-slate-250 flex items-center justify-center overflow-hidden shrink-0 relative group">
                 {formData.logoUrl ? (
-                  <img 
-                    src={formData.logoUrl} 
-                    alt="Clinic Logo Preview" 
+                  <img
+                    src={formData.logoUrl}
+                    alt="Clinic Logo Preview"
                     referrerPolicy="no-referrer"
-                    className="w-full h-full object-cover" 
+                    className="w-full h-full object-cover"
                   />
                 ) : (
                   <Building className="w-8 h-8 text-slate-400" />
@@ -696,7 +696,7 @@ export const ClinicSettingsTab: React.FC<ClinicSettingsTabProps> = ({ initialSet
       {/* Right Column (1/3 width) - Sticky Preview Card */}
       <div className="space-y-6">
         <div className="sticky top-6 space-y-6">
-          
+
           {/* Card 4: Clinic Profile preview visual layout card */}
           <div className="bg-slate-900 text-white border border-slate-800 rounded-xl p-5.5 shadow-md relative overflow-hidden">
             {/* Background geometric accents */}
@@ -707,11 +707,11 @@ export const ClinicSettingsTab: React.FC<ClinicSettingsTabProps> = ({ initialSet
               <div className="flex items-center gap-3.5">
                 <div className="w-11 h-11 rounded-lg bg-indigo-500/10 border border-white/10 flex items-center justify-center shrink-0 overflow-hidden">
                   {formData.logoUrl ? (
-                    <img 
-                      src={formData.logoUrl} 
-                      alt="Logo Miniature" 
+                    <img
+                      src={formData.logoUrl}
+                      alt="Logo Miniature"
                       referrerPolicy="no-referrer"
-                      className="w-full h-full object-cover" 
+                      className="w-full h-full object-cover"
                     />
                   ) : (
                     <Building className="w-5 h-5 text-indigo-400" />
