@@ -91,16 +91,16 @@ export const AppointmentsPage: React.FC = () => {
       fromDate: parsedFrom,
       toDate: parsedTo
     })
-    .then((res: any) => {
-      const items = res.items || [];
-      const total = items.length;
-      const pending = items.filter((a: any) => a.status === 'SCHEDULED').length;
-      const completed = items.filter((a: any) => a.status === 'COMPLETED').length;
-      setTodayStats({ totalToday: total, pending, completed });
-    })
-    .catch((err) => {
-      console.error("Failed to load today stats", err);
-    });
+      .then((res: any) => {
+        const items = res.items || [];
+        const total = items.length;
+        const pending = items.filter((a: any) => a.status === 'SCHEDULED').length;
+        const completed = items.filter((a: any) => a.status === 'COMPLETED').length;
+        setTodayStats({ totalToday: total, pending, completed });
+      })
+      .catch((err) => {
+        console.error("Failed to load today stats", err);
+      });
   };
 
   // Load appointments dynamically
@@ -127,16 +127,16 @@ export const AppointmentsPage: React.FC = () => {
       patientMobile: debouncedPatientSearch,
       visitType: filters.visitType
     })
-    .then((res: any) => {
-      setAppointments(res.items || []);
-      setTotalElements(res.totalItems || 0);
-      setTotalPages(res.totalPages || 1);
-      setIsLoading(false);
-    })
-    .catch((err) => {
-      console.error(err);
-      setIsLoading(false);
-    });
+      .then((res: any) => {
+        setAppointments(res.items || []);
+        setTotalElements(res.totalItems || 0);
+        setTotalPages(res.totalPages || 1);
+        setIsLoading(false);
+      })
+      .catch((err) => {
+        console.error(err);
+        setIsLoading(false);
+      });
   };
 
   useEffect(() => {
@@ -282,7 +282,7 @@ export const AppointmentsPage: React.FC = () => {
           {/* Stats Grid: 3 symmetric columns (No clipping) */}
           <div className="grid grid-cols-3 gap-2.5">
             <div className="bg-brand-primary text-white rounded-xl p-3.5 shadow-sm flex flex-col justify-between h-[84px]">
-              <span className="text-[10px] font-bold uppercase tracking-wider opacity-90 leading-none">Total Today</span>
+              <span className="text-[10px] font-bold uppercase tracking-wider opacity-90 leading-none">Today</span>
               <span className="text-2xl font-extrabold font-display leading-none mt-1">{todayStats.totalToday}</span>
             </div>
             <div className="bg-slate-100 text-slate-800 border border-slate-200/80 rounded-xl p-3.5 shadow-sm flex flex-col justify-between h-[84px]">
@@ -309,11 +309,10 @@ export const AppointmentsPage: React.FC = () => {
             </div>
             <button
               onClick={() => setIsMobileDrawerOpen(true)}
-              className={`w-11 h-11 rounded-xl border flex items-center justify-center transition-all bg-white shadow-2xs cursor-pointer ${
-                (filters.fromDate || filters.toDate || filters.doctorSearch || filters.visitType !== 'ALL')
+              className={`w-11 h-11 rounded-xl border flex items-center justify-center transition-all bg-white shadow-2xs cursor-pointer ${(filters.fromDate || filters.toDate || filters.doctorSearch || filters.visitType !== 'ALL')
                   ? 'border-brand-primary text-brand-primary bg-blue-50/30'
                   : 'border-slate-200 text-slate-500 hover:text-slate-750'
-              }`}
+                }`}
             >
               <SlidersHorizontal className="w-4.5 h-4.5" />
             </button>
@@ -332,11 +331,10 @@ export const AppointmentsPage: React.FC = () => {
                 <button
                   key={tab.value}
                   onClick={() => handleApplyFilters({ ...filters, status: tab.value })}
-                  className={`px-5 py-2.5 rounded-full text-xs font-bold whitespace-nowrap transition-all shadow-3xs cursor-pointer ${
-                    isActive
+                  className={`px-5 py-2.5 rounded-full text-xs font-bold whitespace-nowrap transition-all shadow-3xs cursor-pointer ${isActive
                       ? 'bg-brand-primary text-white font-extrabold shadow-sm'
                       : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'
-                  }`}
+                    }`}
                 >
                   {tab.label}
                 </button>
@@ -371,8 +369,8 @@ export const AppointmentsPage: React.FC = () => {
                   <button onClick={() => handleApplyFilters({ ...filters, visitType: 'ALL' })} className="hover:text-amber-900 font-bold ml-1 text-xs">×</button>
                 </Badge>
               )}
-              <button 
-                onClick={handleResetFilters} 
+              <button
+                onClick={handleResetFilters}
                 className="text-xs text-slate-500 hover:text-brand-primary font-bold px-2 py-0.5 rounded-full hover:bg-slate-100 transition-colors cursor-pointer"
               >
                 Clear All
@@ -395,9 +393,9 @@ export const AppointmentsPage: React.FC = () => {
               <div className="space-y-3.5">
                 {appointments.map((appt) => {
                   const statusStyle = appt.status === 'COMPLETED' ? 'bg-emerald-50 text-emerald-700 border-emerald-150' :
-                                      appt.status === 'SCHEDULED' ? 'bg-blue-50 text-blue-750 border-blue-150' :
-                                      'bg-rose-50 text-rose-700 border-rose-150';
-                  
+                    appt.status === 'SCHEDULED' ? 'bg-blue-50 text-blue-750 border-blue-150' :
+                      'bg-rose-50 text-rose-700 border-rose-150';
+
                   return (
                     <div
                       key={appt.id}

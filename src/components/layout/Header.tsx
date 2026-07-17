@@ -20,12 +20,12 @@ export const Header: React.FC<HeaderProps> = ({ onMenuToggle, currentUser }) => 
     <header className="h-20 border-b border-slate-200 bg-white px-6 md:px-8 flex items-center justify-between sticky top-0 z-30 shadow-sm">
       {/* Mobile Menu & Search Column */}
       <div className="flex items-center gap-4 flex-1">
-        <button
+        {/* <button
           onClick={onMenuToggle}
           className="md:hidden text-slate-500 hover:text-slate-800 p-1.5 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer shrink-0"
         >
           <Menu className="w-5 h-5" />
-        </button>
+        </button> */}
 
         {/* Mobile Heartbeat Brand Logo */}
         <div className="flex md:hidden items-center gap-2 shrink-0">
@@ -34,23 +34,23 @@ export const Header: React.FC<HeaderProps> = ({ onMenuToggle, currentUser }) => 
         </div>
 
         {/* Global Search Bar */}
-        <div className="relative max-w-md w-full hidden sm:block">
+        {/* <div className="relative max-w-md w-full hidden sm:block">
           <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
           <input
             type="text"
             placeholder="Search patients, records, or help..."
             className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-full text-sm outline-none focus:border-brand-primary focus:bg-white focus:ring-1 focus:ring-brand-primary transition-all text-slate-700"
           />
-        </div>
+        </div> */}
       </div>
 
       {/* Notifications & Profile Area */}
       <div className="flex items-center gap-5 shrink-0">
         {/* Notifications Icon with dot */}
-        <button className="relative p-2.5 text-slate-500 hover:text-slate-800 hover:bg-slate-50 rounded-full transition-colors cursor-pointer">
+        {/* <button className="relative p-2.5 text-slate-500 hover:text-slate-800 hover:bg-slate-50 rounded-full transition-colors cursor-pointer">
           <Bell className="w-5 h-5" />
           <span className="absolute top-2 right-2 w-2 h-2 bg-rose-500 rounded-full border border-white" />
-        </button>
+        </button> */}
 
         {/* Vertical Separator */}
         <div className="h-8 w-px bg-slate-200" />
@@ -65,7 +65,7 @@ export const Header: React.FC<HeaderProps> = ({ onMenuToggle, currentUser }) => 
               {user.role}
             </span>
           </div>
-          
+
           {/* Avatar Picture */}
           <div className="relative">
             <img
