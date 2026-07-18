@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { User, BarChart3, Briefcase, Settings, LogOut, ChevronRight, Bell } from 'lucide-react';
 
 interface MorePageProps {
-  currentUser: { firstName: string; lastName: string; role: string; email: string } | null;
+  currentUser: { firstName: string; lastName: string; role: string; email: string; avatarUrl?: string } | null;
   onLogout: () => void;
 }
 
@@ -15,6 +15,7 @@ export const MorePage: React.FC<MorePageProps> = ({ currentUser, onLogout }) => 
     lastName: 'Jenkins',
     role: 'DOCTOR',
     email: 'sarah.jenkins@healthflow.com',
+    avatarUrl: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?q=80&w=120&auto=format&fit=crop',
   };
 
   const getDepartment = () => {
@@ -61,9 +62,12 @@ export const MorePage: React.FC<MorePageProps> = ({ currentUser, onLogout }) => 
       <div className="bg-white border border-slate-250/60 rounded-2xl p-5 shadow-xs flex items-center gap-4.5 mt-2">
         <div className="relative shrink-0">
           <img
-            src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?q=80&w=120&auto=format&fit=crop"
+            src={user.avatarUrl || "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?q=80&w=120&auto=format&fit=crop"}
             alt={`${user.firstName} ${user.lastName}`}
             className="w-16 h-16 rounded-full object-cover border border-slate-100 shadow-sm"
+            onError={(e) => {
+              (e.target as HTMLImageElement).src = `https://api.dicebear.com/7.x/initials/svg?seed=${user.firstName}%20${user.lastName}`;
+            }}
           />
           <span className="absolute bottom-0 right-0 w-4 h-4 bg-emerald-500 rounded-full border-2 border-white" />
         </div>
