@@ -1,4 +1,5 @@
 import React, { useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { AnimatePresence, motion } from 'motion/react';
 import { X } from 'lucide-react';
 
@@ -22,7 +23,7 @@ export const Drawer: React.FC<DrawerProps> = ({ isOpen, onClose, title, children
     };
   }, [isOpen]);
 
-  return (
+  return createPortal(
     <AnimatePresence>
       {isOpen && (
         <div className="fixed inset-0 z-50 flex justify-end">
@@ -63,6 +64,7 @@ export const Drawer: React.FC<DrawerProps> = ({ isOpen, onClose, title, children
           </motion.div>
         </div>
       )}
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body
   );
 };
