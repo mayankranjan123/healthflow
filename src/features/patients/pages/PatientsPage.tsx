@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
+import { createPortal } from 'react-dom';
+import { AnimatePresence, motion } from 'motion/react';
 import {
   Plus,
   Search,
@@ -80,6 +82,15 @@ const formatDob = (dateStr: string): string => {
   } catch (e) {
     return dateStr;
   }
+};
+
+interface ConditionalPortalProps {
+  active: boolean;
+  children: React.ReactNode;
+}
+
+const ConditionalPortal: React.FC<ConditionalPortalProps> = ({ active, children }) => {
+  return active ? createPortal(children, document.body) : <>{children}</>;
 };
 
 export const PatientsPage: React.FC = () => {
@@ -1068,7 +1079,7 @@ export const PatientsPage: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* 1. DIRECTORY VIEW (LIST MODE) */}
-      {viewMode === 'list' && (
+      {(!isMobile || viewMode === 'list') && (
         isMobile ? (
           <div className="space-y-4 pb-20 animate-fade-in-up">
             {/* Mobile Header */}
@@ -1305,10 +1316,19 @@ export const PatientsPage: React.FC = () => {
 
         {/* 2. PATIENT PROFILE VIEW (DETAIL MODE) */}
         {viewMode === 'detail' && selectedPatient && (
-          <div className="space-y-6">
-            {/* Header Split */}
+          <ConditionalPortal active={isMobile}>
+            <AnimatePresence>
+              {viewMode === 'detail' && (
+                <motion.div
+                  initial={isMobile ? { opacity: 0, scale: 0.95, y: 10 } : {}}
+                  animate={isMobile ? { opacity: 1, scale: 1, y: 0 } : {}}
+                  exit={isMobile ? { opacity: 0, scale: 0.95, y: 10 } : {}}
+                  transition={isMobile ? { type: 'spring', duration: 0.35, bounce: 0 } : { duration: 0 }}
+                  className={isMobile ? "fixed inset-0 bg-slate-50 z-45 overflow-y-auto pb-20 flex flex-col" : "space-y-6"}
+                >
+                  {/* Header Split */}
             {isMobile ? (
-              <div className="flex justify-between items-center bg-white px-6 py-4 border-b border-slate-200 sticky top-0 z-30 shadow-sm h-18">
+              <div className="flex justify-between items-center bg-white px-6 py-4 border-b border-slate-200 sticky top-0 z-30 shadow-sm h-18 shrink-0">
                 <div className="flex items-center gap-3">
                   <button
                     onClick={() => setSearchParams({})}
@@ -2386,8 +2406,11 @@ export const PatientsPage: React.FC = () => {
               )
             )}
             </div>
-          </div>
+          </motion.div>
         )}
+      </AnimatePresence>
+    </ConditionalPortal>
+  )}
 
         {/* --- MODAL DIALOGS --- */}
 
