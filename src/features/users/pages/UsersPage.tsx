@@ -33,6 +33,7 @@ import { StaffForm } from '../components/StaffForm';
 
 // UI components
 import { Modal } from '../../../components/ui/Modal';
+import { Drawer } from '../../../components/ui/Drawer';
 import { Button } from '../../../components/ui/Button';
 
 interface UsersPageProps {
@@ -660,35 +661,68 @@ export const UsersPage: React.FC<UsersPageProps> = ({ hideHeader = false }) => {
         )}
       </div>
 
-      {/* ADD/EDIT MODAL */}
-      <Modal
-        isOpen={isFormOpen}
-        onClose={closeFormModal}
-        title={`${editingRecord ? 'Edit' : 'Add'} ${activeTab === 'admin' ? 'Administrator' : activeTab === 'doctor' ? 'Doctor Profile' : 'Staff Member'
+      {/* ADD/EDIT FORM */}
+      {isMobile ? (
+        <Drawer
+          isOpen={isFormOpen}
+          onClose={closeFormModal}
+          title={`${editingRecord ? 'Edit' : 'Add'} ${
+            activeTab === 'admin' ? 'Administrator' : activeTab === 'doctor' ? 'Doctor' : 'Staff Member'
           }`}
-      >
-        {activeTab === 'admin' && (
-          <AdminForm
-            admin={editingRecord}
-            onSave={handleSaveAdmin}
-            onCancel={closeFormModal}
-          />
-        )}
-        {activeTab === 'doctor' && (
-          <DoctorForm
-            doctor={editingRecord}
-            onSave={handleSaveDoctor}
-            onCancel={closeFormModal}
-          />
-        )}
-        {activeTab === 'staff' && (
-          <StaffForm
-            staff={editingRecord}
-            onSave={handleSaveStaff}
-            onCancel={closeFormModal}
-          />
-        )}
-      </Modal>
+        >
+          {activeTab === 'admin' && (
+            <AdminForm
+              admin={editingRecord}
+              onSave={handleSaveAdmin}
+              onCancel={closeFormModal}
+            />
+          )}
+          {activeTab === 'doctor' && (
+            <DoctorForm
+              doctor={editingRecord}
+              onSave={handleSaveDoctor}
+              onCancel={closeFormModal}
+            />
+          )}
+          {activeTab === 'staff' && (
+            <StaffForm
+              staff={editingRecord}
+              onSave={handleSaveStaff}
+              onCancel={closeFormModal}
+            />
+          )}
+        </Drawer>
+      ) : (
+        <Modal
+          isOpen={isFormOpen}
+          onClose={closeFormModal}
+          title={`${editingRecord ? 'Edit' : 'Add'} ${
+            activeTab === 'admin' ? 'Administrator' : activeTab === 'doctor' ? 'Doctor Profile' : 'Staff Member'
+          }`}
+        >
+          {activeTab === 'admin' && (
+            <AdminForm
+              admin={editingRecord}
+              onSave={handleSaveAdmin}
+              onCancel={closeFormModal}
+            />
+          )}
+          {activeTab === 'doctor' && (
+            <DoctorForm
+              doctor={editingRecord}
+              onSave={handleSaveDoctor}
+              onCancel={closeFormModal}
+            />
+          )}
+          {activeTab === 'staff' && (
+            <StaffForm
+              staff={editingRecord}
+              onSave={handleSaveStaff}
+              onCancel={closeFormModal}
+            />
+          )}
+        </Modal>
+      )}
 
       {/* VIEW MODAL */}
       <Modal

@@ -398,12 +398,20 @@ export const DoctorForm: React.FC<DoctorFormProps> = ({ doctor, onSave, onCancel
         </label>
       </div>
 
-      <div className="flex gap-3 pt-5 border-t border-slate-100 mt-8 w-full sm:justify-end">
-        <Button type="button" variant="outline" onClick={onCancel} className="flex-1 sm:flex-initial py-3 rounded-xl font-bold text-sm">
+      <div className="flex items-center gap-3 pt-4 border-t border-slate-100 bg-slate-50 -mx-6 -mb-6 p-6 mt-8 sm:bg-transparent sm:mx-0 sm:mb-0 sm:p-0 sm:justify-end w-full">
+        <Button
+          type="button"
+          variant="outline"
+          onClick={onCancel}
+          className="w-full sm:w-auto sm:px-6 h-11 border-slate-200 text-slate-600 rounded-xl font-semibold text-sm"
+        >
           Cancel
         </Button>
-        <Button type="submit" className="flex-1 sm:flex-initial py-3 bg-brand-primary text-white rounded-xl font-bold text-sm justify-center gap-2">
-          <span>Save Changes</span>
+        <Button
+          type="submit"
+          className="w-full sm:w-auto sm:px-6 h-11 bg-brand-primary text-white rounded-xl font-semibold text-sm justify-center gap-2"
+        >
+          <span>Save</span>
         </Button>
       </div>
     </form>
