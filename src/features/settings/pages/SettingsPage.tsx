@@ -128,6 +128,7 @@ export const SettingsPage: React.FC = () => {
           clinicGst={clinic.gstNumber}
           onSave={handleSaveBilling}
           isMobile={isMobile}
+          onCancel={() => { if (isMobile) setActiveMobileTab(null); }}
         />
       );
     }
@@ -146,6 +147,7 @@ export const SettingsPage: React.FC = () => {
           clinicPhone={clinic.phone}
           onSave={handleSavePrescription}
           isMobile={isMobile}
+          onCancel={() => { if (isMobile) setActiveMobileTab(null); }}
         />
       );
     }

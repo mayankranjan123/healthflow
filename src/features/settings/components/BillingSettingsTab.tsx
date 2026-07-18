@@ -10,6 +10,7 @@ interface BillingSettingsTabProps {
   clinicGst?: string;
   onSave: (data: BillingSettings) => void;
   isMobile?: boolean;
+  onCancel?: () => void;
 }
 
 export const BillingSettingsTab: React.FC<BillingSettingsTabProps> = ({
@@ -19,7 +20,8 @@ export const BillingSettingsTab: React.FC<BillingSettingsTabProps> = ({
   clinicPhone,
   clinicGst,
   onSave,
-  isMobile
+  isMobile,
+  onCancel
 }) => {
   const [formData, setFormData] = useState<BillingSettings>(initialSettings);
   const [saveSuccess, setSaveSuccess] = useState(false);
@@ -390,7 +392,10 @@ export const BillingSettingsTab: React.FC<BillingSettingsTabProps> = ({
           )}
           <button
             type="button"
-            onClick={() => setFormData(initialSettings)}
+            onClick={() => {
+              setFormData(initialSettings);
+              if (onCancel) onCancel();
+            }}
             className="flex-1 h-11 border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 rounded-xl text-xs font-bold transition-all uppercase tracking-wider flex items-center justify-center cursor-pointer"
           >
             Cancel
