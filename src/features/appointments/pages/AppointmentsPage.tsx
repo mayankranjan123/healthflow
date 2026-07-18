@@ -39,9 +39,34 @@ export const AppointmentsPage: React.FC = () => {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const itemsPerPage = 5;
 
+  // Get default doctor name if logged in as doctor
+  const getDefaultDoctorSearch = (): string => {
+    const cached = localStorage.getItem('healthflow_user');
+    if (cached) {
+      try {
+        const u = JSON.parse(cached);
+        if (u && u.role?.toUpperCase() === 'DOCTOR') {
+          return u.firstName && u.lastName ? `${u.firstName} ${u.lastName}` : '';
+        }
+      } catch (e) {}
+    }
+    return '';
+  };
+
+  const isDoctor = useMemo(() => {
+    const cached = localStorage.getItem('healthflow_user');
+    if (cached) {
+      try {
+        const u = JSON.parse(cached);
+        return u?.role?.toUpperCase() === 'DOCTOR';
+      } catch (e) {}
+    }
+    return false;
+  }, []);
+
   // Filter state
   const [filters, setFilters] = useState<FilterState>({
-    doctorSearch: '',
+    doctorSearch: getDefaultDoctorSearch(),
     fromDate: '',
     toDate: '',
     patientSearch: '',
@@ -51,7 +76,7 @@ export const AppointmentsPage: React.FC = () => {
 
   // Temporary filters state for mobile drawer
   const [tempFilters, setTempFilters] = useState<FilterState>({
-    doctorSearch: '',
+    doctorSearch: getDefaultDoctorSearch(),
     fromDate: '',
     toDate: '',
     patientSearch: '',
@@ -60,7 +85,7 @@ export const AppointmentsPage: React.FC = () => {
   });
 
   // Debouncing filters to prevent multiple API hits
-  const [debouncedDoctorSearch, setDebouncedDoctorSearch] = useState('');
+  const [debouncedDoctorSearch, setDebouncedDoctorSearch] = useState(getDefaultDoctorSearch());
   const [debouncedPatientSearch, setDebouncedPatientSearch] = useState('');
 
   useEffect(() => {
@@ -153,7 +178,7 @@ export const AppointmentsPage: React.FC = () => {
   // Handle reset filters
   const handleResetFilters = () => {
     setFilters({
-      doctorSearch: '',
+      doctorSearch: getDefaultDoctorSearch(),
       fromDate: '',
       toDate: '',
       patientSearch: '',
@@ -575,19 +600,21 @@ export const AppointmentsPage: React.FC = () => {
               </div>
 
               {/* Doctor Search */}
-              <div className="space-y-2.5">
-                <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider">Doctor Name</label>
-                <div className="relative">
-                  <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4" />
-                  <input
-                    type="text"
-                    placeholder="Search doctor..."
-                    value={tempFilters.doctorSearch}
-                    onChange={(e) => setTempFilters({ ...tempFilters, doctorSearch: e.target.value })}
-                    className="w-full pl-10 pr-3 h-11 bg-white border border-slate-200 rounded-xl text-sm outline-none focus:border-brand-primary focus:ring-1 focus:ring-brand-primary text-slate-700 font-medium"
-                  />
+              {!isDoctor && (
+                <div className="space-y-2.5">
+                  <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider">Doctor Name</label>
+                  <div className="relative">
+                    <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4" />
+                    <input
+                      type="text"
+                      placeholder="Search doctor..."
+                      value={tempFilters.doctorSearch}
+                      onChange={(e) => setTempFilters({ ...tempFilters, doctorSearch: e.target.value })}
+                      className="w-full pl-10 pr-3 h-11 bg-white border border-slate-200 rounded-xl text-sm outline-none focus:border-brand-primary focus:ring-1 focus:ring-brand-primary text-slate-700 font-medium"
+                    />
+                  </div>
                 </div>
-              </div>
+              )}
 
               {/* Visit Type */}
               <div className="space-y-2.5">
@@ -609,7 +636,7 @@ export const AppointmentsPage: React.FC = () => {
               <button
                 onClick={() => {
                   setTempFilters({
-                    doctorSearch: '',
+                    doctorSearch: getDefaultDoctorSearch(),
                     fromDate: '',
                     toDate: '',
                     patientSearch: filters.patientSearch,

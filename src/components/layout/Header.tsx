@@ -1,5 +1,6 @@
 import React from 'react';
 import { Search, Bell, Menu, Activity } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 interface HeaderProps {
   onMenuToggle: () => void;
@@ -7,6 +8,7 @@ interface HeaderProps {
 }
 
 export const Header: React.FC<HeaderProps> = ({ onMenuToggle, currentUser }) => {
+  const navigate = useNavigate();
   const defaultUser = {
     firstName: 'Neha',
     lastName: 'Kapoor',
@@ -67,7 +69,10 @@ export const Header: React.FC<HeaderProps> = ({ onMenuToggle, currentUser }) => 
           </div>
 
           {/* Avatar Picture */}
-          <div className="relative">
+          <div 
+            className="relative cursor-pointer hover:opacity-85 transition-opacity"
+            onClick={() => navigate('/profile')}
+          >
             <img
               src={user.avatarUrl || "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?q=80&w=120&auto=format&fit=crop"}
               alt={`${user.firstName} ${user.lastName}`}
