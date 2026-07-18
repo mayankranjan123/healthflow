@@ -8,6 +8,7 @@ interface PrescriptionSettingsTabProps {
   clinicAddress: string;
   clinicPhone: string;
   onSave: (data: PrescriptionSettings) => void;
+  isMobile?: boolean;
 }
 
 export const PrescriptionSettingsTab: React.FC<PrescriptionSettingsTabProps> = ({
@@ -15,7 +16,8 @@ export const PrescriptionSettingsTab: React.FC<PrescriptionSettingsTabProps> = (
   clinicName,
   clinicAddress,
   clinicPhone,
-  onSave
+  onSave,
+  isMobile
 }) => {
   const [formData, setFormData] = useState<PrescriptionSettings>(initialSettings);
   const [saveSuccess, setSaveSuccess] = useState(false);
@@ -50,11 +52,11 @@ export const PrescriptionSettingsTab: React.FC<PrescriptionSettingsTabProps> = (
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-      
+
       {/* Left Column (2/3 width) - Edit Form */}
       <div className="lg:col-span-2 space-y-6">
         <form onSubmit={handleSubmit} className="space-y-6">
-          
+
           {/* Card 1: Prescription Layout Numbering */}
           <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm space-y-5">
             <div className="flex items-center gap-2 pb-3 border-b border-slate-100">
@@ -106,14 +108,12 @@ export const PrescriptionSettingsTab: React.FC<PrescriptionSettingsTabProps> = (
                 <button
                   type="button"
                   onClick={() => handleToggle('autoGenerateNumber')}
-                  className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-250 ease-in-out outline-none ${
-                    formData.autoGenerateNumber ? 'bg-indigo-600' : 'bg-slate-250'
-                  }`}
+                  className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-250 ease-in-out outline-none ${formData.autoGenerateNumber ? 'bg-indigo-600' : 'bg-slate-250'
+                    }`}
                 >
                   <span
-                    className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-md ring-0 transition duration-250 ease-in-out ${
-                      formData.autoGenerateNumber ? 'translate-x-5' : 'translate-x-0'
-                    }`}
+                    className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-md ring-0 transition duration-250 ease-in-out ${formData.autoGenerateNumber ? 'translate-x-5' : 'translate-x-0'
+                      }`}
                   />
                 </button>
               </div>
@@ -130,22 +130,21 @@ export const PrescriptionSettingsTab: React.FC<PrescriptionSettingsTabProps> = (
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs font-bold">
               {layoutStyles.map((style) => {
                 const isSelected = formData.headerLayout === style.id;
-                
+
                 return (
                   <div
                     key={style.id}
                     onClick={() => handleValChange('headerLayout', style.id)}
-                    className={`border rounded-xl p-4 cursor-pointer transition-all flex flex-col justify-between h-36 relative select-none ${
-                      isSelected 
-                        ? 'border-indigo-600 bg-indigo-50/20 ring-1 ring-indigo-600' 
+                    className={`border rounded-xl p-4 cursor-pointer transition-all flex flex-col justify-between h-36 relative select-none ${isSelected
+                        ? 'border-indigo-600 bg-indigo-50/20 ring-1 ring-indigo-600'
                         : 'border-slate-200 hover:border-slate-355 hover:bg-slate-50/50'
-                    }`}
+                      }`}
                   >
                     <div className="space-y-1">
                       <input
                         type="radio"
                         checked={isSelected}
-                        onChange={() => {}}
+                        onChange={() => { }}
                         className="w-4 h-4 text-indigo-600 focus:ring-indigo-500 border-slate-300"
                       />
                       <span className="block font-bold text-slate-800 text-sm mt-2">{style.name}</span>
@@ -263,20 +262,44 @@ export const PrescriptionSettingsTab: React.FC<PrescriptionSettingsTabProps> = (
           </div>
 
           {/* Save trigger */}
-          <div className="flex items-center justify-end gap-3 pt-2">
-            {saveSuccess && (
-              <span className="text-emerald-600 text-xs font-bold flex items-center gap-1.5 animate-pulse">
-                <ShieldCheck className="w-4.5 h-4.5" />
-                <span>Prescription layout parameters saved!</span>
-              </span>
-            )}
-            <button
-              type="submit"
-              className="px-6 h-11 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs transition-all rounded-lg shadow-sm flex items-center gap-1.5 cursor-pointer uppercase tracking-wider"
-            >
-              <span>Save Prescription Pad Settings</span>
-            </button>
-          </div>
+          {isMobile ? (
+            <div className="bg-white border border-slate-200 rounded-2xl p-4.5 flex gap-3 shadow-3xs justify-center items-center mt-2 relative">
+              {saveSuccess && (
+                <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-emerald-600 text-white font-extrabold text-[10px] tracking-wide uppercase px-3 py-1 rounded-full shadow flex items-center gap-1">
+                  <CheckCircle className="w-3.5 h-3.5" />
+                  <span>SAVED SUCCESS!</span>
+                </div>
+              )}
+              <button
+                type="button"
+                onClick={() => setFormData(initialSettings)}
+                className="flex-1 h-11 border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 rounded-xl text-xs font-bold transition-all uppercase tracking-wider flex items-center justify-center cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                className="flex-1 h-11 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-xs transition-all rounded-xl shadow-3xs flex items-center justify-center gap-1.5 cursor-pointer uppercase tracking-wider"
+              >
+                Save
+              </button>
+            </div>
+          ) : (
+            <div className="flex items-center justify-end gap-3 pt-2">
+              {saveSuccess && (
+                <span className="text-emerald-600 text-xs font-bold flex items-center gap-1.5 animate-pulse">
+                  <ShieldCheck className="w-4.5 h-4.5" />
+                  <span>Prescription layout parameters saved!</span>
+                </span>
+              )}
+              <button
+                type="submit"
+                className="px-6 h-11 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs transition-all rounded-lg shadow-sm flex items-center gap-1.5 cursor-pointer uppercase tracking-wider"
+              >
+                <span>Save Prescription Pad Settings</span>
+              </button>
+            </div>
+          )}
 
         </form>
       </div>
@@ -289,7 +312,7 @@ export const PrescriptionSettingsTab: React.FC<PrescriptionSettingsTabProps> = (
               Rx Sheet Preview
             </h4>
             <div className="flex items-center gap-1">
-              <button 
+              <button
                 type="button"
                 onClick={() => alert('Opening prescription print layout simulator...')}
                 title="Prescription Sheet Print"
@@ -302,10 +325,10 @@ export const PrescriptionSettingsTab: React.FC<PrescriptionSettingsTabProps> = (
 
           {/* Rx Pad container layout */}
           <div className="bg-white border border-slate-200 rounded-xl shadow-md p-5 min-h-[460px] flex flex-col justify-between text-[10px] text-slate-600 select-none">
-            
+
             {/* Header section adapting to headerLayout */}
             <div className="space-y-4">
-              
+
               {/* Header style */}
               <div className={`
                 pb-3.5 border-b border-indigo-100 flex flex-col
@@ -378,7 +401,7 @@ export const PrescriptionSettingsTab: React.FC<PrescriptionSettingsTabProps> = (
               {/* Large Clinical Rx marker */}
               <div className="pt-2">
                 <span className="text-lg font-black text-slate-900 leading-none">℞</span>
-                
+
                 {/* Drug lists mockup */}
                 <div className="space-y-3 pt-2 pl-2">
                   <div className="space-y-0.5">

@@ -399,6 +399,206 @@ export const BillingSettingsTab: React.FC<BillingSettingsTabProps> = ({
         </div>
       </form>
 
+      {/* Live Layout Preview (Mobile View) */}
+      <div className="space-y-6 pt-4 border-t border-slate-200/60 mt-6 pb-8">
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <h4 className="text-xs font-extrabold text-slate-400 uppercase tracking-widest font-mono">
+              Live Layout Preview
+            </h4>
+            <div className="flex items-center gap-1">
+              <button
+                type="button"
+                onClick={() => alert(`Simulating invoice print preview format: ${formData.paperSize} (${formData.printOrientation})`)}
+                title="Print Preview"
+                className="w-8 h-8 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 flex items-center justify-center transition-colors cursor-pointer border border-slate-200"
+              >
+                <Printer className="w-3.5 h-3.5" />
+              </button>
+              <button
+                type="button"
+                onClick={() => setPreviewTemplateId(formData.selectedTemplateId)}
+                title="Zoom Layout"
+                className="w-8 h-8 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 flex items-center justify-center transition-colors cursor-pointer border border-slate-200"
+              >
+                <ZoomIn className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          </div>
+
+          {/* Scaled-down Physical Invoice Container */}
+          <div className={`bg-white border rounded-xl shadow-md p-4 min-h-[460px] flex flex-col justify-between text-[10px] text-slate-600 select-none ${formData.selectedTemplateId === 'CLASSIC_MEDICAL' ? 'border-slate-200' :
+            formData.selectedTemplateId === 'MODERN_COMPACT' ? 'border-indigo-200' :
+              formData.selectedTemplateId === 'GST_DETAILED' ? 'border-emerald-200' : 'border-slate-350'
+            }`}>
+
+            {/* Template Specific Header Bar */}
+            <div className="space-y-3.5">
+              {formData.selectedTemplateId === 'MODERN_COMPACT' && (
+                <div className="bg-indigo-600 -mx-4 -mt-4 p-3 rounded-t-xl text-white flex items-center justify-between">
+                  <span className="font-extrabold text-[11px] font-sans tracking-wide">
+                    {formData.showClinicLogo ? `✦ ${clinicName}` : clinicName}
+                  </span>
+                  <span className="font-mono text-[9px] bg-white/20 px-1.5 py-0.5 rounded font-bold">
+                    {formData.invoicePrefix}-{formData.startingInvoiceNumber}
+                  </span>
+                </div>
+              )}
+
+              {/* Core Content Grid */}
+              <div className="space-y-3">
+                {formData.selectedTemplateId !== 'MODERN_COMPACT' && (
+                  <div className="flex justify-between items-start">
+                    <div>
+                      {formData.showClinicLogo && (
+                        <div className="w-5 h-5 rounded bg-slate-100 border border-slate-250 flex items-center justify-center text-[8px] font-extrabold text-indigo-600 mb-1">
+                          ✦
+                        </div>
+                      )}
+                      <h5 className="font-extrabold text-slate-900 text-[11px] leading-tight">
+                        {clinicName}
+                      </h5>
+                      {formData.showClinicAddress && (
+                        <p className="text-[8px] text-slate-400 mt-0.5 leading-normal max-w-[120px]">
+                          {clinicAddress}
+                        </p>
+                      )}
+                      {formData.showClinicContact && (
+                        <p className="text-[8px] text-slate-400 mt-0.5 leading-none">
+                          {clinicPhone}
+                        </p>
+                      )}
+                    </div>
+                    <div className="text-right">
+                      <span className="text-[10px] font-mono font-extrabold text-indigo-700 block">
+                        INVOICE
+                      </span>
+                      <span className="font-mono font-bold text-slate-600 block mt-0.5">
+                        No: {formData.invoicePrefix}-{formData.startingInvoiceNumber}
+                      </span>
+                      <span className="block text-[8px] text-slate-400 font-mono mt-0.5">
+                        Date: {new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                      </span>
+                    </div>
+                  </div>
+                )}
+
+                {/* Patient/Doctor Block */}
+                <div className="bg-slate-50/75 rounded border border-slate-100 p-2 grid grid-cols-2 gap-2 text-[8px] leading-relaxed">
+                  <div>
+                    <span className="text-slate-400 uppercase tracking-wider block font-bold text-[7px]">Patient Details</span>
+                    <span className="font-bold text-slate-800 block">Rohan Mehra</span>
+                    {formData.showPatientMobile && (
+                      <span className="text-slate-500 font-mono block">+91 99000 88776</span>
+                    )}
+                  </div>
+                  <div>
+                    <span className="text-slate-400 uppercase tracking-wider block font-bold text-[7px]">Attending Doctor</span>
+                    {formData.showDoctorName ? (
+                      <span className="font-bold text-slate-800 block">Dr. Aisha Mehta</span>
+                    ) : (
+                      <span className="text-slate-400 block font-medium">Not Printed</span>
+                    )}
+                    <span className="text-slate-400 block">Cardiology</span>
+                  </div>
+                </div>
+
+                {/* Items Table Mockup */}
+                <div className="space-y-1 pt-1">
+                  <div className="border-b border-slate-150 pb-1 flex items-center font-bold text-slate-400 uppercase tracking-wider text-[7px]">
+                    <span className="flex-1">Description</span>
+                    <span className="w-10 text-center">Qty</span>
+                    <span className="w-12 text-right">Price</span>
+                    {formData.enableItemLevelTax && (
+                      <span className="w-10 text-right">{formData.taxLabel}</span>
+                    )}
+                    <span className="w-12 text-right">Total</span>
+                  </div>
+
+                  {/* Service Row */}
+                  <div className="flex items-center py-1 font-bold text-slate-700 text-[8px]">
+                    <span className="flex-1 text-slate-900 font-bold truncate">General Outpatient Service</span>
+                    <span className="w-10 text-center font-mono">1</span>
+                    <span className="w-12 text-right font-mono">₹1,500.00</span>
+                    {formData.enableItemLevelTax && (
+                      <span className="w-10 text-right font-mono">₹270.00</span>
+                    )}
+                    <span className="w-12 text-right font-mono">₹1,770.00</span>
+                  </div>
+
+                  {/* GST Detailed Extra Rows mock */}
+                  {formData.selectedTemplateId === 'GST_DETAILED' && (
+                    <div className="bg-slate-50 p-1.5 rounded border border-slate-150 text-[7px] text-slate-400 font-mono space-y-0.5 leading-none">
+                      <div className="flex justify-between">
+                        <span>HSN Code: 999311 (Medical OPD)</span>
+                        <span>CGST (9%): ₹135.00</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Place of Supply: Punjab</span>
+                        <span>SGST (9%): ₹135.00</span>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* General Ledger Subtotals */}
+                <div className="border-t border-slate-150 pt-2 flex flex-col items-end space-y-1 font-bold text-[8px] text-slate-600">
+                  <div className="flex justify-between w-28">
+                    <span>Subtotal:</span>
+                    <span className="font-mono text-slate-800">₹1,500.00</span>
+                  </div>
+                  {formData.enableInvoiceLevelDiscount && (
+                    <div className="flex justify-between w-28 text-rose-500">
+                      <span>Discount (10%):</span>
+                      <span className="font-mono">-₹150.00</span>
+                    </div>
+                  )}
+                  <div className="flex justify-between w-28">
+                    <span>{formData.taxLabel} Tax ({formData.defaultTaxPercent}%):</span>
+                    <span className="font-mono text-slate-800">₹270.00</span>
+                  </div>
+                  <div className="flex justify-between w-28 pt-1 border-t border-slate-150 text-[10px] text-indigo-700 font-extrabold">
+                    <span>Grand Total:</span>
+                    <span className="font-mono">₹1,620.00</span>
+                  </div>
+                </div>
+
+                {/* Payment Summary section if checked */}
+                {formData.showPaymentSummary && (
+                  <div className="border-t border-slate-100 pt-2 flex items-center justify-between text-[7.5px] font-bold">
+                    <div className="text-slate-400">
+                      <span>Payment Mode:</span>
+                      <span className="text-slate-600 ml-1">ONLINE / UPI</span>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Bottom section: Footer + Signature */}
+            <div className="space-y-3.5 border-t border-slate-100 pt-2 text-center text-slate-400 font-medium">
+
+              {/* Footer message if checked */}
+              {formData.showFooterMessage && formData.footerMessage && (
+                <p className="text-[7.5px] italic font-semibold text-slate-500 max-w-[190px] mx-auto leading-normal">
+                  "{formData.footerMessage}"
+                </p>
+              )}
+
+              {/* Authorized signature if checked */}
+              {formData.showAuthorizedSignature && (
+                <div className="flex flex-col items-end pt-1">
+                  <div className="w-16 border-t border-slate-350 mt-4" />
+                  <span className="text-[7px] uppercase font-bold text-slate-400 tracking-wider block mt-1 pr-1">
+                    Authorized Signatory
+                  </span>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+
       {/* Expanded Template Preview Modal */}
       {previewTemplateId && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/45 p-4 animate-fade-in text-left">

@@ -145,6 +145,7 @@ export const SettingsPage: React.FC = () => {
           clinicAddress={`${clinic.addressLine}, ${clinic.city}`}
           clinicPhone={clinic.phone}
           onSave={handleSavePrescription}
+          isMobile={isMobile}
         />
       );
     }
