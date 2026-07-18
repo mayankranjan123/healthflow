@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import {
   Plus,
   Search,
@@ -105,8 +106,25 @@ export const PatientsPage: React.FC = () => {
   }, []);
 
   // Page View state
+  const [searchParams, setSearchParams] = useSearchParams();
+  const patientIdFromUrl = searchParams.get('patientId');
+
   const [viewMode, setViewMode] = useState<'list' | 'detail'>('list');
   const [selectedPatient, setSelectedPatient] = useState<PatientProfileExtended | null>(null);
+
+  useEffect(() => {
+    if (patientIdFromUrl && patients.length > 0) {
+      const matched = patients.find(p => p.id === patientIdFromUrl || p.patientNumber === patientIdFromUrl);
+      if (matched) {
+        setSelectedPatient(matched);
+        setViewMode('detail');
+      }
+    } else if (!patientIdFromUrl) {
+      setSelectedPatient(null);
+      setViewMode('list');
+    }
+  }, [patientIdFromUrl, patients]);
+
   const [profileTab, setProfileTab] = useState<'profile' | 'appointments' | 'prescriptions' | 'files'>('profile');
 
   // Search & Filters state for primary directory
@@ -917,6 +935,7 @@ export const PatientsPage: React.FC = () => {
 
   // View Patient Details
   const handleViewDetails = (patient: PatientProfileExtended) => {
+    setSearchParams({ patientId: patient.id });
     setSelectedPatient(patient);
     setProfileTab('profile');
     setViewMode('detail');
@@ -1289,13 +1308,10 @@ export const PatientsPage: React.FC = () => {
           <div className="space-y-6">
             {/* Header Split */}
             {isMobile ? (
-              <div className="flex justify-between items-center bg-white -mx-6 -mt-6 px-6 py-4 border-b border-slate-200 sticky top-0 z-30 shadow-sm h-18">
+              <div className="flex justify-between items-center bg-white px-6 py-4 border-b border-slate-200 sticky top-0 z-30 shadow-sm h-18">
                 <div className="flex items-center gap-3">
                   <button
-                    onClick={() => {
-                      setViewMode('list');
-                      setSelectedPatient(null);
-                    }}
+                    onClick={() => setSearchParams({})}
                     className="text-slate-650 hover:bg-slate-100 p-1.5 rounded-full cursor-pointer transition-colors"
                   >
                     <ArrowLeft className="w-6 h-6" />
@@ -1318,10 +1334,7 @@ export const PatientsPage: React.FC = () => {
                   id="back-to-list-btn"
                   variant="outline"
                   size="sm"
-                  onClick={() => {
-                    setViewMode('list');
-                    setSelectedPatient(null);
-                  }}
+                  onClick={() => setSearchParams({})}
                   className="gap-1.5 border-slate-200 py-1.5 text-slate-600 hover:text-slate-900"
                 >
                   <ArrowLeft className="w-3.5 h-3.5" />
@@ -1333,6 +1346,9 @@ export const PatientsPage: React.FC = () => {
                 </span>
               </div>
             )}
+
+            {/* Main detail page content */}
+            <div className={isMobile ? 'px-6 space-y-6' : 'space-y-6'}>
 
             {/* Stats Summary / Avatar Banner Split */}
             {isMobile ? (
@@ -2369,6 +2385,7 @@ export const PatientsPage: React.FC = () => {
                 </div>
               )
             )}
+            </div>
           </div>
         )}
 
