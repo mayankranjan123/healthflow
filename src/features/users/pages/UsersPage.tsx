@@ -489,6 +489,189 @@ export const UsersPage: React.FC<UsersPageProps> = ({ hideHeader = false }) => {
 
   const header = getHeaderDetails();
 
+  const detailsContent = viewingRecord && (
+    viewingRecord.isLoadingDetails ? (
+      <div className="flex flex-col justify-center items-center py-20">
+        <div className="w-10 h-10 border-4 border-blue-600 border-t-transparent rounded-full animate-spin" />
+        <span className="text-slate-500 font-semibold mt-4 text-sm">Loading details...</span>
+      </div>
+    ) : (
+      <div className="space-y-6">
+        {/* Header profile section - Centered */}
+        <div className="flex flex-col items-center pb-4 border-b border-slate-100">
+          <div className="w-28 h-28 rounded-full overflow-hidden bg-slate-50 border-4 border-slate-100 shadow-sm relative">
+            {viewingRecord.avatarUrl ? (
+              <img src={viewingRecord.avatarUrl} alt="" className="w-full h-full object-cover" />
+            ) : (
+              <div className="w-full h-full flex items-center justify-center font-extrabold text-slate-400 uppercase text-2xl font-display">
+                {viewingRecord.name ? viewingRecord.name.replace('Dr. ', '').split(' ').map((n: any) => n[0]).join('') : 'U'}
+              </div>
+            )}
+            <span className={`absolute bottom-1 right-1 w-4.5 h-4.5 rounded-full border-2 border-white ${viewingRecord.isActive ? 'bg-emerald-500' : 'bg-slate-400'}`} />
+          </div>
+          <h4 className="font-display font-extrabold text-slate-800 text-xl tracking-tight text-center mt-4">
+            {viewingRecord.name}
+          </h4>
+          <p className="text-xs text-slate-455 font-bold font-mono tracking-wider text-center mt-1.5 uppercase bg-slate-50 border border-slate-100 px-2 py-0.5 rounded">
+            {viewingRecord.id}
+          </p>
+          <div className="flex justify-center mt-3">
+            <span className={`inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full text-[10px] font-extrabold uppercase tracking-wider ${viewingRecord.isActive ? 'bg-teal-50 text-teal-700 border border-teal-150' : 'bg-slate-155 text-slate-500 border border-slate-200'
+              }`}>
+              <span className={`w-1.5 h-1.5 rounded-full ${viewingRecord.isActive ? 'bg-emerald-500 animate-pulse' : 'bg-slate-400'}`} />
+              {viewingRecord.isActive ? 'Active Authorization' : 'Inactive'}
+            </span>
+          </div>
+        </div>
+
+        {/* Contact coordinates list - styled row blocks */}
+        <div className="space-y-3">
+          <div className="flex items-center justify-between border-b border-slate-150 pb-1.5">
+            <span className="text-[10px] font-bold text-blue-600 uppercase tracking-widest">Contact Information</span>
+          </div>
+          <div className="space-y-3">
+            <div className="flex items-center gap-3.5 bg-slate-50/50 p-3 rounded-2xl border border-slate-100">
+              <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center text-blue-600 shrink-0 border border-blue-100">
+                <Mail className="w-5 h-5" />
+              </div>
+              <div>
+                <span className="text-[10px] font-bold text-slate-450 uppercase tracking-wider block">Email Address</span>
+                <span className="text-sm font-semibold text-slate-755">{viewingRecord.email}</span>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3.5 bg-slate-50/50 p-3 rounded-2xl border border-slate-100">
+              <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center text-blue-600 shrink-0 border border-blue-100">
+                <Phone className="w-5 h-5" />
+              </div>
+              <div>
+                <span className="text-[10px] font-bold text-slate-455 uppercase tracking-wider block">Mobile Contact</span>
+                <span className="text-sm font-semibold text-slate-755">{viewingRecord.mobile}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Tab/Details Layout based on role */}
+        {viewingRecordType === 'doctor' ? (
+          <div className="space-y-6">
+            {/* Section 1: Clinical Profile */}
+            <div className="space-y-3">
+              <div className="flex items-center justify-between border-b border-slate-150 pb-1.5">
+                <span className="text-[10px] font-bold text-blue-600 uppercase tracking-widest">Clinical Profile</span>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="bg-slate-50/50 p-3 rounded-2xl border border-slate-100">
+                  <span className="text-[10px] font-bold text-slate-450 uppercase tracking-wider block">Specialization</span>
+                  <span className="text-sm font-semibold text-slate-755 mt-1 block flex items-center gap-1.5 truncate">
+                    <Activity className="w-3.5 h-3.5 text-blue-500 shrink-0" />
+                    {viewingRecord.specialization}
+                  </span>
+                </div>
+                <div className="bg-slate-50/50 p-3 rounded-2xl border border-slate-100">
+                  <span className="text-[10px] font-bold text-slate-455 uppercase tracking-wider block">Qualification</span>
+                  <span className="text-sm font-semibold text-slate-755 mt-1 block flex items-center gap-1.5 truncate">
+                    <Briefcase className="w-3.5 h-3.5 text-blue-500 shrink-0" />
+                    {viewingRecord.qualification}
+                  </span>
+                </div>
+                <div className="bg-slate-50/50 p-3 rounded-2xl border border-slate-100 col-span-2">
+                  <span className="text-[10px] font-bold text-slate-450 uppercase tracking-wider block">Medical Registration No</span>
+                  <span className="text-sm font-semibold text-slate-755 mt-1 block font-mono">
+                    {viewingRecord.registrationNumber}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Section 2: Clinical Metrics & Fees */}
+            <div className="space-y-3">
+              <div className="flex items-center justify-between border-b border-slate-150 pb-1.5">
+                <span className="text-[10px] font-bold text-blue-600 uppercase tracking-widest">Financials & Consultations</span>
+              </div>
+              <div className="grid grid-cols-3 gap-2.5">
+                <div className="bg-slate-50/50 p-3 rounded-2xl border border-slate-100 text-center flex flex-col justify-between">
+                  <span className="text-[9px] font-bold text-slate-455 uppercase tracking-wider block leading-tight">OPD Fee</span>
+                  <span className="text-sm font-extrabold text-blue-600 mt-1.5 block font-mono">
+                    ₹{viewingRecord.fee?.toLocaleString('en-IN')}
+                  </span>
+                </div>
+                <div className="bg-slate-50/50 p-3 rounded-2xl border border-slate-100 text-center flex flex-col justify-between">
+                  <span className="text-[9px] font-bold text-slate-455 uppercase tracking-wider block leading-tight">Follow-up</span>
+                  <span className="text-sm font-extrabold text-blue-600 mt-1.5 block font-mono">
+                    ₹{(viewingRecord.followupFee || 60)?.toLocaleString('en-IN')}
+                  </span>
+                </div>
+                <div className="bg-slate-50/50 p-3 rounded-2xl border border-slate-100 text-center flex flex-col justify-between">
+                  <span className="text-[9px] font-bold text-slate-455 uppercase tracking-wider block leading-tight">Consults</span>
+                  <span className="text-sm font-extrabold text-emerald-600 mt-1.5 block font-mono">
+                    {viewingRecord.totalConsultations ?? 0}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Section 3: Logistics & Bio */}
+            <div className="space-y-3">
+              <div className="flex items-center justify-between border-b border-slate-150 pb-1.5">
+                <span className="text-[10px] font-bold text-blue-600 uppercase tracking-widest">Logistics & Biography</span>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="bg-slate-50/50 p-3 rounded-2xl border border-slate-100">
+                  <span className="text-[10px] font-bold text-slate-455 uppercase tracking-wider block">Experience</span>
+                  <span className="text-sm font-semibold text-slate-755 mt-1 block">
+                    {viewingRecord.experience}
+                  </span>
+                </div>
+                <div className="bg-slate-50/50 p-3 rounded-2xl border border-slate-100">
+                  <span className="text-[10px] font-bold text-slate-455 uppercase tracking-wider block">Joining Date</span>
+                  <span className="text-sm font-semibold text-slate-755 mt-1 block">
+                    {viewingRecord.joiningDate}
+                  </span>
+                </div>
+                <div className="bg-slate-50/50 p-3 rounded-2xl border border-slate-100 col-span-2">
+                  <span className="text-[10px] font-bold text-slate-450 uppercase tracking-wider block">Working Hours</span>
+                  <span className="text-sm font-semibold text-slate-755 mt-1 block flex items-center gap-1.5">
+                    <Clock className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                    {viewingRecord.workingHours}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+        ) : (
+          /* Simple Contact Fields for Admin / Staff */
+          <div className="space-y-3">
+            <div className="flex items-center justify-between border-b border-slate-150 pb-1.5">
+              <span className="text-[10px] font-bold text-blue-600 uppercase tracking-widest">Regional & Identity</span>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="bg-slate-50/50 p-3.5 rounded-2xl border border-slate-100 text-center">
+                <span className="text-[10px] font-bold text-slate-455 uppercase tracking-wider block">Gender</span>
+                <span className={`text-sm font-semibold block mt-1 ${viewingRecord.gender ? 'text-slate-755' : 'text-slate-400 italic'}`}>
+                  {viewingRecord.gender || 'Not specified'}
+                </span>
+              </div>
+              <div className="bg-slate-50/50 p-3.5 rounded-2xl border border-slate-100 text-center">
+                <span className="text-[10px] font-bold text-slate-455 uppercase tracking-wider block">Date of Birth</span>
+                <span className={`text-sm font-semibold block mt-1 ${viewingRecord.dateOfBirth ? 'text-slate-755' : 'text-slate-400 italic'}`}>
+                  {viewingRecord.dateOfBirth || 'Not specified'}
+                </span>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Full width Close details button */}
+        <div className="flex items-center gap-3 pt-4 border-t border-slate-100 bg-slate-50 -mx-6 -mb-6 p-6 mt-6 sm:bg-transparent sm:mx-0 sm:mb-0 sm:p-0 w-full">
+          <Button onClick={closeViewModal} className="w-full sm:w-auto sm:px-6 h-11 bg-brand-primary text-white rounded-xl font-semibold text-sm justify-center gap-2">
+            Close Details
+          </Button>
+        </div>
+      </div>
+    )
+  );
+
   return (
     <div className="space-y-6 animate-fade-in-up">
       {/* Dynamic Module Header */}
@@ -724,196 +907,24 @@ export const UsersPage: React.FC<UsersPageProps> = ({ hideHeader = false }) => {
         </Modal>
       )}
 
-      {/* VIEW MODAL */}
-      <Modal
-        isOpen={isViewOpen}
-        onClose={closeViewModal}
-        title={`${viewingRecordType === 'admin' ? 'Admin' : viewingRecordType === 'doctor' ? 'Doctor' : viewingRecordType === 'staff' ? 'Staff' : 'User'
-          } Details`}
-      >
-        {viewingRecord && (
-          viewingRecord.isLoadingDetails ? (
-            <div className="flex flex-col justify-center items-center py-20">
-              <div className="w-10 h-10 border-4 border-blue-600 border-t-transparent rounded-full animate-spin" />
-              <span className="text-slate-500 font-semibold mt-4 text-sm">Loading Doctor details...</span>
-            </div>
-          ) : (
-            <div className="space-y-6">
-              {/* Header profile section - Centered */}
-              <div className="flex flex-col items-center pb-4 border-b border-slate-100">
-                <div className="w-28 h-28 rounded-full overflow-hidden bg-slate-50 border-4 border-slate-100 shadow-sm relative">
-                  {viewingRecord.avatarUrl ? (
-                    <img src={viewingRecord.avatarUrl} alt="" className="w-full h-full object-cover" />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center font-extrabold text-slate-400 uppercase text-2xl font-display">
-                      {viewingRecord.name ? viewingRecord.name.replace('Dr. ', '').split(' ').map((n: any) => n[0]).join('') : 'U'}
-                    </div>
-                  )}
-                  <span className={`absolute bottom-1 right-1 w-4.5 h-4.5 rounded-full border-2 border-white ${viewingRecord.isActive ? 'bg-emerald-500' : 'bg-slate-400'}`} />
-                </div>
-                <h4 className="font-display font-extrabold text-slate-800 text-xl tracking-tight text-center mt-4">
-                  {viewingRecord.name}
-                </h4>
-                <p className="text-xs text-slate-455 font-bold font-mono tracking-wider text-center mt-1.5 uppercase bg-slate-50 border border-slate-100 px-2 py-0.5 rounded">
-                  {viewingRecord.id}
-                </p>
-                <div className="flex justify-center mt-3">
-                  <span className={`inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full text-[10px] font-extrabold uppercase tracking-wider ${viewingRecord.isActive ? 'bg-teal-50 text-teal-700 border border-teal-150' : 'bg-slate-155 text-slate-500 border border-slate-200'
-                    }`}>
-                    <span className={`w-1.5 h-1.5 rounded-full ${viewingRecord.isActive ? 'bg-emerald-500 animate-pulse' : 'bg-slate-400'}`} />
-                    {viewingRecord.isActive ? 'Active Authorization' : 'Inactive'}
-                  </span>
-                </div>
-              </div>
-
-              {/* Contact coordinates list - styled row blocks */}
-              <div className="space-y-3">
-                <div className="flex items-center justify-between border-b border-slate-150 pb-1.5">
-                  <span className="text-[10px] font-bold text-blue-600 uppercase tracking-widest">Contact Information</span>
-                </div>
-                <div className="space-y-3">
-                  <div className="flex items-center gap-3.5 bg-slate-50/50 p-3 rounded-2xl border border-slate-100">
-                    <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center text-blue-600 shrink-0 border border-blue-100">
-                      <Mail className="w-5 h-5" />
-                    </div>
-                    <div>
-                      <span className="text-[10px] font-bold text-slate-450 uppercase tracking-wider block">Email Address</span>
-                      <span className="text-sm font-semibold text-slate-750">{viewingRecord.email}</span>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-3.5 bg-slate-50/50 p-3 rounded-2xl border border-slate-100">
-                    <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center text-blue-600 shrink-0 border border-blue-100">
-                      <Phone className="w-5 h-5" />
-                    </div>
-                    <div>
-                      <span className="text-[10px] font-bold text-slate-455 uppercase tracking-wider block">Mobile Contact</span>
-                      <span className="text-sm font-semibold text-slate-755">{viewingRecord.mobile}</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Tab/Details Layout based on role */}
-              {viewingRecordType === 'doctor' ? (
-                <div className="space-y-6">
-                  {/* Section 1: Clinical Profile */}
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between border-b border-slate-150 pb-1.5">
-                      <span className="text-[10px] font-bold text-blue-600 uppercase tracking-widest">Clinical Profile</span>
-                    </div>
-                    <div className="grid grid-cols-2 gap-3">
-                      <div className="bg-slate-50/50 p-3 rounded-2xl border border-slate-100">
-                        <span className="text-[10px] font-bold text-slate-450 uppercase tracking-wider block">Specialization</span>
-                        <span className="text-sm font-semibold text-slate-755 mt-1 block flex items-center gap-1.5 truncate">
-                          <Activity className="w-3.5 h-3.5 text-blue-500 shrink-0" />
-                          {viewingRecord.specialization}
-                        </span>
-                      </div>
-                      <div className="bg-slate-50/50 p-3 rounded-2xl border border-slate-100">
-                        <span className="text-[10px] font-bold text-slate-450 uppercase tracking-wider block">Qualification</span>
-                        <span className="text-sm font-semibold text-slate-755 mt-1 block flex items-center gap-1.5 truncate">
-                          <Briefcase className="w-3.5 h-3.5 text-blue-500 shrink-0" />
-                          {viewingRecord.qualification}
-                        </span>
-                      </div>
-                      <div className="bg-slate-50/50 p-3 rounded-2xl border border-slate-100 col-span-2">
-                        <span className="text-[10px] font-bold text-slate-450 uppercase tracking-wider block">Medical Registration No</span>
-                        <span className="text-sm font-semibold text-slate-755 mt-1 block font-mono">
-                          {viewingRecord.registrationNumber}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Section 2: Clinical Metrics & Fees */}
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between border-b border-slate-150 pb-1.5">
-                      <span className="text-[10px] font-bold text-blue-600 uppercase tracking-widest">Financials & Consultations</span>
-                    </div>
-                    <div className="grid grid-cols-3 gap-2.5">
-                      <div className="bg-slate-50/50 p-3 rounded-2xl border border-slate-100 text-center flex flex-col justify-between">
-                        <span className="text-[9px] font-bold text-slate-450 uppercase tracking-wider block leading-tight">OPD Fee</span>
-                        <span className="text-sm font-extrabold text-blue-600 mt-1.5 block font-mono">
-                          ₹{viewingRecord.fee?.toLocaleString('en-IN')}
-                        </span>
-                      </div>
-                      <div className="bg-slate-50/50 p-3 rounded-2xl border border-slate-100 text-center flex flex-col justify-between">
-                        <span className="text-[9px] font-bold text-slate-450 uppercase tracking-wider block leading-tight">Follow-up</span>
-                        <span className="text-sm font-extrabold text-blue-600 mt-1.5 block font-mono">
-                          ₹{(viewingRecord.followupFee || 60)?.toLocaleString('en-IN')}
-                        </span>
-                      </div>
-                      <div className="bg-slate-50/50 p-3 rounded-2xl border border-slate-100 text-center flex flex-col justify-between">
-                        <span className="text-[9px] font-bold text-slate-455 uppercase tracking-wider block leading-tight">Consults</span>
-                        <span className="text-sm font-extrabold text-emerald-600 mt-1.5 block font-mono">
-                          {viewingRecord.totalConsultations ?? 0}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Section 3: Logistics & Bio */}
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between border-b border-slate-150 pb-1.5">
-                      <span className="text-[10px] font-bold text-blue-600 uppercase tracking-widest">Logistics & Biography</span>
-                    </div>
-                    <div className="grid grid-cols-2 gap-3">
-                      <div className="bg-slate-50/50 p-3 rounded-2xl border border-slate-100">
-                        <span className="text-[10px] font-bold text-slate-455 uppercase tracking-wider block">Experience</span>
-                        <span className="text-sm font-semibold text-slate-755 mt-1 block">
-                          {viewingRecord.experience}
-                        </span>
-                      </div>
-                      <div className="bg-slate-50/50 p-3 rounded-2xl border border-slate-100">
-                        <span className="text-[10px] font-bold text-slate-455 uppercase tracking-wider block">Joining Date</span>
-                        <span className="text-sm font-semibold text-slate-755 mt-1 block">
-                          {viewingRecord.joiningDate}
-                        </span>
-                      </div>
-                      <div className="bg-slate-50/50 p-3 rounded-2xl border border-slate-100 col-span-2">
-                        <span className="text-[10px] font-bold text-slate-450 uppercase tracking-wider block">Working Hours</span>
-                        <span className="text-sm font-semibold text-slate-755 mt-1 block flex items-center gap-1.5">
-                          <Clock className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-                          {viewingRecord.workingHours}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              ) : (
-                /* Simple Contact Fields for Admin / Staff */
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between border-b border-slate-150 pb-1.5">
-                    <span className="text-[10px] font-bold text-blue-600 uppercase tracking-widest">Regional & Identity</span>
-                  </div>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="bg-slate-50/50 p-3.5 rounded-2xl border border-slate-100 text-center">
-                      <span className="text-[10px] font-bold text-slate-450 uppercase tracking-wider block">Gender</span>
-                      <span className={`text-sm font-semibold block mt-1 ${viewingRecord.gender ? 'text-slate-750' : 'text-slate-400 italic'}`}>
-                        {viewingRecord.gender || 'Not specified'}
-                      </span>
-                    </div>
-                    <div className="bg-slate-50/50 p-3.5 rounded-2xl border border-slate-100 text-center">
-                      <span className="text-[10px] font-bold text-slate-450 uppercase tracking-wider block">Date of Birth</span>
-                      <span className={`text-sm font-semibold block mt-1 ${viewingRecord.dateOfBirth ? 'text-slate-755' : 'text-slate-400 italic'}`}>
-                        {viewingRecord.dateOfBirth || 'Not specified'}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* Full width Close details button */}
-              <div className="flex pt-4 border-t border-slate-100 mt-6 w-full">
-                <Button onClick={closeViewModal} className="w-full py-3 bg-brand-primary text-white rounded-xl font-bold text-sm justify-center shadow-sm">
-                  Close Details
-                </Button>
-              </div>
-            </div>
-          )
-        )}
-      </Modal>
+      {/* VIEW DETAILS */}
+      {isMobile ? (
+        <Drawer
+          isOpen={isViewOpen}
+          onClose={closeViewModal}
+          title={`${viewingRecordType === 'admin' ? 'Admin' : viewingRecordType === 'doctor' ? 'Doctor' : viewingRecordType === 'staff' ? 'Staff' : 'User'} Details`}
+        >
+          {detailsContent}
+        </Drawer>
+      ) : (
+        <Modal
+          isOpen={isViewOpen}
+          onClose={closeViewModal}
+          title={`${viewingRecordType === 'admin' ? 'Admin' : viewingRecordType === 'doctor' ? 'Doctor' : viewingRecordType === 'staff' ? 'Staff' : 'User'} Details`}
+        >
+          {detailsContent}
+        </Modal>
+      )}
 
       {/* Onboarding setPassword link notification modal */}
       <Modal
