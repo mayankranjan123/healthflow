@@ -57,7 +57,7 @@ export const Drawer: React.FC<DrawerProps> = ({ isOpen, onClose, title, children
             )}
 
             {/* Body */}
-            <div className="flex-1 p-6 overflow-y-auto bg-slate-50">
+            <div className={`flex-1 overflow-y-auto bg-slate-50 ${hideHeader ? 'p-0' : 'p-6'}`}>
               {children}
             </div>
           </motion.div>

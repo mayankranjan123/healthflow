@@ -1048,14 +1048,30 @@ export const PatientsPage: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      {/* 1. DIRECTORY VIEW (LIST MODE) */}
-      {viewMode === 'list' && (
-        isMobile ? (
-          <div className="space-y-4 pb-20 animate-fade-in-up">
-            {/* Mobile Header */}
-            <div className="flex flex-col gap-1">
-              <h2 className="text-2xl font-display font-bold text-slate-900 tracking-tight">Patient Directory</h2>
-            </div>
+      {/* Mobile Header (Only list view) */}
+      {isMobile && viewMode === 'list' && (
+        <div className="flex items-center justify-between bg-white px-6 py-4 border-b border-slate-200 sticky top-0 z-30 shadow-sm h-18">
+          <div className="flex items-center gap-2">
+            <h2 className="text-lg font-bold text-[#094093] font-display ml-1">
+              Patient Directory
+            </h2>
+          </div>
+          <div>
+            <img
+              src={currentUser?.avatarUrl || "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?q=80&w=120&auto=format&fit=crop"}
+              alt="Avatar"
+              className="w-9 h-9 rounded-full object-cover border border-slate-200 cursor-pointer shadow-xs"
+            />
+          </div>
+        </div>
+      )}
+
+      <div className={isMobile ? 'px-6 space-y-6' : 'space-y-6'}>
+        {/* 1. DIRECTORY VIEW (LIST MODE) */}
+        {viewMode === 'list' && (
+          isMobile ? (
+            <div className="space-y-4 pb-20 animate-fade-in-up pt-4">
+              {/* Mobile Header title hidden */}
 
             {/* Metrics Cards: Side-by-side 2-column grid */}
             <div className="grid grid-cols-2 gap-4">
@@ -1289,18 +1305,18 @@ export const PatientsPage: React.FC = () => {
         <div className="space-y-6">
           {/* Header Split */}
           {isMobile ? (
-            <div className="flex justify-between items-center bg-white -mx-6 -mt-6 p-4.5 px-6 border-b border-slate-100 sticky top-0 z-30">
+            <div className="flex justify-between items-center bg-white -mx-6 px-6 py-4 border-b border-slate-200 sticky top-0 z-30 shadow-sm h-18">
               <div className="flex items-center gap-3">
                 <button
                   onClick={() => {
                     setViewMode('list');
                     setSelectedPatient(null);
                   }}
-                  className="text-slate-700 hover:bg-slate-100 p-1.5 rounded-full cursor-pointer transition-colors"
+                  className="text-slate-650 hover:bg-slate-100 p-1.5 rounded-full cursor-pointer transition-colors"
                 >
-                  <ArrowLeft className="w-5 h-5" />
+                  <ArrowLeft className="w-6 h-6" />
                 </button>
-                <h2 className="text-lg font-bold text-slate-800">Patient Profile</h2>
+                <h2 className="text-lg font-bold text-[#094093] font-display ml-1">Patient Profile</h2>
               </div>
               <div className="flex items-center gap-2">
                 <button className="relative p-2 text-slate-500 hover:bg-slate-50 rounded-full cursor-pointer">
@@ -2379,23 +2395,31 @@ export const PatientsPage: React.FC = () => {
         <Drawer
           isOpen={isAddPatientOpen}
           onClose={() => setIsAddPatientOpen(false)}
-          title="Add New Patient"
-          hideHeader={true}
+          title="Register Patient"
+          hideHeader={isMobile}
         >
-          <div className="flex flex-col h-full -m-6 bg-slate-50/50">
-            {/* Header */}
-            <div className="flex items-center justify-between px-6 py-4.5 bg-white border-b border-slate-100 shrink-0 relative">
-              <button
-                type="button"
-                onClick={() => setIsAddPatientOpen(false)}
-                className="text-slate-700 hover:bg-slate-100 p-1.5 rounded-full cursor-pointer transition-colors"
-              >
-                <ArrowLeft className="w-5 h-5" />
-              </button>
-              <h3 className="font-display font-extrabold text-slate-800 text-base absolute left-1/2 -translate-x-1/2">
-                Add New Patient
-              </h3>
-              <div className="w-8 h-8" />
+          <div className="flex flex-col h-full bg-slate-50/50">
+            {/* Custom Mobile Header */}
+            <div className="flex items-center justify-between bg-white px-6 py-4 border-b border-slate-200 sticky top-0 z-30 shadow-sm h-18 shrink-0">
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setIsAddPatientOpen(false)}
+                  className="text-slate-650 hover:bg-slate-100 p-1.5 rounded-full cursor-pointer transition-colors"
+                >
+                  <ArrowLeft className="w-6 h-6" />
+                </button>
+                <h2 className="text-lg font-bold text-[#094093] font-display ml-1">
+                  Add New Patient
+                </h2>
+              </div>
+              <div>
+                <img
+                  src={currentUser?.avatarUrl || "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?q=80&w=120&auto=format&fit=crop"}
+                  alt="Avatar"
+                  className="w-9 h-9 rounded-full object-cover border border-slate-200 cursor-pointer shadow-xs"
+                />
+              </div>
             </div>
 
             {/* Scrollable form body */}
@@ -2526,7 +2550,7 @@ export const PatientsPage: React.FC = () => {
               </div>
 
               {/* Pinned bottom action button */}
-              <div className="p-5 bg-white border-t border-slate-100 shrink-0">
+              <div className="px-5 pt-4 pb-8 bg-white border-t border-slate-100 shrink-0">
                 <button
                   type="submit"
                   className="w-full bg-[#0a305e] hover:bg-[#08274d] text-white font-semibold py-3.5 rounded-xl text-center cursor-pointer shadow-sm text-sm active:scale-[0.99] transition-all"
@@ -2737,7 +2761,7 @@ export const PatientsPage: React.FC = () => {
         hideHeader={isMobile}
       >
         {isMobile ? (
-          <div className="flex flex-col h-full -m-6 bg-slate-50/50">
+          <div className="flex flex-col h-full bg-slate-50/50">
             {/* Custom Mobile Header */}
             <div className="flex items-center justify-between bg-white px-6 py-4 border-b border-slate-200 sticky top-0 z-30 shadow-sm h-18 shrink-0">
               <div className="flex items-center gap-2">
@@ -2764,7 +2788,7 @@ export const PatientsPage: React.FC = () => {
             {/* Scrollable form body */}
             <form onSubmit={handleCreatePrescriptionSubmit} className="flex-1 flex flex-col justify-between overflow-hidden">
               <div className="flex-1 p-6 overflow-y-auto space-y-6">
-                
+
                 {/* Prescribed By Selector */}
                 {currentUser?.role === 'DOCTOR' ? (
                   <div className="space-y-1.5 text-left">
@@ -2950,7 +2974,7 @@ export const PatientsPage: React.FC = () => {
               </div>
 
               {/* Bottom Sticky buttons */}
-              <div className="p-5 bg-white border-t border-slate-150 shrink-0 grid grid-cols-2 gap-3.5 shadow-lg">
+              <div className="px-5 pt-4 pb-8 bg-white border-t border-slate-150 shrink-0 grid grid-cols-2 gap-3.5 shadow-lg">
                 <button
                   type="button"
                   onClick={() => setIsCreatePrescriptionOpen(false)}
@@ -2962,7 +2986,7 @@ export const PatientsPage: React.FC = () => {
                   type="submit"
                   className="w-full py-3.5 bg-blue-600 hover:bg-blue-700 text-white font-extrabold rounded-xl text-center cursor-pointer shadow-sm text-xs uppercase tracking-wider active:scale-95 transition-all"
                 >
-                  Save Prescription
+                  Save
                 </button>
               </div>
             </form>
@@ -3170,7 +3194,7 @@ export const PatientsPage: React.FC = () => {
                 Cancel
               </Button>
               <Button type="submit" className="w-full">
-                Save Prescription
+                Save
               </Button>
             </div>
           </form>
@@ -3535,6 +3559,7 @@ export const PatientsPage: React.FC = () => {
           <Plus className="w-6 h-6" />
         </button>
       )}
+      </div>
     </div>
   );
 };
