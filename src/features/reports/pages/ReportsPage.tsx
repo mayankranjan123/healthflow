@@ -55,7 +55,7 @@ export const ReportsPage: React.FC = () => {
   useEffect(() => {
     let active = true;
     setIsLoading(true);
-    
+
     const loadReports = async () => {
       try {
         const reportData = await reportService.getReportData(1000000000, activeFilters);
@@ -219,13 +219,13 @@ export const ReportsPage: React.FC = () => {
         <div className="space-y-5 pb-24 px-6 pt-4 animate-fade-in-up">
           {/* Mobile Header with Export button */}
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Clinic Performance Overview</span>
+            <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Clinic Performance</span>
             <button
               onClick={handleExportExcel}
               className="bg-indigo-600 text-white text-xs font-bold px-3 py-1.5 rounded-lg flex items-center gap-1.5 cursor-pointer hover:bg-blue-700 transition-colors shadow-sm"
             >
               <Download className="w-3.5 h-3.5 shrink-0" />
-              <span>Export Excel</span>
+              <span>Export</span>
             </button>
           </div>
 
@@ -237,11 +237,10 @@ export const ReportsPage: React.FC = () => {
                 <button
                   key={preset}
                   onClick={() => handleQuickPreset(preset)}
-                  className={`px-4 py-2 rounded-full font-bold text-xs whitespace-nowrap transition-all shadow-3xs cursor-pointer ${
-                    isActive
-                      ? 'bg-indigo-600 text-white font-black'
-                      : 'bg-slate-100 text-slate-500 hover:bg-slate-200'
-                  }`}
+                  className={`px-4 py-2 rounded-full font-bold text-xs whitespace-nowrap transition-all shadow-3xs cursor-pointer ${isActive
+                    ? 'bg-indigo-600 text-white font-black'
+                    : 'bg-slate-100 text-slate-500 hover:bg-slate-200'
+                    }`}
                 >
                   {preset.charAt(0) + preset.slice(1).toLowerCase()}
                 </button>
@@ -249,11 +248,10 @@ export const ReportsPage: React.FC = () => {
             })}
             <button
               onClick={() => setFilters(prev => ({ ...prev, quickFilter: 'TODAY' }))}
-              className={`px-4 py-2 rounded-full font-bold text-xs whitespace-nowrap transition-all shadow-3xs cursor-pointer ${
-                activeFilters.fromDate
-                  ? 'bg-indigo-600 text-white font-black'
-                  : 'bg-slate-100 text-slate-500 hover:bg-slate-200'
-              }`}
+              className={`px-4 py-2 rounded-full font-bold text-xs whitespace-nowrap transition-all shadow-3xs cursor-pointer ${activeFilters.fromDate
+                ? 'bg-indigo-600 text-white font-black'
+                : 'bg-slate-100 text-slate-500 hover:bg-slate-200'
+                }`}
             >
               Custom
             </button>
@@ -314,7 +312,7 @@ export const ReportsPage: React.FC = () => {
             <>
               {/* Stacked metric cards */}
               <div className="space-y-4">
-                
+
                 {/* Total Revenue */}
                 <div className="bg-white border border-slate-200/85 rounded-2xl p-4.5 flex items-center justify-between shadow-3xs relative overflow-hidden">
                   <div className="flex items-center gap-4.5 min-w-0">
@@ -468,7 +466,7 @@ export const ReportsPage: React.FC = () => {
           {/* Dynamic Date Filter Block */}
           <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm space-y-4">
             <div className="flex flex-col lg:flex-row items-stretch lg:items-end justify-between gap-4">
-              
+
               {/* Quick presets tab-toggle */}
               <div className="space-y-1.5 flex-1 max-w-sm">
                 <span className="block text-xs font-bold text-slate-500 uppercase tracking-wider">
@@ -479,11 +477,10 @@ export const ReportsPage: React.FC = () => {
                     <button
                       key={preset}
                       onClick={() => handleQuickPreset(preset)}
-                      className={`flex-1 text-center font-bold text-xs capitalize rounded-md transition-all cursor-pointer ${
-                        activeFilters.quickFilter === preset && !activeFilters.fromDate
-                          ? 'bg-white text-indigo-700 shadow-sm'
-                          : 'text-slate-500 hover:text-slate-800'
-                      }`}
+                      className={`flex-1 text-center font-bold text-xs capitalize rounded-md transition-all cursor-pointer ${activeFilters.quickFilter === preset && !activeFilters.fromDate
+                        ? 'bg-white text-indigo-700 shadow-sm'
+                        : 'text-slate-500 hover:text-slate-800'
+                        }`}
                     >
                       {preset.toLowerCase()}
                     </button>
@@ -558,7 +555,7 @@ export const ReportsPage: React.FC = () => {
             <>
               {/* Summary Stats Cards */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                
+
                 {/* Total Revenue */}
                 <div className="bg-emerald-50/20 border border-emerald-100 rounded-xl p-5 shadow-sm flex items-center gap-4.5">
                   <div className="w-12 h-12 rounded-xl bg-emerald-100 flex items-center justify-center text-emerald-600 shrink-0 text-xl font-bold shadow-inner">
@@ -634,7 +631,7 @@ export const ReportsPage: React.FC = () => {
                     <h3 className="font-display font-bold text-slate-900 text-base">Report Summary</h3>
                     <p className="text-xs text-slate-400 font-semibold mt-0.5">Itemized performance statistics per active physician</p>
                   </div>
-                  <button 
+                  <button
                     onClick={() => alert('Opening consultation audits database log...')}
                     className="text-xs font-bold text-indigo-600 hover:text-indigo-700 transition-colors uppercase tracking-wider flex items-center gap-1"
                   >
@@ -664,7 +661,7 @@ export const ReportsPage: React.FC = () => {
                       ) : (
                         data.topDoctors.map((doc) => {
                           const ratio = Math.round((doc.completedConsultations / (doc.appointments || 1)) * 100);
-                          
+
                           return (
                             <tr key={doc.id} className="hover:bg-slate-50/40 transition-colors">
                               {/* Doctor ID & Initials */}
@@ -701,7 +698,7 @@ export const ReportsPage: React.FC = () => {
                               <td className="px-6 py-4 whitespace-nowrap">
                                 <div className="flex items-center justify-center gap-3 max-w-xs mx-auto">
                                   <div className="w-24 h-1.5 bg-slate-100 rounded-full overflow-hidden shrink-0">
-                                    <div 
+                                    <div
                                       className="h-full bg-emerald-500 rounded-full"
                                       style={{ width: `${ratio}%` }}
                                     />
