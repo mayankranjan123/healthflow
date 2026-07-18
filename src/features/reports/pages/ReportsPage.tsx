@@ -182,9 +182,9 @@ export const ReportsPage: React.FC = () => {
       case 'TODAY':
         return `Today (${new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })})`;
       case 'WEEKLY':
-        return 'This Week (Current Week Audit)';
+        return 'This Week';
       case 'MONTHLY':
-        return 'This Month (Current Month Ledger)';
+        return 'This Month';
     }
   }, [activeFilters]);
 
@@ -246,7 +246,7 @@ export const ReportsPage: React.FC = () => {
                 </button>
               );
             })}
-            <button
+            {/* <button
               onClick={() => setFilters(prev => ({ ...prev, quickFilter: 'TODAY' }))}
               className={`px-4 py-2 rounded-full font-bold text-xs whitespace-nowrap transition-all shadow-3xs cursor-pointer ${activeFilters.fromDate
                 ? 'bg-indigo-600 text-white font-black'
@@ -254,7 +254,7 @@ export const ReportsPage: React.FC = () => {
                 }`}
             >
               Custom
-            </button>
+            </button> */}
           </div>
 
           {/* Date inputs (2 columns) */}
