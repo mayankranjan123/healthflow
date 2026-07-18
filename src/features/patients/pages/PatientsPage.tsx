@@ -1079,7 +1079,7 @@ export const PatientsPage: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* 1. DIRECTORY VIEW (LIST MODE) */}
-      {(!isMobile || viewMode === 'list') && (
+      {viewMode === 'list' && (
         isMobile ? (
           <div className="space-y-4 pb-20 animate-fade-in-up">
             {/* Mobile Header */}
