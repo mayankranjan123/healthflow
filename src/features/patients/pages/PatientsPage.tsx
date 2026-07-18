@@ -1048,30 +1048,14 @@ export const PatientsPage: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      {/* Mobile Header (Only list view) */}
-      {isMobile && viewMode === 'list' && (
-        <div className="flex items-center justify-between bg-white px-6 py-4 border-b border-slate-200 sticky top-0 z-30 shadow-sm h-18">
-          <div className="flex items-center gap-2">
-            <h2 className="text-lg font-bold text-[#094093] font-display ml-1">
-              Patient Directory
-            </h2>
-          </div>
-          <div>
-            <img
-              src={currentUser?.avatarUrl || "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?q=80&w=120&auto=format&fit=crop"}
-              alt="Avatar"
-              className="w-9 h-9 rounded-full object-cover border border-slate-200 cursor-pointer shadow-xs"
-            />
-          </div>
-        </div>
-      )}
-
-      <div className={isMobile ? 'px-6 space-y-6' : 'space-y-6'}>
-        {/* 1. DIRECTORY VIEW (LIST MODE) */}
-        {viewMode === 'list' && (
-          isMobile ? (
-            <div className="space-y-4 pb-20 animate-fade-in-up pt-4">
-              {/* Mobile Header title hidden */}
+      {/* 1. DIRECTORY VIEW (LIST MODE) */}
+      {viewMode === 'list' && (
+        isMobile ? (
+          <div className="space-y-4 pb-20 animate-fade-in-up">
+            {/* Mobile Header */}
+            <div className="flex flex-col gap-1">
+              <h2 className="text-2xl font-display font-bold text-slate-900 tracking-tight">Patient Directory</h2>
+            </div>
 
               {/* Metrics Cards: Side-by-side 2-column grid */}
               <div className="grid grid-cols-2 gap-4">
@@ -1305,7 +1289,7 @@ export const PatientsPage: React.FC = () => {
           <div className="space-y-6">
             {/* Header Split */}
             {isMobile ? (
-              <div className="flex justify-between items-center bg-white -mx-6 px-6 py-4 border-b border-slate-200 sticky top-0 z-30 shadow-sm h-18">
+              <div className="flex justify-between items-center bg-white -mx-6 -mt-6 px-6 py-4 border-b border-slate-200 sticky top-0 z-30 shadow-sm h-18">
                 <div className="flex items-center gap-3">
                   <button
                     onClick={() => {
@@ -3559,7 +3543,6 @@ export const PatientsPage: React.FC = () => {
             <Plus className="w-6 h-6" />
           </button>
         )}
-      </div>
     </div>
   );
 };
