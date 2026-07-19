@@ -1,0 +1,12 @@
+steps:
+  # Build the frontend container image with build arguments
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'build'
+      - '-t'
+      - 'asia-south1-docker.pkg.dev/project-de920623-03c7-48d1-864/healthflow-repo/frontend:latest'
+      - '--build-arg'
+      - 'VITE_API_URL=/api/v1'
+      - '.'
+images:
+  - 'asia-south1-docker.pkg.dev/project-de920623-03c7-48d1-864/healthflow-repo/frontend:latest'
