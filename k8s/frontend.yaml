@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
         - name: frontend
-          image: asia-south1-docker.pkg.dev/YOUR_GCP_PROJECT_ID/healthflow-repo/frontend:latest
+          image: asia-south1-docker.pkg.dev/project-de920623-03c7-48d1-864/healthflow-repo/frontend:latest
           ports:
             - containerPort: 8080
           resources:
