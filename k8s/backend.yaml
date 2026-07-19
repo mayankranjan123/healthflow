@@ -1,0 +1,66 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: healthflow-backend
+  labels:
+    app: healthflow-backend
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: healthflow-backend
+  template:
+    metadata:
+      labels:
+        app: healthflow-backend
+    spec:
+      containers:
+        - name: backend
+          image: asia-south1-docker.pkg.dev/YOUR_GCP_PROJECT_ID/healthflow-repo/backend:latest
+          ports:
+            - containerPort: 8080
+          env:
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: healthflow-secrets
+                  key: DATABASE_URL
+            - name: DATABASE_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: healthflow-secrets
+                  key: DATABASE_USERNAME
+            - name: DATABASE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: healthflow-secrets
+                  key: DATABASE_PASSWORD
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: healthflow-secrets
+                  key: JWT_SECRET
+            - name: CORS_ALLOWED_ORIGINS
+              value: "*"
+            - name: PORT
+              value: "8080"
+          resources:
+            requests:
+              memory: "512Mi"
+              cpu: "250m"
+            limits:
+              memory: "1024Mi"
+              cpu: "500m"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: backend-service
+spec:
+  selector:
+    app: healthflow-backend
+  ports:
+    - protocol: TCP
+      port: 8080
+      targetPort: 8080
+  type: ClusterIP
