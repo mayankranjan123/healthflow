@@ -4,12 +4,12 @@ spring:
   
   # Database Configuration
   datasource:
-#    url: ${DATABASE_URL:jdbc:postgresql://bowed-herder-17640.jxf.gcp-asia-south1.cockroachlabs.cloud:26257/healthflow?options=-c%20allow_unsafe_internals%3Dtrue}
-#    username: ${DATABASE_USERNAME:postgres}
-#    password: ${DATABASE_PASSWORD:U8GcydLZv2p0tXpI6GncEw}
-    url: ${DATABASE_URL:jdbc:postgresql://127.0.0.1:5432/health}
+    url: ${DATABASE_URL:jdbc:postgresql://bowed-herder-17640.jxf.gcp-asia-south1.cockroachlabs.cloud:26257/healthflow?options=-c%20allow_unsafe_internals%3Dtrue}
     username: ${DATABASE_USERNAME:postgres}
-    password: ${DATABASE_PASSWORD:root}
+    password: ${DATABASE_PASSWORD:U8GcydLZv2p0tXpI6GncEw}
+#    url: ${DATABASE_URL:jdbc:postgresql://127.0.0.1:5432/health}
+#    username: ${DATABASE_USERNAME:postgres}
+#    password: ${DATABASE_PASSWORD:root}
     driver-class-name: org.postgresql.Driver
     hikari:
       maximum-pool-size: 20
