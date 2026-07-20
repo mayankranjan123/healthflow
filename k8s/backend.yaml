@@ -60,7 +60,7 @@ spec:
                   name: healthflow-secrets
                   key: JWT_SECRET
             - name: CORS_ALLOWED_ORIGINS
-              value: "*"
+              value: "https://whatthecode.in,https://www.whatthecode.in,http://localhost:3000,http://localhost:5173"
             - name: PORT
               value: "8080"
 

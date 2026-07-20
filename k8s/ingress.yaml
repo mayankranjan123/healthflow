@@ -1,3 +1,13 @@
+apiVersion: networking.gke.io/v1
+kind: ManagedCertificate
+metadata:
+  name: healthflow-cert
+spec:
+  domains:
+    - whatthecode.in
+    - www.whatthecode.in
+
+---
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
@@ -5,6 +15,7 @@ metadata:
   annotations:
     kubernetes.io/ingress.class: gce
     kubernetes.io/ingress.global-static-ip-name: "healthflow-static-ip"
+    networking.gke.io/managed-certificates: "healthflow-cert"
 spec:
   rules:
     - host: whatthecode.in
