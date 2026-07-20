@@ -2,6 +2,9 @@ package com.healthflow.exception;
 
 import com.healthflow.common.dto.ApiResponse;
 import com.healthflow.common.dto.ErrorDetail;
+import com.healthflow.patient.service.PatientServiceImpl;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
@@ -16,6 +19,9 @@ import java.util.List;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
+
+    private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
+
 
     // 1. Handle Resource Not Found Custom Exception
     @ExceptionHandler(ResourceNotFoundException.class)
@@ -78,6 +84,7 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ApiResponse<Void>> handleGeneralException(Exception ex) {
         // Log the exception in real production logs (omitted trace in final API response)
         ApiResponse<Void> response = ApiResponse.error("An unexpected error occurred. Please contact system support.");
+        log.error("Exception occurred: {}", ex.getMessage(), ex);
         return new ResponseEntity<>(response, HttpStatus.INTERNAL_SERVER_ERROR);
     }
 }

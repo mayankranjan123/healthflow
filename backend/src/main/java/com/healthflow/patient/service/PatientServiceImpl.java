@@ -26,10 +26,10 @@ import java.util.stream.Collectors;
 @Transactional(readOnly = true)
 public class PatientServiceImpl implements PatientService {
 
-    private static final Logger log = LoggerFactory.getLogger(PatientServiceImpl.class);
     private final PatientRepository patientRepository;
     private final EntityManager entityManager;
     private final Random random = new Random();
+    private static final Logger log = LoggerFactory.getLogger(PatientServiceImpl.class);
 
     public PatientServiceImpl(PatientRepository patientRepository, EntityManager entityManager) {
         this.patientRepository = patientRepository;

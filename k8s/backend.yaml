@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
         - name: backend
-          image: asia-south1-docker.pkg.dev/project-de920623-03c7-48d1-864/healthflow-repo/backend:1
+          image: asia-south1-docker.pkg.dev/project-de920623-03c7-48d1-864/healthflow-repo/backend:2
           ports:
             - containerPort: 8080
 
