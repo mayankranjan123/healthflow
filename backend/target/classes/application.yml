@@ -4,12 +4,12 @@ spring:
   
   # Database Configuration
   datasource:
-    url: ${DATABASE_URL:jdbc:postgresql://bowed-herder-17640.jxf.gcp-asia-south1.cockroachlabs.cloud:26257/healthflow?options=-c%20allow_unsafe_internals%3Dtrue}
-    username: ${DATABASE_USERNAME:postgres}
-    password: ${DATABASE_PASSWORD:U8GcydLZv2p0tXpI6GncEw}
-#    url: ${DATABASE_URL:jdbc:postgresql://127.0.0.1:5432/healthflow}
+#    url: ${DATABASE_URL:jdbc:postgresql://bowed-herder-17640.jxf.gcp-asia-south1.cockroachlabs.cloud:26257/healthflow?options=-c%20allow_unsafe_internals%3Dtrue}
 #    username: ${DATABASE_USERNAME:postgres}
-#    password: ${DATABASE_PASSWORD:root}
+#    password: ${DATABASE_PASSWORD:U8GcydLZv2p0tXpI6GncEw}
+    url: ${DATABASE_URL:jdbc:postgresql://127.0.0.1:5432/health}
+    username: ${DATABASE_USERNAME:postgres}
+    password: ${DATABASE_PASSWORD:root}
     driver-class-name: org.postgresql.Driver
     hikari:
       maximum-pool-size: 20
@@ -23,7 +23,7 @@ spring:
   jpa:
     database-platform: org.hibernate.dialect.PostgreSQLDialect
     hibernate:
-      ddl-auto: validate # Production standard: always validate, use Flyway for schema
+      ddl-auto: update # Automatically create and update schema tables on startup
     show-sql: false
     properties:
       hibernate:
@@ -34,15 +34,6 @@ spring:
           fetch_size: 50
         order_inserts: true
         order_updates: true
-
-  # Flyway Migrations
-  flyway:
-    enabled: true
-    baseline-on-migrate: true
-    baseline-version: 0
-    locations: classpath:db/migration
-    clean-disabled: false
-    clean-on-validation-error: true
 
 # Server Configuration
 server:

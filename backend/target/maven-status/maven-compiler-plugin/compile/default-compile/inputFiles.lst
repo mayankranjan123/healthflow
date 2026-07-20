@@ -60,6 +60,7 @@ C:\Users\LENOVO\Downloads\healthflow\backend\src\main\java\com\healthflow\except
 C:\Users\LENOVO\Downloads\healthflow\backend\src\main\java\com\healthflow\billing\dto\InvoiceRequestDto.java
 C:\Users\LENOVO\Downloads\healthflow\backend\src\main\java\com\healthflow\billing\entity\Invoice.java
 C:\Users\LENOVO\Downloads\healthflow\backend\src\main\java\com\healthflow\clinic\controller\ClinicController.java
+C:\Users\LENOVO\Downloads\healthflow\backend\src\main\java\com\healthflow\config\DatabaseInitializer.java
 C:\Users\LENOVO\Downloads\healthflow\backend\src\main\java\com\healthflow\billing\entity\InvoiceItem.java
 C:\Users\LENOVO\Downloads\healthflow\backend\src\main\java\com\healthflow\patient\service\PatientService.java
 C:\Users\LENOVO\Downloads\healthflow\backend\src\main\java\com\healthflow\report\service\ReportService.java
