@@ -1,5 +1,5 @@
 spring:
-  application:
+  application:  Aaz
     name: healthflow-api
   
   # Database Configuration
